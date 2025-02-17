@@ -26,7 +26,7 @@ docker run -d -p 8004:8004 tosku/cinema-rserver
 First download CINeMA
 
 ```
-git clone https://github.com/esm-ispm-unibe-ch/cinema.git
+git clone https://github.com/tpapak/cinema.git
 cd cinema/webapp
 ```
 From now the base directory will be ```cinema/webapp```
