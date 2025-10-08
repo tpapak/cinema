@@ -1,0 +1,234 @@
+{
+  "project": {
+    "CM": {
+      "contributionMatrices": {
+        "hatmatrix": {
+          "colNames": ["A:B", "A:C", "A:D", "B:C"],
+          "H": [
+            [0.6172, 0.1914, 0, 0.1914],
+            [0.141, 0.718, 0, 0.141],
+            [0, 0, 1, 0],
+            [0.1676, 0.1676, 0, 0.6648],
+            [0.3086, 0.1276, 0.4362, 0.1276],
+            [0.094, 0.359, 0.453, 0.094]
+          ],
+          "model": "fixed",
+          "rowNames": ["A:B", "A:C", "A:D", "B:C", "B:D", "C:D"],
+          "sm": "OR"
+        },
+        "studycontributions": {
+          "A:B": {
+            "StudyAB1": 0.3477,
+            "StudyAB2": 0.2695,
+            "StudyAC1": 0.0714,
+            "StudyAC2": 0.12,
+            "StudyAD1": 0,
+            "StudyAD2": 0,
+            "StudyBC1": 0.1156,
+            "StudyBC2": 0.0758
+          },
+          "A:C": {
+            "StudyAB1": 0.0794,
+            "StudyAB2": 0.0616,
+            "StudyAC1": 0.268,
+            "StudyAC2": 0.45,
+            "StudyAD1": 0,
+            "StudyAD2": 0,
+            "StudyBC1": 0.0852,
+            "StudyBC2": 0.0559
+          },
+          "A:D": {
+            "StudyAB1": 0,
+            "StudyAB2": 0,
+            "StudyAC1": 0,
+            "StudyAC2": 0,
+            "StudyAD1": 0.5067,
+            "StudyAD2": 0.4933,
+            "StudyBC1": 0,
+            "StudyBC2": 0
+          },
+          "B:C": {
+            "StudyAB1": 0.0944,
+            "StudyAB2": 0.0732,
+            "StudyAC1": 0.0626,
+            "StudyAC2": 0.105,
+            "StudyAD1": 0,
+            "StudyAD2": 0,
+            "StudyBC1": 0.4015,
+            "StudyBC2": 0.2633
+          },
+          "B:D": {
+            "StudyAB1": 0.1738,
+            "StudyAB2": 0.1348,
+            "StudyAC1": 0.0476,
+            "StudyAC2": 0.08,
+            "StudyAD1": 0.221,
+            "StudyAD2": 0.2152,
+            "StudyBC1": 0.0771,
+            "StudyBC2": 0.0505
+          },
+          "C:D": {
+            "StudyAB1": 0.053,
+            "StudyAB2": 0.0411,
+            "StudyAC1": 0.134,
+            "StudyAC2": 0.225,
+            "StudyAD1": 0.2295,
+            "StudyAD2": 0.2235,
+            "StudyBC1": 0.0568,
+            "StudyBC2": 0.0372
+          }
+        }
+      }
+    },
+    "format": "long",
+    "type": "binary",
+    "studies": {
+      "long": [
+        {
+          "study": "StudyAB1",
+          "id": 1,
+          "t": "B",
+          "n": 112,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 91
+        },
+        {
+          "study": "StudyAB1",
+          "id": 1,
+          "t": "A",
+          "n": 114,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 79
+        },
+        {
+          "study": "StudyAB2",
+          "id": 2,
+          "t": "B",
+          "n": 65,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 41
+        },
+        {
+          "study": "StudyAB2",
+          "id": 2,
+          "t": "A",
+          "n": 65,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 28
+        },
+        {
+          "study": "StudyAC1",
+          "id": 3,
+          "t": "A",
+          "n": 82,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 43
+        },
+        {
+          "study": "StudyAC1",
+          "id": 3,
+          "t": "C",
+          "n": 82,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 60
+        },
+        {
+          "study": "StudyAC2",
+          "id": 4,
+          "t": "A",
+          "n": 130,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 74
+        },
+        {
+          "study": "StudyAC2",
+          "id": 4,
+          "t": "C",
+          "n": 130,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 87
+        },
+        {
+          "study": "StudyAD1",
+          "id": 5,
+          "t": "A",
+          "n": 97,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 48
+        },
+        {
+          "study": "StudyAD1",
+          "id": 5,
+          "t": "D",
+          "n": 98,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 51
+        },
+        {
+          "study": "StudyAD2",
+          "id": 6,
+          "t": "A",
+          "n": 102,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 54
+        },
+        {
+          "study": "StudyAD2",
+          "id": 6,
+          "t": "D",
+          "n": 101,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 68
+        },
+        {
+          "study": "StudyBC1",
+          "id": 7,
+          "t": "B",
+          "n": 102,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 65
+        },
+        {
+          "study": "StudyBC1",
+          "id": 7,
+          "t": "C",
+          "n": 103,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 56
+        },
+        {
+          "study": "StudyBC2",
+          "id": 8,
+          "t": "B",
+          "n": 85,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 63
+        },
+        {
+          "study": "StudyBC2",
+          "id": 8,
+          "t": "C",
+          "n": 86,
+          "rob": 1,
+          "indirectness": 1,
+          "r": 65
+        }
+      ]
+    }
+  }
+}

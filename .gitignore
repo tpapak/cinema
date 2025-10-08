@@ -19,3 +19,5 @@ webapp/config.json
 package-lock.json
 **/*.js_bc
 **/.DS_Store
+**/*AGENTS.md
+**/*opencode*

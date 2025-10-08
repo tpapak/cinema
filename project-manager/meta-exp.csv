@@ -1,0 +1,17 @@
+study,id,t,r,n,rob,indirectness
+StudyAB1,1,B,91,112,1,1
+StudyAB1,1,A,79,114,1,1
+StudyAB2,2,B,41,65,1,1
+StudyAB2,2,A,28,65,1,1
+StudyAC1,3,A,43,82,1,1
+StudyAC1,3,C,60,82,1,1
+StudyAC2,4,A,74,130,1,1
+StudyAC2,4,C,87,130,1,1
+StudyAD1,5,A,48,97,1,1
+StudyAD1,5,D,51,98,1,1
+StudyAD2,6,A,54,102,1,1
+StudyAD2,6,D,68,101,1,1
+StudyBC1,7,B,65,102,1,1
+StudyBC1,7,C,56,103,1,1
+StudyBC2,8,B,63,85,1,1
+StudyBC2,8,C,65,86,1,1
