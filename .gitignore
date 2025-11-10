@@ -17,6 +17,7 @@ papers/
 docker/cinema-web/
 webapp/config.json
 package-lock.json
+secrets/
 **/*.js_bc
 **/.DS_Store
 **/*AGENTS.md

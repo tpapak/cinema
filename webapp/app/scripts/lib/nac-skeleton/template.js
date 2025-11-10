@@ -1,7 +1,7 @@
 var h = require('virtual-dom/h');
 // if you use handlebars
-// var VNode = require('virtual-dom/vnode/vnode');
-// var VText = require('virtual-dom/vnode/vtext');
+// var VNode = require('vtree/vnode');
+// var VText = require('vtree/vtext');
 // var convertHTML = require('html-to-vdom')({
 //      VNode: VNode,
 //      VText: VText

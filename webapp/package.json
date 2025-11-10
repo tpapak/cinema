@@ -14,7 +14,7 @@
     "csvtojson": "^2.0.14",
     "del": "^2.2.0",
     "gulp": "^4.0.2",
-    "gulp-autoprefixer": "^10.0.0",
+    "gulp-autoprefixer": "^8.0.0",
     "gulp-babel": "^6.1.1",
     "gulp-cache": "^1.1.3",
     "gulp-cssnano": "^2.1.3",
@@ -64,6 +64,14 @@
         "single"
       ]
     }
+  },
+  "scripts": {
+    "build": "gulp build",
+    "lint": "gulp lint",
+    "serve": "gulp serve",
+    "serve:test": "gulp serve:test",
+    "test": "gulp serve:test",
+    "serve:headless": "gulp serve:headless"
   },
   "dependencies": {
     "alertifyjs": "^1.11.0",
