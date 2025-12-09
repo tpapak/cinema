@@ -1,22 +1,25 @@
 module Heterogeneity.Nodes where
 
 import Prelude
-import Control.Monad.Eff 
-import Control.Monad.Eff.Unsafe
-import Control.Monad.Eff.Console (CONSOLE, log, logShow)
+import Effect 
+import Effect.Unsafe
+import Effect.Console (log, logShow)
 import Data.Array
-import Data.Foreign 
-import Data.Foreign.Class (class Decode, encode, decode)
-import Data.Foreign.Index ((!))
-import Data.Foreign.Generic (defaultOptions, genericDecode, genericDecodeJSON)
+import Data.Argonaut 
+import Data.Argonaut.Decode.Error (JsonDecodeError(..))
+import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
+import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)
+-- import Data.Argonaut.Index ((!)) -- REMOVED: Use getField from Data.Argonaut
+-- import Data.Argonaut.Generic -- REMOVED: Use DecodeJson instances
 import Data.Generic.Rep as Rep 
-import Data.Generic.Rep.Show (genericShow)
+import Data.Show.Generic (genericShow)
 import Control.Monad.Except (runExcept)
 import Data.Maybe
 import Data.Either (Either(..), isLeft, fromRight)
 import Data.Int
 import Data.String as S
 import Data.Symbol
+import Type.Proxy (Proxy(..))
 import Data.Lens
 import Data.Lens.Index
 import Data.Lens.Record (prop)
@@ -30,9 +33,8 @@ import Text.Model
 import SaveModel
 
 
-opts = defaultOptions { unwrapSingleConstructors = true }
 
-getState :: forall eff. Foreign -> Eff (console :: CONSOLE | eff) Unit
+getState :: Json  -> Effect Unit
 getState mdl = do
   let (s :: Either String State) = readState mdl
   case s of
@@ -46,25 +48,25 @@ getState mdl = do
        {--log $ "all nodes are " <> show allnodes--}
        log $ "THE  E E E E E E Eselected nodes are " <> show nds
 
-nodesToForeign :: Array Node -> Foreign
-nodesToForeign nds = toForeign $ map 
+nodesToJson :: Array Node -> Json
+nodesToJson nds = encodeJson $ map 
   (\n -> nodeId .~ (n ^. _Node)."label" 
   $ (n ^. _Node)) nds
 
-setNodes :: Foreign -> Foreign
+setNodes :: Json -> Json
 setNodes mdl = do
   let (s :: Either String State) = readState mdl
   case s of
-    Left err -> toForeign []
+    Left err -> encodeJson ([] :: Array Node)
     Right st -> do
       let selects = getSelected st
           studiesNodes = (st  ^. _State <<< project <<< _Project 
                        <<< studies <<< _Studies)."nodes"
           nds = sort $ filter (isSelectedNode selects) studiesNodes
-      nodesToForeign nds
+      nodesToJson nds
 
 
-getNodes :: Foreign -> Array Node
+getNodes :: Json -> Array Node
 getNodes mdl = do
   let (s :: Either String State) = readState mdl
   case s of
@@ -96,11 +98,7 @@ chooseInterventionType id = do
                ) defaults 
   out
   
-deselectIntTypes :: forall eff. Foreign -> 
-                      Eff (console :: CONSOLE 
-                        , modelOut :: SAVE_STATE 
-                        | eff
-                      ) Unit
+deselectIntTypes :: Json -> Effect Unit
 deselectIntTypes mdl = do
   let nds = getNodes mdl
   let out = map (\node -> _Node <<< interventionType .~
@@ -108,17 +106,13 @@ deselectIntTypes mdl = do
   {--logShow $ "changing node" <> (show out) <> it--}
   {--saveState "heterogeneity.referenceValues.status" "not-set"--}
   saveState "heterogeneity.referenceValues.treatments" $
-    nodesToForeign out
+    nodesToJson out
                   
 
-setAllNodesIntType :: forall eff. Foreign -> Foreign -> 
-                      Eff (console :: CONSOLE 
-                        , modelOut :: SAVE_STATE 
-                        | eff
-                      ) Unit
+setAllNodesIntType :: Json -> Json -> Effect Unit
 setAllNodesIntType mdl intype = do
   let nds = getNodes mdl
-  let it = case runExcept (readString intype) of
+  let it = case decodeJson intype of
             Left _ -> "undefined"
             Right t -> t 
   let out = map (\node -> _Node <<< interventionType .~
@@ -126,20 +120,16 @@ setAllNodesIntType mdl intype = do
   {--logShow $ "changing node" <> (show out) <> it--}
   saveState "heterogeneity.referenceValues.status" "edited"
   saveState "heterogeneity.referenceValues.treatments" $
-    nodesToForeign out
+    nodesToJson out
                   
 
-setNodeIntType :: forall eff. Foreign -> Foreign -> Foreign -> 
-                      Eff (console :: CONSOLE 
-                        , modelOut :: SAVE_STATE 
-                        | eff
-                      ) Unit
+setNodeIntType :: Json -> Json -> Json -> Effect Unit
 setNodeIntType mdl nodeLabel intype = do
   let nds = getNodes mdl
-  let nl = case runExcept (readString nodeLabel) of
+  let nl = case decodeJson nodeLabel of
             Left _ -> "undefined"
             Right l -> l 
-  let it = case runExcept (readString intype) of
+  let it = case decodeJson intype of
             Left _ -> "undefined"
             Right t -> t 
   let nd = findIndex (\n -> (n ^. _Node)."label" == nl) nds
@@ -153,15 +143,15 @@ setNodeIntType mdl nodeLabel intype = do
   {--logShow $ "changing node" <> (show out) <> it--}
   saveState "heterogeneity.referenceValues.status" "edited"
   saveState "heterogeneity.referenceValues.treatments" $
-    nodesToForeign out
+    nodesToJson out
                   
-hasSelectedAll :: Foreign -> Boolean
+hasSelectedAll :: Json -> Boolean
 hasSelectedAll mdl = do 
   let nodes = getNodes mdl
   all (\n ->  any (\it -> (it ^. _InterventionType)."isSelected" == true) 
           (n ^. _Node <<< interventionType)) nodes
 
-getInterventionType :: Foreign -> TreatmentId -> Maybe InterventionType
+getInterventionType :: Json -> TreatmentId -> Maybe InterventionType
 getInterventionType mdl tid = do 
   let nodes = getNodes mdl
   let mnode = findIndex (\n -> (n ^. _Node)."id" == tid) nodes 
@@ -175,10 +165,12 @@ getInterventionType mdl tid = do
            Nothing -> Nothing
            Just inttype -> ((node ^. _Node)."interventionType") !! inttype
 
-isTheSameComparison :: Foreign -> Foreign -> Boolean
+isTheSameComparison :: Json -> Json -> Boolean
 isTheSameComparison fc1 fc2 = do
-  let ec1 = runExcept $ readString fc1
-  let ec2 = runExcept $ readString fc2
+  -- TODO: Fix decoder
+  let ec1 = decodeJson fc1 :: Either JsonDecodeError String
+  -- TODO: Fix decoder
+  let ec2 = decodeJson fc2 :: Either JsonDecodeError String
   if any isLeft [ec1, ec2] then
     false
     else do
@@ -190,10 +182,11 @@ isTheSameComparison fc1 fc2 = do
              Right sc2 -> stringToComparison ":" sc2
       c1 == c2 && (c1 /= skeletonComparison) && (c2 /= skeletonComparison)
 
-getComparisonType :: Foreign -> Foreign -> String
+getComparisonType :: Json -> Json -> String
 getComparisonType mdl fid = do
   let (s :: Either String State) = readState mdl
-  let eid = runExcept $ readString fid
+  -- TODO: Fix decoder
+  let eid = decodeJson fid :: Either JsonDecodeError String
   case s of
     Left err -> ""
     Right st -> do
@@ -220,20 +213,20 @@ getComparisonType mdl fid = do
                       "Pharmacological vs Pharmacological"
 
 {--CIlow CIhigh PrIlow PrIhigh zonelower zonehigher nmaEffect null--}
-jointCrosses :: Foreign -> Foreign 
-  -> Foreign -> Foreign 
-  -> Foreign -> Foreign 
-  -> Foreign -> Foreign 
+jointCrosses :: Json -> Json 
+  -> Json -> Json 
+  -> Json -> Json 
+  -> Json -> Json 
   -> Array Int
 jointCrosses fil fih fprl fprh fzl fzh feffect fnul = do
-  let eil = runExcept $ readNumber fil
-  let eih = runExcept $ readNumber fih
-  let eprl = runExcept $ readNumber fprl
-  let eprh = runExcept $ readNumber fprh
-  let ezl = runExcept $ readNumber fzl
-  let ezh = runExcept $ readNumber fzh
-  let eeffect = runExcept $ readNumber feffect
-  let enul = runExcept $ readNumber fnul
+  let eil = decodeJson fil
+  let eih = decodeJson fih
+  let eprl = decodeJson fprl
+  let eprh = decodeJson fprh
+  let ezl = decodeJson fzl
+  let ezh = decodeJson fzh
+  let eeffect = decodeJson feffect
+  let enul = decodeJson fnul
   let fromRight = (\e -> case e of
                    Left _ -> -1.0
                    Right v -> v)
@@ -282,10 +275,10 @@ numberOfCrosses ilow ihigh zlow zhigh =
                                        true -> 0
                                        false -> 2
 
-ruleLevel :: Foreign -> Foreign -> Int
+ruleLevel :: Json -> Json -> Int
 ruleLevel fcicrs fpricrs = do
-  let ecicrs = runExcept $ readInt fcicrs
-  let epricrs = runExcept $ readInt fpricrs
+  let ecicrs = decodeJson fcicrs
+  let epricrs = decodeJson fpricrs
   let fromRight = (\e -> case e of
                    Left _ -> -1
                    Right v -> v)

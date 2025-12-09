@@ -1,8 +1,4 @@
-//module DownloadJudgements
-"use strict";
-
-
-exports.downloadJudgements = function () {
+export const downloadJudgements = function () {
   if (typeof window.Model !== 'undefined'){
     if (typeof window.Model.state !== 'undefined'){
       if (typeof window.Model.state.project !== 'undefined'){

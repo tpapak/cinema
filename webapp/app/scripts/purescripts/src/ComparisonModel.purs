@@ -1,29 +1,32 @@
 module ComparisonModel where
 
 import Prelude
-import Control.Monad.Eff 
-import Control.Monad.Eff.Console (CONSOLE, log, logShow)
+import Effect 
+import Effect.Console (log, logShow)
 import Data.Array
-import Data.Foreign 
-import Data.Foreign.Class (class Decode, encode, decode)
-import Data.Foreign.Index ((!))
-import Data.Foreign.Generic (defaultOptions, genericDecode, genericDecodeJSON)
+import Data.Argonaut.Core (Json, toObject)
+import Data.Argonaut.Decode.Error (JsonDecodeError(..))
+import Data.Argonaut.Decode.Combinators (getField)
+import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
+import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)
+-- import Data.Argonaut.Index ((!)) -- REMOVED: Use getField from Data.Argonaut
+import Data.Argonaut.Decode.Generic (genericDecodeJson)
 import Data.Generic.Rep as Rep 
-import Data.Generic.Rep.Show (genericShow)
+import Data.Show.Generic (genericShow)
 import Control.Monad.Except (runExcept)
 import Data.List.Types
 import Data.Maybe
 import Data.Either (Either(..))
-import Data.Int
+import Data.Int (fromString, floor) as Int
 import Data.Newtype
 import Data.String as S
 import Data.Symbol
+import Type.Proxy (Proxy(..))
 import Data.Lens
 import Data.Lens.Record (prop)
 import Data.Lens.Zoom (Traversal, Traversal', Lens, Lens', zoom)
 import Partial.Unsafe (unsafePartial)
 
-opts = defaultOptions { unwrapSingleConstructors = true }
 
 -- Comparison <
 data TreatmentId = StringId String | IntId Int
@@ -43,22 +46,26 @@ instance orderTreatmentId :: Ord TreatmentId where
   compare (StringId a) (IntId b) = GT
   compare (IntId a) (StringId b) = LT
 
-instance decodeTreatmentId :: Decode TreatmentId where
-  decode = readTreatmentId
+instance decodeTreatmentIdInstance :: DecodeJson TreatmentId where
+  decodeJson tid = 
+    let sid = decodeJson tid :: Either JsonDecodeError String
+    in case sid of 
+         Left _ -> 
+           let iidResult = decodeJson tid :: Either JsonDecodeError Int
+           in case iidResult of
+               Left _ -> pure $ StringId "Error"
+               Right iid -> pure $ IntId iid
+         Right id -> 
+           case Int.fromString id of 
+                Just iid -> pure $ IntId iid
+                Nothing -> pure $ StringId id
 
-readTreatmentId :: Foreign -> F TreatmentId
-readTreatmentId tid = do
-  let sid = runExcept $ readString tid
-  case sid of 
-       Left _ -> do 
-         let iid = runExcept $ readInt tid
-         case iid of
-             Left _ ->  pure $ StringId "Error"
-             Right oid -> IntId <$> (readInt tid)
-       Right id -> do
-         case fromString id of 
-              Just iid -> pure $ IntId iid
-              Nothing -> pure $ StringId id
+instance encodeTreatmentIdInstance :: EncodeJson TreatmentId where
+  encodeJson (StringId s) = encodeJson s
+  encodeJson (IntId i) = encodeJson i
+
+decodeTreatmentId :: Json -> Either JsonDecodeError TreatmentId
+decodeTreatmentId = decodeJson
 
 treatmentIdToString :: TreatmentId -> String
 treatmentIdToString (StringId t) = t
@@ -73,17 +80,19 @@ newtype Comparison = Comparison
 derive instance genericComparison :: Rep.Generic Comparison _
 instance showComparison :: Show Comparison where
     show = genericShow
-instance decodeComparison :: Decode Comparison where
-  decode c = do
-    id <- c ! "id" >>= readString
-    t1 <- c ! "t1" >>= readTreatmentId
-    t2 <- c ! "t2" >>= readTreatmentId
-    numStudies <- c ! "numStudies" >>= readInt
-    pure $ Comparison { id
-                      , t1
-                      , t2
-                      , numStudies
-                      }
+instance decodeComparison :: DecodeJson Comparison where
+  decodeJson json = case toObject json of
+    Nothing -> Left $ TypeMismatch "Object"
+    Just obj -> do
+      id <- getField obj "id"
+      t1 <- getField obj "t1" >>= decodeTreatmentId
+      t2 <- getField obj "t2" >>= decodeTreatmentId
+      numStudies <- getField obj "numStudies"
+      pure $ Comparison { id
+                        , t1
+                        , t2
+                        , numStudies
+                        }
 
 _Comparison :: Lens' Comparison (Record _)
 _Comparison = lens (\(Comparison s) -> s) (\_ -> Comparison)
@@ -97,7 +106,7 @@ skeletonComparison = Comparison { id : "none:none"
 
 stringToTreatmentId :: String -> TreatmentId
 stringToTreatmentId str = do
-   let sint = fromString str
+   let sint = Int.fromString str
    case sint of
      Just sint -> IntId sint
      Nothing -> StringId str
@@ -138,76 +147,76 @@ instance equalComparisons :: Eq Comparison where
           ((compB ^. _Comparison)."t2" ))
 
 isIdOfComparison :: String -> Comparison -> Boolean
-isIdOfComparison id comp = do
+isIdOfComparison id comp = 
   let t1 = min (comp ^. _Comparison)."t1" (comp ^. _Comparison)."t2"
       t2 = max (comp ^. _Comparison)."t1" (comp ^. _Comparison)."t2"
       sid = S.split (S.Pattern ":") id
       st1 = unsafePartial $ fromJust $ head sid
       st2 = unsafePartial $ fromJust $ last sid
-  (st1 == treatmentIdToString t1) && (st2 == treatmentIdToString t2)  ||
-  (st1 == treatmentIdToString t2) && (st2 == treatmentIdToString t1) 
+  in (st1 == treatmentIdToString t1) && (st2 == treatmentIdToString t2)  ||
+     (st1 == treatmentIdToString t2) && (st2 == treatmentIdToString t1) 
 
 isIdOfComparisonComma :: String -> Comparison -> Boolean
-isIdOfComparisonComma id comp = do
+isIdOfComparisonComma id comp = 
   let t1 = min (comp ^. _Comparison)."t1" (comp ^. _Comparison)."t2"
       t2 = max (comp ^. _Comparison)."t1" (comp ^. _Comparison)."t2"
       sid = S.split (S.Pattern ",") id
       st1 = unsafePartial $ fromJust $ head sid
       st2 = unsafePartial $ fromJust $ last sid
-  (st1 == treatmentIdToString t1) && (st2 == treatmentIdToString t2)  ||
-  (st1 == treatmentIdToString t2) && (st2 == treatmentIdToString t1) 
+  in (st1 == treatmentIdToString t1) && (st2 == treatmentIdToString t2)  ||
+     (st1 == treatmentIdToString t2) && (st2 == treatmentIdToString t1) 
 
 hasNode :: Comparison -> Node -> Boolean
-hasNode c n = do
+hasNode c n = 
   let t1 = (c ^. _Comparison)."t1"
       t2 = (c ^. _Comparison)."t2"
       nid = (n ^. _Node)."id"
-  t1 == nid || t2 == nid
+  in t1 == nid || t2 == nid
   
 
-isSelectedComparison :: forall eff. Array String -> Comparison -> Boolean
+isSelectedComparison :: Array String -> Comparison -> Boolean
 isSelectedComparison selected comp = do
   let isSelected = foldl (||) false $ map (\sid -> do
                    isIdOfComparison sid comp
                   ) selected
   isSelected
 
-isSelectedNode :: forall eff. Array String -> Node -> Boolean
+isSelectedNode :: Array String -> Node -> Boolean
 isSelectedNode selected node = do
   let isSelected = foldl (||) false $ map (\sid -> do
                    hasNode (stringToComparison ":" sid) node
                   ) selected
   isSelected
 
-sortStringComparisonIds :: Foreign -> Foreign
-sortStringComparisonIds fsids = do
-  let eids = decode fsids
-  let ids = case runExcept eids of
+sortStringComparisonIds :: Json -> Json
+sortStringComparisonIds fsids = 
+  let eids = decodeJson fsids :: Either JsonDecodeError (Array String)
+      ids = case eids of
            Left _ -> []
-           Right (idss :: (Array String)) -> idss
-  toForeign $ sortBy (\id1 id2 -> 
-    comparisonsOrdering (stringToComparison ":" id1)
-      (stringToComparison ":" id2)) ids
+           Right idss -> idss
+  in encodeJson $ sortBy (\id1 id2 -> 
+       comparisonsOrdering (stringToComparison ":" id1)
+         (stringToComparison ":" id2)) ids
 
-{--fixComparisonId :: forall eff. Foreign -> Eff (console :: CONSOLE | eff) Unit --}
-fixComparisonId :: Foreign -> Foreign
-fixComparisonId fsid = do
-  let esid = readString fsid
-      sid = case runExcept esid of
+{--fixComparisonId :: Json  -> Effect Unit --}
+fixComparisonId :: Json -> Json
+fixComparisonId fsid = 
+  let esid = decodeJson fsid :: Either JsonDecodeError String
+      sid = case esid of
         Left _ -> "error"
         Right id -> show ((stringToComparison ":" id) ^. _Comparison)."t1" <>
                                                   ":" <>
             show ((stringToComparison ":" id) ^. _Comparison)."t2"
   {--logShow $ "TO SID POU VGANEI EINAI" <>  sid--}
-  toForeign sid
+  in encodeJson sid
   
-orderIds :: Foreign -> Foreign
-orderIds ftids = do
-  let (eids :: (Either (NonEmptyList ForeignError) (Array TreatmentId))) = runExcept $ decode ftids
+orderIds :: Json -> Json
+orderIds ftids = 
+  let eids = decodeJson ftids :: Either JsonDecodeError (Array TreatmentId)
       res = case eids of 
              Left _ -> ftids
-             Right ids -> toForeign $ map show (sort ids)
-  res
+             Right ids -> encodeJson $ map show (sort ids)
+  in res
 
 -- Comparison >
 
@@ -225,8 +234,11 @@ derive instance genericInterventionType :: Rep.Generic InterventionType _
 instance showInterventionType :: Show InterventionType where
     show = genericShow
 
-instance decodeInterventionType :: Decode InterventionType where
-  decode = genericDecode opts
+instance decodeInterventionType :: DecodeJson InterventionType where
+  decodeJson = genericDecodeJson
+
+instance encodeInterventionType :: EncodeJson InterventionType where
+  encodeJson (InterventionType it) = encodeJson it
 
 _InterventionType :: Lens' InterventionType (Record _)
 _InterventionType = lens (\(InterventionType s) -> s) (\_ -> InterventionType)
@@ -280,36 +292,46 @@ instance equalNodes :: Eq Node where
 instance orderNodes :: Ord Node where
   compare nA nB = compare ((nA ^. _Node)."id")  ((nB ^. _Node)."id")
 
-instance decodeNode :: Decode Node where
-  decode n = do
-    id <- n ! "id" >>= readTreatmentId
-    numStudies <- n ! "numStudies" >>= readNumber
-    sampleSize <- n ! "sampleSize" >>= readNumber
-    let label = n ! "label" >>= readString
-    let l = case (runExcept label) of
-         Left _ -> do 
-           let lll = n ! "label" >>= readInt
-           let outl = case (runExcept lll) of
-                Left _ -> ""
-                Right llll -> show llll
-           outl
-         Right ll -> ll
-    let it = n ! "interventionType" >>= decode
-    let interventionType = case (runExcept it) of
-          Left r -> defaultInterventionTypes
-          Right intp -> intp
-    pure $ Node { id
-                , label : l
-                , numStudies : floor numStudies
-                , sampleSize : floor sampleSize
-                , interventionType
-                }
+instance decodeNode :: DecodeJson Node where
+  decodeJson json = case toObject json of
+    Nothing -> Left $ TypeMismatch "Object"
+    Just obj -> do
+      id <- getField obj "id" >>= decodeTreatmentId
+      numStudies <- getField obj "numStudies"
+      sampleSize <- getField obj "sampleSize"
+      let labelResult = getField obj "label" :: Either JsonDecodeError String
+      let l = case labelResult of
+           Left _ -> 
+             let numLabelResult = getField obj "label" :: Either JsonDecodeError Int
+             in case numLabelResult of
+                  Left _ -> ""
+                  Right numLabel -> show numLabel
+           Right labelStr -> labelStr
+      let itResult = getField obj "interventionType" :: Either JsonDecodeError (Array InterventionType)
+      let interventionType = case itResult of
+            Left _ -> defaultInterventionTypes
+            Right intp -> intp
+      pure $ Node { id
+                  , label : l
+                  , numStudies : Int.floor numStudies
+                  , sampleSize : Int.floor sampleSize
+                  , interventionType
+                  }
+instance encodeNode :: EncodeJson Node where
+  encodeJson (Node n) = encodeJson
+    { id: show n.id
+    , label: n.label
+    , numStudies: n.numStudies
+    , sampleSize: n.sampleSize
+    , interventionType: n.interventionType
+    }
+
 nodeId :: forall a b r. Lens { "id" :: a | r } { "id" :: b | r } a b
-nodeId = prop (SProxy :: SProxy "id")
+nodeId = prop (Proxy :: Proxy "id")
 
 
 interventionType :: forall a b r. Lens { interventionType :: a | r } { interventionType :: b | r } a b
-interventionType = prop (SProxy :: SProxy "interventionType")
+interventionType = prop (Proxy :: Proxy "interventionType")
 
 _Node :: Lens' Node (Record _)
 _Node = lens (\(Node s) -> s) (\_ -> Node)

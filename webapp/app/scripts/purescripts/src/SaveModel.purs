@@ -1,20 +1,14 @@
 module SaveModel where
 
 import Prelude
-import Control.Monad.Eff 
-import Data.Foreign 
+import Effect (Effect)
 import Data.Function.Uncurried (Fn2, runFn2)
 
-import Model
+-- The SAVE_STATE effect is now just Effect  
+-- The JS FFI still triggers window.Model.saveState()
 
-foreign import data ModelOut :: Type
+foreign import saveStateImpl :: forall pos st. Fn2 pos st (Effect Unit)
 
-foreign import data SAVE_STATE :: Effect
-
-foreign import saveStateImpl :: forall eff pos st. Fn2 pos st 
-             (Eff ( modelOut :: SAVE_STATE | eff) Unit)
-
-saveState :: forall eff pos st. pos -> st ->
-          (Eff ( modelOut :: SAVE_STATE | eff) Unit)
+saveState :: forall pos st. pos -> st -> Effect Unit
 saveState pos st = runFn2 saveStateImpl pos st
 

@@ -1,0 +1,33 @@
+package:
+  name: purescripts
+  dependencies:
+    - argonaut
+    - argonaut-codecs
+    - argonaut-core
+    - argonaut-generic
+    - argonaut-traversals
+    - arrays
+    - console
+    - effect
+    - either
+    - exceptions
+    - foldable-traversable
+    - foreign
+    - foreign-object
+    - integers
+    - lists
+    - maybe
+    - newtype
+    - numbers
+    - partial
+    - prelude
+    - profunctor-lenses
+    - strings
+    - transformers
+  test:
+    main: Test.Main
+    dependencies: []
+workspace:
+  packageSet:
+    registry: 68.1.0
+  extraPackages: {}

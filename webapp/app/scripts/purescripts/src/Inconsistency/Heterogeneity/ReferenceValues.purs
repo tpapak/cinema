@@ -1,15 +1,16 @@
 module Heterogeneity.ReferenceValues where
 
 import Prelude
-import Control.Monad.Eff 
-import Control.Monad.Eff.Console (CONSOLE, log, logShow)
+import Effect 
+import Effect.Console (log, logShow)
 import Data.Array
-import Data.Foreign 
-import Data.Foreign.Class (class Decode, encode, decode)
-import Data.Foreign.Index ((!))
-import Data.Foreign.Generic (defaultOptions, genericDecode, genericDecodeJSON)
+import Data.Argonaut 
+import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
+import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)
+-- import Data.Argonaut.Index ((!)) -- REMOVED: Use getField from Data.Argonaut
+-- import Data.Argonaut.Generic -- REMOVED: Use DecodeJson instances
 import Data.Generic.Rep as Rep 
-import Data.Generic.Rep.Show (genericShow)
+import Data.Show.Generic (genericShow)
 import Control.Monad.Except (runExcept)
 import Data.List.Types
 import Data.Maybe
@@ -18,12 +19,12 @@ import Data.Int
 import Data.Newtype
 import Data.String as S
 import Data.Symbol
+import Type.Proxy (Proxy(..))
 import Data.Lens
 import Data.Lens.Record (prop)
 import Data.Lens.Zoom (Traversal, Traversal', Lens, Lens', zoom)
 import Partial.Unsafe (unsafePartial)
 
-opts = defaultOptions { unwrapSingleConstructors = true }
 
 newtype ReferenceValueQuery = ReferenceValuesQuery
   { measurement :: Array String
@@ -31,5 +32,5 @@ newtype ReferenceValueQuery = ReferenceValuesQuery
   ," InterventionComparisonType" :: Array String
   }
 
-makeQueries :: Foreign -> Foreign
+makeQueries :: Json -> Json
 makeQueries fpars = fpars

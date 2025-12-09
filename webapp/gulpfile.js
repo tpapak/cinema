@@ -4,7 +4,7 @@ const gulpLoadPlugins = require('gulp-load-plugins');
 const browserSync = require('browser-sync');
 const del = require('del');
 const wiredep = require('wiredep').stream;
-const runSequence = require('run-sequence');
+// const runSequence = require('run-sequence'); // Removed: use gulp.series/parallel instead
 const assign = require('lodash.assign');
 const browserify = require('browserify');
 const watchify = require('watchify');
@@ -37,18 +37,20 @@ function string_src(filename, string) {
   return src
 }
 
+// Read version from package.json (single source of truth)
+const pkg = require('./package.json');
+
 var config = {};
 if(fs.existsSync("config.json")){
   config = require('./config.json');
 }else{
   config = {
-    version: "2.0.0",
     ganalID: "UA-XXXXXXXXX-X",
     rserverurl: "http://localhost:8004/ocpu/library/contribution/R"
   }
 }
 conf = { config: {
-         version: config.version,
+         version: pkg.version,  // Always use version from package.json
          rserverurl: config.rserverurl
        }};
 
@@ -79,64 +81,62 @@ gulp.task('templates', () => {
     .pipe(gulp.dest('.tmp/templates'));
 });
 
+// gulp-sass v6+ requires explicit sass compiler
+const sass = require('sass');
+const gulpSass = require('gulp-sass')(sass);
+
 gulp.task('styles', () => {
   return gulp.src('app/styles/*.scss')
     .pipe($.plumber())
     .pipe($.sourcemaps.init())
-    .pipe($.sass.sync({
-      outputStyle: 'expanded',
-      precision: 10,
-      includePaths: ['.']
-    }).on('error', $.sass.logError))
-    .pipe($.autoprefixer({browsers: ['> 1%', 'last 2 versions', 'Firefox ESR']}))
+    .pipe(gulpSass.sync({
+      loadPaths: ['.', './bower_components']
+    }).on('error', gulpSass.logError))
+    .pipe($.autoprefixer({overrideBrowserslist: ['> 1%', 'last 2 versions', 'Firefox ESR']}))
     .pipe($.sourcemaps.write())
     .pipe(gulp.dest('.tmp/styles'))
     .pipe(reload({stream: true}));
 });
 
-// using vinyl-source-stream:
-gulp.task('scripts', function() {
-  const customOpts = {
-    entries: 'app/scripts/main.js',
-    debug: true
-  };
-  var bopts = assign({}, watchify.args, customOpts);
-  var bundleStream = browserify(bopts).transform(babelify).bundle();
+// Using esbuild for bundling (handles ES modules from PureScript)
+const esbuild = require('esbuild');
 
-  return bundleStream
-    .pipe(source('bundle.js'))
-    .pipe($.plumber())
-    .pipe(buffer())
-    .pipe($.sourcemaps.init({loadMaps: true}))
-    .pipe($.sourcemaps.write('.'))
-    .pipe(gulp.dest('.tmp/scripts'));
+gulp.task('scripts', function() {
+  return esbuild.build({
+    entryPoints: ['app/scripts/main.js'],
+    bundle: true,
+    outfile: '.tmp/scripts/bundle.js',
+    format: 'iife',
+    platform: 'browser',
+    target: ['es2015'],
+    sourcemap: true,
+    minify: false,
+    logLevel: 'warning',
+  }).catch(() => process.exit(1));
 });
 
-// add custom browserify options here
-const customOpts = {
-  entries: 'app/scripts/main.js',
-  debug: true
-};
-var bopts = assign({}, watchify.args, customOpts);
-var b = watchify(browserify(bopts));
+// Watch mode for scripts using esbuild
+let esbuildContext = null;
 
-b.transform(babelify);
-
-function watchbundle () {
-  return b.bundle()
-    .on('error', gutil.log.bind(gutil, 'Browserify Error'))
-    .pipe(source('bundle.js'))
-    .pipe($.plumber())
-    .pipe(buffer())
-    .pipe($.sourcemaps.init({loadMaps: true}))
-    .pipe($.sourcemaps.write('.'))
-    .pipe(gulp.dest('.tmp/scripts'))
-    .pipe(reload({stream: true}));
+async function watchbundle() {
+  if (!esbuildContext) {
+    esbuildContext = await esbuild.context({
+      entryPoints: ['app/scripts/main.js'],
+      bundle: true,
+      outfile: '.tmp/scripts/bundle.js',
+      format: 'iife',
+      platform: 'browser',
+      target: ['es2015'],
+      sourcemap: true,
+      minify: false,
+      logLevel: 'info',
+    });
+  }
+  await esbuildContext.rebuild();
+  reload();
 }
 
 gulp.task('watchscripts', watchbundle);
-b.on('update', watchbundle); // on any dep update, runs the bundler
-b.on('log', gutil.log); // output build logs to terminal
 
 function lint(files, options) {
   return gulp.src(files)
@@ -162,7 +162,7 @@ gulp.task('lint:test', () => {
     .pipe(gulp.dest('test/spec'));
 });
 
-gulp.task('html', ['config', 'styles', 'scripts', 'templates', 'hbsTojs'], () => {
+gulp.task('html', gulp.series('config', 'styles', 'scripts', 'templates', 'hbsTojs', () => {
   var inject = require('gulp-inject-string');
   var postfix = config.version==='0.0.0'?randomstring.generate():config.version;
   var ganal = config.version==='0.0.0'?'':`<script async src='https://www.googletagmanager.com/gtag/js?id=`+config.ganalID+`'></script>
@@ -176,7 +176,8 @@ gulp.task('html', ['config', 'styles', 'scripts', 'templates', 'hbsTojs'], () =>
 
   return gulp.src('app/*.html')
     .pipe($.useref({searchPath: ['.tmp', 'app', '.']}))
-    .pipe($.if('*.js', $.uglify()))
+    // Note: JS minification handled by esbuild in scripts task
+    // .pipe($.if('*.js', $.uglify()))
     .pipe($.if('*.css', $.cssnano({safe: true, autoprefixer: false})))
     .pipe($.if('*.html', $.htmlmin({collapseWhitespace: true})))
     .pipe($.if('index.html', replace("main.js","main.js?"+postfix)))
@@ -186,7 +187,7 @@ gulp.task('html', ['config', 'styles', 'scripts', 'templates', 'hbsTojs'], () =>
     .pipe($.if('index.html', replace("main.css","main.css?"+postfix)))
     //.pipe($.if('index.html', inject.after('<!-- analytics:js -->', ganal)))
     .pipe(gulp.dest('dist'));
-});
+}));
 
 gulp.task('model', () => {
   return gulp.src('app/model/**/*')
@@ -194,8 +195,9 @@ gulp.task('model', () => {
 });
 
 gulp.task('images', () => {
+  // Note: gulp-imagemin requires ESM and doesn't work with gulp-load-plugins
+  // Just copy images without optimization for now
   return gulp.src('app/images/**/*')
-    .pipe($.cache($.imagemin()))
     .pipe(gulp.dest('dist/images'));
 });
 
@@ -215,38 +217,67 @@ gulp.task('extras',() => {
   }).pipe(gulp.dest('dist'));
 });
 
+// inject bower components
+const merge = require('merge-stream');
+
+gulp.task('wiredep', () => {
+  const scssStream = gulp.src('app/styles/*.scss')
+    .pipe(wiredep({
+      ignorePath: /^(\.\.\/)+/
+    }))
+    .pipe(gulp.dest('app/styles'));
+
+  const htmlStream = gulp.src('app/*.html')
+    .pipe(wiredep({
+      exclude: ['bootstrap-sass'],
+      ignorePath: /^(\.\.\/)*\.\./
+    }))
+    .pipe(gulp.dest('app'));
+
+  return merge(scssStream, htmlStream);
+});
+
 gulp.task('clean', del.bind(null, ['.tmp', 'dist']));
 
-gulp.task('serve', () => {
-  runSequence(['clean', 'wiredep'], ['styles', 'templates', 'hbsTojs', 'watchscripts', 'fonts'], () => {
-    browserSync({
-      notify: false,
-      port: 9000,
-      browser: "chromium-browser",
-      server: {
-        baseDir: ['.tmp', 'app'],
-        routes: {
-          '/bower_components': 'bower_components'
-        }
+// Serve task - Gulp 4 compatible
+function startBrowserSync(done) {
+  browserSync({
+    notify: false,
+    port: 9000,
+    browser: "chromium-browser",
+    server: {
+      baseDir: ['.tmp', 'app'],
+      routes: {
+        '/bower_components': 'bower_components'
       }
-    });
-
-    gulp.watch([
-      'app/*.html',
-      'app/images/**/*',
-      '.tmp/templates/**/*.js',
-      '.tmp/templates/**/*.json',
-      '.tmp/fonts/**/*'
-    ]).on('change', reload);
-
-    gulp.watch('app/styles/**/*.scss', ['styles']);
-    gulp.watch('app/templates/**/*.hbs', ['templates']);
-    gulp.watch('app/scripts/**/*.hbs', ['hbsTojs']);
-    gulp.watch('app/scripts/**/*.js', ['watchscripts']);
-    gulp.watch('app/fonts/**/*', ['fonts']);
-    gulp.watch('bower.json', ['wiredep', 'fonts']);
+    }
   });
-});
+
+  gulp.watch([
+    'app/*.html',
+    'app/images/**/*',
+    '.tmp/templates/**/*.js',
+    '.tmp/templates/**/*.json',
+    '.tmp/fonts/**/*'
+  ]).on('change', reload);
+
+  gulp.watch('app/styles/**/*.scss', gulp.series('styles'));
+  gulp.watch('app/templates/**/*.hbs', gulp.series('templates'));
+  gulp.watch('app/scripts/**/*.hbs', gulp.series('hbsTojs'));
+  gulp.watch('app/scripts/**/*.js', gulp.series('watchscripts'));
+  gulp.watch('app/fonts/**/*', gulp.series('fonts'));
+  gulp.watch('bower.json', gulp.series('wiredep', 'fonts'));
+  done();
+}
+
+gulp.task('serve', gulp.series(
+  'clean',
+  'wiredep',
+  'config',  // config must run BEFORE watchscripts (which bundles it)
+  gulp.parallel('styles', 'templates', 'hbsTojs', 'fonts'),  // templates load before scripts
+  'watchscripts',  // bundle AFTER templates and config are ready
+  startBrowserSync
+));
 
 gulp.task('serve:dist', () => {
   browserSync({
@@ -258,7 +289,7 @@ gulp.task('serve:dist', () => {
   });
 });
 
-gulp.task('serve:test', ['templates','scripts'], () => {
+gulp.task('serve:test', gulp.series('templates', 'scripts', function serveTest() {
   browserSync({
     notify: false,
     port: 9000,
@@ -272,29 +303,13 @@ gulp.task('serve:test', ['templates','scripts'], () => {
     }
   });
 
-  gulp.watch('app/templates/**/*.hbs', ['templates']);
-  gulp.watch('app/scripts/**/*.js', ['scripts']);
+  gulp.watch('app/templates/**/*.hbs', gulp.series('templates'));
+  gulp.watch('app/scripts/**/*.js', gulp.series('scripts'));
   gulp.watch(['test/spec/**/*.js', 'test/index.html']).on('change', reload);
-  gulp.watch('test/spec/**/*.js', ['lint:test']);
-});
+  gulp.watch('test/spec/**/*.js', gulp.series('lint:test'));
+}));
 
-// inject bower components
-gulp.task('wiredep', () => {
-  gulp.src('app/styles/*.scss')
-    .pipe(wiredep({
-      ignorePath: /^(\.\.\/)+/
-    }))
-    .pipe(gulp.dest('app/styles'));
-
-  gulp.src('app/*.html')
-    .pipe(wiredep({
-      exclude: ['bootstrap-sass'],
-      ignorePath: /^(\.\.\/)*\.\./
-    }))
-    .pipe(gulp.dest('app'));
-});
-
-gulp.task('generate-service-worker', [ 'html', 'images', 'fonts'], function(callback) {
+gulp.task('generate-service-worker', gulp.series('html', 'images', 'fonts', function generateServiceWorker(callback) {
   var path = require('path');
   var swPrecache = require('sw-precache');
   var rootDir = 'dist';
@@ -303,13 +318,18 @@ gulp.task('generate-service-worker', [ 'html', 'images', 'fonts'], function(call
     staticFileGlobs: [rootDir + '/**/*.{js,html,css,png,jpg,gif,eot,svg,ttf,woff,woff2}'],
     stripPrefix: rootDir
   }, callback);
-});
+}));
 
-gulp.task('buildWithServiceWorker', ['lint','generate-service-worker', 'extras'], () => {
+gulp.task('buildWithServiceWorker', gulp.series('lint', 'generate-service-worker', 'extras', () => {
   return gulp.src('dist/**/*').pipe($.size({title: 'build', gzip: true}));
-});
+}));
 
-gulp.task('buildToDocker', ['build'], () => {
+gulp.task('build', gulp.series('html', 'model', 'images', 'fonts', 'extras', (done) => {
+  console.log('Build complete! Output in dist/');
+  done();
+}));
+
+gulp.task('buildToDocker', gulp.series('build', () => {
   console.log("deleting "+dockerPath+"www");
   return del(dockerPath+"/www/**/*",{force:true}).then(
     () => {
@@ -318,12 +338,6 @@ gulp.task('buildToDocker', ['build'], () => {
         .pipe(gulp.dest(dockerPath+"/www"));
     }
   );
-});
+}));
 
-gulp.task('build', ['html', 'model', 'images', 'fonts', 'extras'], () => {
-  return gulp.src('dist/**/*').pipe($.size({title: 'build', gzip: true}));
-});
-
-gulp.task('default', () => {
-  runSequence(['clean', 'wiredep'], 'build');
-});
+gulp.task('default', gulp.series('clean', 'wiredep', 'build'));

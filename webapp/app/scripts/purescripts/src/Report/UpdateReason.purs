@@ -1,13 +1,11 @@
 module UpdateReason where
 
 import Prelude
-import Control.Monad.Eff 
-import Data.Foreign 
+import Effect (Effect)
+import Data.Argonaut.Core (Json)
 
 import Model
 
 foreign import data UpdateMe :: Type
 
-foreign import data UPDATE_REASON :: Effect
-   
-foreign import updateReason :: forall eff rj. rj -> (Eff ( updateMe :: UPDATE_REASON | eff) Unit)
+foreign import updateReason :: forall rj. rj -> Effect Unit

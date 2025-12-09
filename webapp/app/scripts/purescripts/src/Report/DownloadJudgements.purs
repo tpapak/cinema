@@ -1,9 +1,9 @@
 module DownloadJudgements where
 
 import Prelude
-import Control.Monad.Eff 
+import Effect 
 
-foreign import data DOWNLOAD_JUDGEMENTS :: Effect
+-- foreign import data DOWNLOAD_JUDGEMENTS :: Effect -- REMOVED: Old effect type
 
 foreign import downloadJudgements :: forall eff. 
-    Eff ( downloadJudgements :: DOWNLOAD_JUDGEMENTS | eff) Unit
+    Effect Unit

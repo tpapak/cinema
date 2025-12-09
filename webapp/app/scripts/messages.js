@@ -3,7 +3,9 @@ var alertify = require('alertifyjs');
 
 
 var Messages = {
-  alertify: ()=>{ alertify.defaults = {
+  alertify: ()=>{ 
+    // Merge with existing defaults instead of replacing (preserves internal hooks)
+    Object.assign(alertify.defaults, {
       // dialogs defaults
       autoReset:true,
       basic:false,
@@ -51,7 +53,7 @@ var Messages = {
           // class name attached to cancel button
           cancel:'ajs-cancel'
       }
-    };
+    });
     return alertify;
   },
   updateInfo : (infos,extra) => {

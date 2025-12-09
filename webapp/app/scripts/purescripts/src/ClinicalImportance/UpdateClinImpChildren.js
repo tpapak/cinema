@@ -1,7 +1,4 @@
-//module UpdateHeterogeneity
-"use strict";
-
-exports.updateClinImpChildren = function () {
+export const updateClinImpChildren = function () {
   if (typeof Actions !== 'undefined'){
     if (typeof Actions.Heterogeneity !== 'undefined'){
       Actions.Heterogeneity.updateState();

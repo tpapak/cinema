@@ -1,10 +1,11 @@
 module ClinImp.Update where
 
 import Prelude
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log, logShow)
+import Effect (Effect)
+import Effect.Console (log, logShow)
 import Control.Monad.Except (runExcept)
-import Data.Foreign
+import Data.Argonaut.Core (Json)
+import Data.Argonaut.Decode.Class (decodeJson)
 import Data.Maybe (Maybe(..))
 import Data.Either (Either(..))
 import Data.Tuple
@@ -21,16 +22,12 @@ import ClinImp.Model
 import ClinImp.View
 import UpdateClinImpChildren
 
-saveState :: forall eff. String -> SanitizedClinImp -> 
-  Eff ( modelOut    :: S.SAVE_STATE 
-      , updateClinImpChildren :: UPDATE_CHILDREN | eff) Unit
+saveState :: String -> SanitizedClinImp -> Effect Unit
 saveState s c = do
   S.saveState s c
   updateChildren
 
-updateState :: forall eff. Foreign -> Eff (console :: CONSOLE 
-                   , modelOut :: S.SAVE_STATE 
-                   , updateClinImpChildren :: UPDATE_CHILDREN | eff) Unit
+updateState :: Json -> Effect Unit
 updateState mdl = do
   {--logShow "updating CLINIMP"--}
   let (s :: Either String State) = readState mdl
@@ -47,17 +44,15 @@ updateState mdl = do
           saveState "clinImp" $ sanitizeClinImp emptyClinImp
 
 
-set :: forall eff. Foreign -> Foreign -> Eff (console :: CONSOLE 
-                   , modelOut :: S.SAVE_STATE 
-                   , updateClinImpChildren :: UPDATE_CHILDREN | eff) Unit
+set :: Json -> Json -> Effect Unit
 set fci fbv = do
-  let eci = runExcept $ readClinImp fci
-      ebv = runExcept $ readNumber fbv
+  let eci = readClinImp fci
+      ebv = decodeJson fbv
   case eci of
        {--Left err -> do logShow $ "Clin imp setting error: " <> show err--}
        Left err -> do pure unit
        Right ci -> do
-         case ebv of 
+         case ebv of
            {--Left er -> logShow $ "Clin imp setting error on value" <> show er--}
            Left er -> do pure unit
            Right bv -> do
@@ -69,19 +64,19 @@ set fci fbv = do
 
 
 setBaseValue :: Number -> ClinImp -> ClinImp
-setBaseValue measure ci = 
+setBaseValue measure ci =
   let bl = getDefaultMeasure $ (ci ^. _ClinImp)."emtype"
       ir = isRatio $ (ci ^. _ClinImp)."emtype"
       df = measure - bl
       bounds
         | measure > bl =
-          if ir 
+          if ir
             then
               Tuple (1.0/measure) measure
             else
               Tuple (-measure) measure
         | otherwise =
-          if ir 
+          if ir
              then
                Tuple measure  (1.0/measure)
              else
@@ -92,18 +87,14 @@ setBaseValue measure ci =
                                 , status = "ready"
                                 }
 
-updateChildren :: forall eff. Eff ( updateClinImpChildren :: UPDATE_CHILDREN 
-                                  | eff ) Unit
-updateChildren = do 
+updateChildren :: forall eff. Effect Unit
+updateChildren = do
   updateClinImpChildren
 
 
-reSet :: forall eff. Foreign -> 
-  Eff ( modelOut    :: S.SAVE_STATE 
-      , console     :: CONSOLE
-      , updateClinImpChildren :: UPDATE_CHILDREN | eff) Unit
+reSet :: Json -> Effect Unit
 reSet fmt = do
-  let emt = runExcept $ readEffectMeasureType fmt
+  let emt = readEffectMeasureType fmt
   case emt of
        {--Left err -> do  return () logShow $ "Clin imp reSetting error: " <> show err--}
        Left err -> do pure unit

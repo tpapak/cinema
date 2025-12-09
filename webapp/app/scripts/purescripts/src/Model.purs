@@ -1,14 +1,17 @@
 module Model where
 
 import Prelude
-import Control.Monad.Eff 
+import Effect
 import Data.Array
-import Data.Foreign 
-import Data.Foreign.Class (class Decode, encode, decode)
-import Data.Foreign.Index ((!))
-import Data.Foreign.Generic (defaultOptions, genericDecode, genericDecodeJSON)
-import Data.Generic.Rep as Rep 
-import Data.Generic.Rep.Show (genericShow)
+import Data.Argonaut
+import Data.Argonaut.Decode.Error (JsonDecodeError(..))
+import Data.Argonaut.Decode.Combinators (getField)
+import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
+import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)
+-- import Data.Argonaut.Index ((!)) -- REMOVED: Use getField from Data.Argonaut
+import Data.Argonaut.Decode.Generic (genericDecodeJson)
+import Data.Generic.Rep as Rep
+import Data.Show.Generic (genericShow)
 import Control.Monad.Except (runExcept)
 import Data.Maybe
 import Data.Either (Either(..))
@@ -16,6 +19,7 @@ import Data.Int
 import Data.Newtype
 import Data.String as S
 import Data.Symbol
+import Type.Proxy (Proxy(..))
 import Data.Lens
 import Data.Lens.Record (prop)
 import Data.Lens.Zoom (Traversal, Traversal', Lens, Lens', zoom)
@@ -32,7 +36,6 @@ import ImprecisionModel
 import PubbiasModel
 import Report.Model
 
-opts = defaultOptions { unwrapSingleConstructors = true }
 
 -- State <
 newtype State = State
@@ -44,20 +47,19 @@ _State = lens (\(State s) -> s) (\_ -> State)
 derive instance genericState :: Rep.Generic State _
 instance showState :: Show State where
     show = genericShow
-instance decodeState :: Decode State where
-  decode = genericDecode opts
-getState :: Foreign -> F State
-getState = genericDecode opts 
+instance decodeState :: DecodeJson State where
+  decodeJson = genericDecodeJson
+getState :: Json -> Either JsonDecodeError State
+getState = genericDecodeJson
 project :: forall a b r. Lens { project :: a | r } { project :: b | r } a b
-project = prop (SProxy :: SProxy "project")
+project = prop (Proxy :: Proxy "project")
 text :: forall a b r. Lens { text :: a | r } { text :: b | r } a b
-text = prop (SProxy :: SProxy "text")
+text = prop (Proxy :: Proxy "text")
 
-readState :: Foreign -> Either String State
-readState m = do
-  let rs = runExcept $ getState m 
-  case rs of 
-   Left a -> Left (show a) 
+readState :: Json -> Either String State
+readState m = 
+  case getState m of
+   Left a -> Left (show a)
    Right b -> Right b
 -- State >
 
@@ -83,67 +85,72 @@ newtype Project = Project
 derive instance genericProject :: Rep.Generic Project _
 instance showProject :: Show Project where
     show = genericShow
-instance decodeProject :: Decode Project where
-  decode p = do
-    title <- p ! "title" >>= readString
-    format <- p ! "format" >>= readString
-    tp <- p ! "type" >>= readString
-    creationDate <- pure floor <*> ( p ! "creationDate" >>= readNumber )
-    accessDate <- pure floor <*> ( p ! "accessDate" >>= readNumber)
-    studyLimitationLevels <- p ! "studyLimitationLevels" >>= decode
-    studies <- p ! "studies" >>= decode
-    cm <- p ! "CM" >>= decode
-    netRob <- p ! "netRob" >>= decode
-    imprecision <- p ! "imprecision" >>= decode
-    indr <- p ! "indirectness"
-    indirectness <- indr ! "netindr" >>= decode
-    heterogeneity <- p ! "heterogeneity" >>= decode
-    incoherence <- p ! "incoherence" >>= decode
-    clinImp <- p ! "clinImp" >>= decode
-    pubbias <- p ! "pubbias" >>= decode
-    report <- p ! "report" >>= decode
-    pure $ Project { title
+instance decodeProject :: DecodeJson Project where
+  decodeJson json = case toObject json of
+    Nothing -> Left $ TypeMismatch "Object"
+    Just obj -> do
+      title <- getField obj "title"
+      format <- getField obj "format"
+      tp <- getField obj "type"
+      creationDate <- pure floor <*> getField obj "creationDate"
+      accessDate <- pure floor <*> getField obj "accessDate"
+      studyLimitationLevels <- getField obj "studyLimitationLevels"
+      studies <- getField obj "studies"
+      cm <- getField obj "CM"
+      netRob <- getField obj "netRob"
+      imprecision <- getField obj "imprecision"
+      indrJson <- getField obj "indirectness"
+      indrObj <- case toObject indrJson of
+        Nothing -> Left $ TypeMismatch "Object"
+        Just o -> Right o
+      indirectness <- getField indrObj "netindr"
+      heterogeneity <- getField obj "heterogeneity"
+      incoherence <- getField obj "incoherence"
+      clinImp <- getField obj "clinImp"
+      pubbias <- getField obj "pubbias"
+      report <- getField obj "report"
+      pure $ Project { title
                    , format
                    , "type" : tp
                    , creationDate
                    , accessDate
                    , studyLimitationLevels
-                   , studies 
+                   , studies
                    , "CM" : cm
-                   , netRob 
+                   , netRob
                    , indirectness
                    , clinImp
                    , imprecision
-                   , heterogeneity 
-                   , incoherence 
+                   , heterogeneity
+                   , incoherence
                    , pubbias
                    , report}
 _Project :: Lens' Project (Record _)
 _Project = lens (\(Project s) -> s) (\_ -> Project)
 netRob :: forall a b r. Lens { netRob :: a | r } { netRob :: b | r } a b
-netRob = prop (SProxy :: SProxy "netRob")
+netRob = prop (Proxy :: Proxy "netRob")
 inconsistency :: forall a b r. Lens { inconsistency :: a | r } { inconsistency :: b | r } a b
-inconsistency = prop (SProxy :: SProxy "inconsistency")
+inconsistency = prop (Proxy :: Proxy "inconsistency")
 imprecision :: forall a b r. Lens { imprecision :: a | r } { imprecision :: b | r } a b
-imprecision = prop (SProxy :: SProxy "imprecision")
+imprecision = prop (Proxy :: Proxy "imprecision")
 indirectness :: forall a b r. Lens { indirectness :: a | r } { indirectness :: b | r } a b
-indirectness = prop (SProxy :: SProxy "indirectness")
+indirectness = prop (Proxy :: Proxy "indirectness")
 heterogeneity :: forall a b r. Lens { heterogeneity :: a | r } { heterogeneity :: b | r } a b
-heterogeneity = prop (SProxy :: SProxy "heterogeneity")
+heterogeneity = prop (Proxy :: Proxy "heterogeneity")
 incoherence :: forall a b r. Lens { incoherence :: a | r } { incoherence :: b | r } a b
-incoherence = prop (SProxy :: SProxy "incoherence")
+incoherence = prop (Proxy :: Proxy "incoherence")
 pubbias :: forall a b r. Lens { pubbias :: a | r } { pubbias :: b | r } a b
-pubbias = prop (SProxy :: SProxy "pubbias")
+pubbias = prop (Proxy :: Proxy "pubbias")
 clinImp :: forall a b r. Lens { clinImp :: a | r } { clinImp :: b | r } a b
-clinImp = prop (SProxy :: SProxy "clinImp")
+clinImp = prop (Proxy :: Proxy "clinImp")
 studies :: forall a b r. Lens { studies :: a | r } { studies :: b | r } a b
-studies = prop (SProxy :: SProxy "studies")
+studies = prop (Proxy :: Proxy "studies")
 cmContainer :: forall a b r. Lens { "CM" :: a | r } { "CM" :: b | r } a b
-cmContainer = prop (SProxy :: SProxy "CM")
+cmContainer = prop (Proxy :: Proxy "CM")
 
 hasConMat :: State -> Boolean
-hasConMat st = (st ^. _State <<< project <<< _Project 
-                    <<< cmContainer <<< _CMContainer 
+hasConMat st = (st ^. _State <<< project <<< _Project
+                    <<< cmContainer <<< _CMContainer
                     <<< currentCM <<< _ContributionMatrix)
                    ."status" == "ready"
 -- Project >
@@ -151,21 +158,21 @@ hasConMat st = (st ^. _State <<< project <<< _Project
 newtype Studies = Studies
   { directComparisons :: Array Comparison
   , indirectComparisons :: Array String
-  , nodes :: Array Node 
+  , nodes :: Array Node
   }
 derive instance genericStudies :: Rep.Generic Studies _
 instance showStudies :: Show Studies where
     show = genericShow
-instance decodeStudies :: Decode Studies where
-  decode = genericDecode opts
+instance decodeStudies :: DecodeJson Studies where
+  decodeJson = genericDecodeJson
 _Studies :: Lens' Studies (Record _)
 _Studies = lens (\(Studies s) -> s) (\_ -> Studies)
 directComparisons :: forall a b r. Lens { directComparisons :: a | r } {
   directComparisons :: b | r } a b
-directComparisons = prop (SProxy :: SProxy "directComparisons" )
+directComparisons = prop (Proxy :: Proxy "directComparisons" )
 indirectComparisons :: forall a b r. Lens { indirectComparisons :: a | r } {
   indirectComparisons :: b | r } a b
-indirectComparisons = prop (SProxy :: SProxy "indirectComparisons" )
+indirectComparisons = prop (Proxy :: Proxy "indirectComparisons" )
 -- Studies >
 
 -- CMContainer <
@@ -175,12 +182,12 @@ newtype CMContainer = CMContainer
 derive instance genericCMContainer :: Rep.Generic CMContainer _
 instance showCMContainer :: Show CMContainer where
     show = genericShow
-instance decodeCMContainer :: Decode CMContainer where
-  decode = genericDecode opts
+instance decodeCMContainer :: DecodeJson CMContainer where
+  decodeJson = genericDecodeJson
 _CMContainer :: Lens' CMContainer (Record _)
 _CMContainer = lens (\(CMContainer s) -> s) (\_ -> CMContainer)
 currentCM :: forall a b r. Lens { currentCM :: a | r } { currentCM :: b | r } a b
-currentCM = prop (SProxy :: SProxy "currentCM" )
+currentCM = prop (Proxy :: Proxy "currentCM" )
 -- CMContainer >
 
 -- ContributionMatrix <
@@ -189,21 +196,21 @@ newtype ContributionMatrix = ContributionMatrix
   , colNames :: Array String
   , directRowNames :: Array String
   , indirectRowNames :: Array String
-  , params :: CMParameters 
+  , params :: CMParameters
   , selectedComparisons :: Array String
   }
 derive instance genericContributionMatrix :: Rep.Generic ContributionMatrix _
 instance showContributionMatrix :: Show ContributionMatrix where
     show = genericShow
-instance decodeContributionMatrix :: Decode ContributionMatrix where
-  decode = genericDecode opts
+instance decodeContributionMatrix :: DecodeJson ContributionMatrix where
+  decodeJson = genericDecodeJson
 _ContributionMatrix :: Lens' ContributionMatrix (Record _)
 _ContributionMatrix = lens (\(ContributionMatrix s) -> s) (\_ -> ContributionMatrix)
 params :: forall a b r. Lens { params :: a | r } { params :: b | r } a b
-params = prop (SProxy :: SProxy "params")
+params = prop (Proxy :: Proxy "params")
 
 getSelected :: State -> Array String
-getSelected st = (st  ^. _State <<< project <<< _Project 
+getSelected st = (st  ^. _State <<< project <<< _Project
                  <<< cmContainer <<< _CMContainer
                  <<< currentCM <<< _ContributionMatrix)."selectedComparisons"
 -- ContributionMatrix >
@@ -219,13 +226,13 @@ newtype CMParameters = CMParameters
 derive instance genericCMParameters :: Rep.Generic CMParameters _
 instance showCMParameters :: Show CMParameters where
     show = genericShow
-instance decodeCMParameters :: Decode CMParameters where
-  decode = genericDecode opts
+instance decodeCMParameters :: DecodeJson CMParameters where
+  decodeJson = genericDecodeJson
 _CMParameters :: Lens' CMParameters (Record _)
 _CMParameters = lens (\(CMParameters s) -> s) (\_ -> CMParameters)
 
 getEffectMeasureType :: State -> EffectMeasureType
-getEffectMeasureType st = (st ^. _State <<< project <<< _Project 
+getEffectMeasureType st = (st ^. _State <<< project <<< _Project
                           <<< cmContainer <<< _CMContainer
                           <<< currentCM <<< _ContributionMatrix
                           <<< params <<< _CMParameters

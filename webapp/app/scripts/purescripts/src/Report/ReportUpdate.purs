@@ -1,16 +1,16 @@
 module Report.Update where
 
 import Prelude
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log, logShow)
-import Data.Foreign
+import Effect (Effect)
+import Effect.Console (log, logShow)
+import Data.Argonaut
 import Data.Maybe (Maybe(..))
 import Data.Either (Either(..))
-import Data.Traversable
+import Data.Traversable (traverse)
 import Data.Lens
 import Data.Lens.Record (prop)
 import Data.Lens.Zoom (Traversal, Traversal', Lens, Lens', zoom)
-import Data.Array
+import Data.Array (find, filter, length, head, last, (!!), (..), sortBy, updateAt, mapWithIndex, concat)
 import Partial.Unsafe (unsafePartial)
 import Data.Maybe (fromJust)
 
@@ -29,11 +29,7 @@ import Report.Model
 import ResetJudgements
 import DownloadJudgements
 
-updateState :: forall eff. Foreign 
-  -> Eff (console :: CONSOLE 
-         , modelOut :: SAVE_STATE 
-         | eff
-         ) Unit
+updateState :: Json -> Effect Unit
 updateState mdl = do
   let (s :: Either String State) = readState mdl
   case s of
@@ -52,7 +48,7 @@ updateState mdl = do
           {--logShow $ "Report Not Ready"--}
 
 emptyReport :: Report
-emptyReport = Report 
+emptyReport = Report
   { status : "notReady"
   , hasChanged: false
   , directRows : []
@@ -60,7 +56,7 @@ emptyReport = Report
   }
 
 skeletonReport :: State -> Report
-skeletonReport st = Report 
+skeletonReport st = Report
   { status : "ready"
   , hasChanged: false
   , directRows : directRows st
@@ -69,7 +65,7 @@ skeletonReport st = Report
 
 isReady :: State -> Boolean
 isReady s =
-  (hasStudyLimitations s) || 
+  (hasStudyLimitations s) ||
   (hasImprecision s) ||
   (hasIncoherence s) ||
   (hasIndirectness s) ||
@@ -77,22 +73,16 @@ isReady s =
   (hasHeterogeneity s)
 
 hasChanged :: State -> Boolean
-hasChanged st = (st ^. _State 
-  <<< project <<< _Project 
+hasChanged st = (st ^. _State
+  <<< project <<< _Project
   <<< report <<< _Report)."hasChanged"
 
-updateReportJudgement :: forall e. Foreign 
-  -> Eff ( console :: CONSOLE
-         , updateMe :: UPDATE_JUDGEMENT 
-         | e) Unit
+updateReportJudgement :: Json -> Effect Unit
 updateReportJudgement a = do
   updateJudgement a
   logShow $ "updated judgement"
 
-updateReportReason :: forall e. Foreign 
-  -> Eff ( console :: CONSOLE
-         , updateMe :: UPDATE_REASON 
-         | e) Unit
+updateReportReason :: Json -> Effect Unit
 updateReportReason a = do
   updateReason a
   logShow $ "updated reason"
@@ -102,13 +92,13 @@ resetAll = resetJudgements
 download = downloadJudgements
 
 hasJudgements :: State -> Boolean
-hasJudgements st = (st ^. _State <<< project <<< _Project 
+hasJudgements st = (st ^. _State <<< project <<< _Project
                     <<< report <<< _Report)
                    ."status" == "ready"
 
-fixAllowedReasons :: State 
-                  -> Comparison 
-                  -> Array ReasonLevel 
+fixAllowedReasons :: State
+                  -> Comparison
+                  -> Array ReasonLevel
                   -> Array ReasonLevel
 fixAllowedReasons st c reass =
       let StudyLimitation robbox = getStudyLimitation st c
@@ -141,7 +131,7 @@ fixAllowedReasons st c reass =
                          ) reass
        in map ReasonLevel newReass
 
-defaultJudgement :: State 
+defaultJudgement :: State
                  -> Comparison
                  -> ReportJudgement
 defaultJudgement st c =
@@ -170,7 +160,7 @@ defaultJudgement st c =
                       ]
       levels = map (\i -> do
                      let l = defaultLevels !! i
-                         ol = case l of 
+                         ol = case l of
                            Just dl -> dl
                            Nothing -> skeletonReportLevel ^. _ReportLevel
                          lb = levelsText !! i
@@ -236,88 +226,88 @@ hasIndirects st = length (indirectRows st) > 0
 
 
 hasImprecision :: State -> Boolean
-hasImprecision st = (st ^. _State <<< project <<< _Project 
+hasImprecision st = (st ^. _State <<< project <<< _Project
                     <<< imprecision <<< _Imprecision)
                    ."status" == "ready"
 
 hasIndirectness :: State -> Boolean
-hasIndirectness st = (st ^. _State <<< project <<< _Project 
+hasIndirectness st = (st ^. _State <<< project <<< _Project
                       <<< indirectness <<< _Indirectness)
                      ."status" == "ready"
 
 hasIncoherence :: State -> Boolean
-hasIncoherence st = (st ^. _State <<< project <<< _Project 
+hasIncoherence st = (st ^. _State <<< project <<< _Project
                     <<< incoherence <<< _Incoherence)
                    ."status" == "ready"
 
 hasHeterogeneity :: State -> Boolean
-hasHeterogeneity st = (st ^. _State <<< project <<< _Project 
+hasHeterogeneity st = (st ^. _State <<< project <<< _Project
                     <<< heterogeneity <<< _Heterogeneity
                     <<< heters <<< _Heters)
                    ."status" == "ready"
 
 hasStudyLimitations :: State -> Boolean
-hasStudyLimitations st = (st ^. _State <<< project <<< _Project 
-                 <<< netRob <<< _NetRobModel 
+hasStudyLimitations st = (st ^. _State <<< project <<< _Project
+                 <<< netRob <<< _NetRobModel
                  <<< studyLimitations <<< _StudyLimitations)
                  ."status" == "ready"
 
 hasPubbias :: State -> Boolean
-hasPubbias st = (st ^. _State <<< project <<< _Project 
+hasPubbias st = (st ^. _State <<< project <<< _Project
                  <<< pubbias <<< _Pubbias)
                  ."status" == "ready"
 
 
 getDirects :: State -> Array Comparison
-getDirects st = 
-  let directs = st ^. _State <<< project <<< _Project 
+getDirects st =
+  let directs = st ^. _State <<< project <<< _Project
                  <<< studies <<< _Studies
-                 <<< directComparisons 
+                 <<< directComparisons
                  in (sortBy comparisonsOrdering directs)
 
 getIndirects :: State -> Array Comparison
-getIndirects st = 
-  let indirects = st ^. _State <<< project <<< _Project 
+getIndirects st =
+  let indirects = st ^. _State <<< project <<< _Project
                  <<< studies <<< _Studies
-                 <<< indirectComparisons 
+                 <<< indirectComparisons
      in (sortBy comparisonsOrdering (map (stringToComparison ",") indirects))
 
 
 getIndirectness :: State -> Comparison -> IndirectnessBox
 getIndirectness st c = do
-  let boxs = st  ^. _State <<< project <<< _Project 
+  let boxs = st  ^. _State <<< project <<< _Project
               <<< indirectness <<< _Indirectness
               <<< boxes
   if hasIndirectness st then
-    let mbox = find (\ib -> 
+    let mbox = find (\ib ->
               isIdOfComparison (ib ^. _IndirectnessBox)."id" c
-              ) boxs 
+              ) boxs
         levelsText = (st ^. _State <<< text <<< _TextContent
                      <<< indirectnessText <<< _IndirectnessText)."levels"
         getcolor = do
-           case mbox of 
+           case mbox of
                Nothing -> "grey"
-               Just box -> let mlevel = (box ^. _IndirectnessBox)."levels" !! 
+               Just box -> let mlevel = (box ^. _IndirectnessBox)."levels" !!
                                         ((box ^. _IndirectnessBox)."judgement"
                                         - 1)
-                             in case mlevel of 
+                             in case mlevel of
                                    Nothing -> "grey"
                                    Just level -> (level ^.
                                    _IndirectnessLevel)."color"
-        getLabel = do 
-          case mbox of 
+        getLabel = do
+          case mbox of
                Nothing -> "error"
                Just box -> let mlabel = levelsText !!
                                         ((box ^. _IndirectnessBox)."judgement"
                                         - 1)
-                             in case mlabel of 
+                             in case mlabel of
                                    Nothing -> "error"
                                    Just label -> label
         getCustomized = do
           case mbox of
                Nothing -> false
-               Just box -> 
-                 (box ^. _IndirectnessBox)."judgement" /= 
+               Just box ->
+                 (box ^. _IndirectnessBox)."judgement" /=
                    (box ^. _IndirectnessBox)."ruleLevel"
      in case mbox of
                  Nothing -> skeletonIndirectnessBox
@@ -332,14 +322,14 @@ getIndirectness st c = do
 
 
 getStudyLimitations :: State -> Array NetRob
-getStudyLimitations st = st  ^. _State <<< project <<< _Project 
+getStudyLimitations st = st  ^. _State <<< project <<< _Project
                  <<< netRob <<< _NetRobModel
                  <<< studyLimitations <<< _StudyLimitations
                  <<< boxes
 
 getStudyLimitationsRule :: State -> RobRule
-getStudyLimitationsRule st = do 
-  let rule = (st  ^. _State <<< project <<< _Project 
+getStudyLimitationsRule st = do
+  let rule = (st  ^. _State <<< project <<< _Project
                  <<< netRob <<< _NetRobModel
                  <<< studyLimitations <<< _StudyLimitations)."rule"
       rulesTexts = st ^. _State <<< text <<< _TextContent
@@ -356,29 +346,29 @@ isCustomized :: NetRob -> RobRule -> Boolean
 isCustomized comp rl = do
   let rule = (rl ^. _RobRule)."id"
       value = (comp ^. _NetRob)."judgement"
-      activeRule = find (\r -> rule == (r ^. _RobRule)."id") 
-        $ (comp ^. _NetRob)."rules" 
+      activeRule = find (\r -> rule == (r ^. _RobRule)."id")
+        $ (comp ^. _NetRob)."rules"
       ruleValue = case activeRule of
-         Just ar -> (ar ^. _RobRule)."value" 
+         Just ar -> (ar ^. _RobRule)."value"
          Nothing -> 0
   value /= ruleValue
 
 getStudyLimitation :: State -> Comparison -> StudyLimitation
 getStudyLimitation st c = do
   if hasStudyLimitations st then
-    let rob = find (\sl -> 
+    let rob = find (\sl ->
                 isIdOfComparison (sl ^. _NetRob)."id" c
               ) $ getStudyLimitations st
         level = case rob of
-                     Just r -> find (\slv -> 
-                              (slv ^. _RoBLevel)."id" 
+                     Just r -> find (\slv ->
+                              (slv ^. _RoBLevel)."id"
                               == (r ^. _NetRob)."judgement"
                               ) $ getStudyLimitationLevels st
                      Nothing -> Nothing
 
-        in case level of 
-                Just l -> StudyLimitation { 
-                          id : 
+        in case level of
+                Just l -> StudyLimitation {
+                          id :
                             ((unsafePartial $ fromJust rob) ^. _NetRob)."id"
                            , customized : isCustomized
                             (unsafePartial $ fromJust rob)
@@ -398,39 +388,39 @@ getStudyLimitation st c = do
 
 getImprecision :: State -> Comparison -> ImprecisionBox
 getImprecision st c = do
-  let boxs = st  ^. _State <<< project <<< _Project 
+  let boxs = st  ^. _State <<< project <<< _Project
                      <<< imprecision <<< _Imprecision
                      <<< boxes
   if hasImprecision st then
-    let mbox = find (\ib -> 
+    let mbox = find (\ib ->
                 isIdOfComparison (ib ^. _ImprecisionBox)."id" c
-              ) boxs 
+              ) boxs
         levelsText = (st ^. _State <<< text <<< _TextContent
                      <<< imprecisionText <<< _ImprecisionText)."levels"
         getcolor = do
-           case mbox of 
+           case mbox of
                Nothing -> "grey"
-               Just box -> let mlevel = (box ^. _ImprecisionBox)."levels" !! 
+               Just box -> let mlevel = (box ^. _ImprecisionBox)."levels" !!
                                         ((box ^. _ImprecisionBox)."judgement"
                                         - 1)
-                             in case mlevel of 
+                             in case mlevel of
                                    Nothing -> "grey"
                                    Just level -> (level ^.
                                    _ImprecisionLevel)."color"
-        getLabel = do 
-          case mbox of 
+        getLabel = do
+          case mbox of
                Nothing -> "error"
                Just box -> let mlabel = levelsText !!
                                         ((box ^. _ImprecisionBox)."judgement"
                                         - 1)
-                             in case mlabel of 
+                             in case mlabel of
                                    Nothing -> "error"
                                    Just label -> label
         getCustomized = do
           case mbox of
                Nothing -> false
-               Just box -> 
-                 (box ^. _ImprecisionBox)."judgement" /= 
+               Just box ->
+                 (box ^. _ImprecisionBox)."judgement" /=
                    (box ^. _ImprecisionBox)."ruleLevel"
      in case mbox of
                  Nothing -> skeletonImprecisionBox
@@ -447,43 +437,43 @@ getJudgementDebug a =
   let comps = getDirects a
       rowjudgement st c = do
         let directs :: Array ReportRow
-            directs = (st  ^. _State <<< project <<< _Project 
+            directs = (st  ^. _State <<< project <<< _Project
                          <<< report <<< _Report
                       )."directRows"
             indirects :: Array ReportRow
-            indirects = (st  ^. _State <<< project <<< _Project 
+            indirects = (st  ^. _State <<< project <<< _Project
                            <<< report <<< _Report
                         )."indirectRows"
         if hasJudgements st then
           let aresame r = isIdOfComparisonComma (r ^. _ReportRow)."id" c
               allrows = directs <> indirects
-              judg = find (\ib -> 
+              judg = find (\ib ->
                        aresame ib
                      ) allrows
            in show $ judg
           else "has no judgements, report not ready"
       selects = getSelected a
-      rows = map (\s -> rowjudgement a s) 
+      rows = map (\s -> rowjudgement a s)
              $ filter (isSelectedComparison selects) comps
    in show $ rows
-    
+
 
 getJudgement :: State -> Comparison -> ReportJudgement
 getJudgement st c = do
   let directs :: Array ReportRow
-      directs = (st  ^. _State <<< project <<< _Project 
+      directs = (st  ^. _State <<< project <<< _Project
                    <<< report <<< _Report
                 )."directRows"
       indirects :: Array ReportRow
-      indirects = (st  ^. _State <<< project <<< _Project 
+      indirects = (st  ^. _State <<< project <<< _Project
                      <<< report <<< _Report
                   )."indirectRows"
   if hasJudgements st then
-    let judg = find (\ib -> 
+    let judg = find (\ib ->
                   isIdOfComparisonComma (ib ^. _ReportRow)."id" c
               ) (directs <> indirects)
      in case judg of
-                 Just j -> let ReportJudgement oldj = (j ^. _ReportRow)."judgement" 
+                 Just j -> let ReportJudgement oldj = (j ^. _ReportRow)."judgement"
                                newj = oldj { reasons = fixAllowedReasons st c
                                            oldj."reasons"}
                             in ReportJudgement newj
@@ -493,13 +483,13 @@ getJudgement st c = do
 
 getIncoherence :: State -> Comparison -> IncoherenceBox
 getIncoherence st c = do
-  let incoherences = st  ^. _State <<< project <<< _Project 
+  let incoherences = st  ^. _State <<< project <<< _Project
                      <<< incoherence <<< _Incoherence
                      <<< boxes
   if hasIncoherence st then
-    let rob = find (\ib -> 
+    let rob = find (\ib ->
                 isIdOfComparison (ib ^. _IncoherenceBox)."id" c
-              ) incoherences 
+              ) incoherences
      in case rob of
                  Just r -> r
                  Nothing -> skeletonIncoherenceBox
@@ -508,40 +498,40 @@ getIncoherence st c = do
 
 getHeterogeneity :: State -> Comparison -> HeterogeneityBox
 getHeterogeneity st c = do
-  let heterboxes = st  ^. _State <<< project <<< _Project 
+  let heterboxes = st  ^. _State <<< project <<< _Project
                      <<< heterogeneity <<< _Heterogeneity
                      <<< heters <<< _Heters
                      <<< boxes
   if hasHeterogeneity st then
-    let mbox = find (\ib -> 
+    let mbox = find (\ib ->
                 isIdOfComparison (ib ^. _HeterogeneityBox)."id" c
-              ) heterboxes 
+              ) heterboxes
         levelsText = (st ^. _State <<< text <<< _TextContent
                      <<< heterogeneityText <<< _HeterogeneityText)."levels"
         getcolor = do
-           case mbox of 
+           case mbox of
                Nothing -> "grey"
-               Just box -> let mlevel = (box ^. _HeterogeneityBox)."levels" !! 
+               Just box -> let mlevel = (box ^. _HeterogeneityBox)."levels" !!
                                         ((box ^. _HeterogeneityBox)."judgement"
                                         - 1)
-                             in case mlevel of 
+                             in case mlevel of
                                    Nothing -> "grey"
                                    Just level -> (level ^.
                                    _HeterogeneityLevel)."color"
-        getLabel = do 
-          case mbox of 
+        getLabel = do
+          case mbox of
                Nothing -> "error"
                Just box -> let mlabel = levelsText !!
                                         ((box ^. _HeterogeneityBox)."judgement"
                                         - 1)
-                             in case mlabel of 
+                             in case mlabel of
                                    Nothing -> "error"
                                    Just label -> label
         getCustomized = do
           case mbox of
                Nothing -> false
-               Just box -> 
-                 (box ^. _HeterogeneityBox)."judgement" /= 
+               Just box ->
+                 (box ^. _HeterogeneityBox)."judgement" /=
                    (box ^. _HeterogeneityBox)."ruleLevel"
      in case mbox of
                  Nothing -> skeletonHeterogeneityBox
@@ -555,32 +545,32 @@ getHeterogeneity st c = do
 
 getPubbias :: State -> Comparison -> PubbiasBox
 getPubbias st c = do
-  let boxs = st  ^. _State <<< project <<< _Project 
+  let boxs = st  ^. _State <<< project <<< _Project
                      <<< pubbias <<< _Pubbias
                      <<< boxes
   if hasPubbias st then
-    let mbox = find (\ib -> 
+    let mbox = find (\ib ->
               isIdOfComparison (ib ^. _PubbiasBox)."id" c
-              ) boxs 
+              ) boxs
         levelsText = (st ^. _State <<< text <<< _TextContent
                      <<< pubbiasText <<< _PubbiasText)."levels"
         getcolor = do
-           case mbox of 
+           case mbox of
                Nothing -> "grey"
-               Just box -> let mlevel = (box ^. _PubbiasBox)."levels" !! 
+               Just box -> let mlevel = (box ^. _PubbiasBox)."levels" !!
                                         ((box ^. _PubbiasBox)."judgement"
                                         - 1)
-                             in case mlevel of 
+                             in case mlevel of
                                    Nothing -> "grey"
                                    Just level -> (level ^.
                                    _PubbiasLevel)."color"
-        getLabel = do 
-          case mbox of 
+        getLabel = do
+          case mbox of
                Nothing -> "error"
                Just box -> let mlabel = levelsText !!
                                         ((box ^. _PubbiasBox)."judgement"
                                         - 1)
-                             in case mlabel of 
+                             in case mlabel of
                                    Nothing -> "error"
                                    Just label -> label
         getCustomized = do
@@ -598,10 +588,10 @@ getPubbias st c = do
     skeletonPubbiasBox
 
 getRows :: State -> Array Comparison -> Array ReportRow
-getRows a comps = 
+getRows a comps =
   let selects = getSelected a
-      rows =  map (\s -> 
-             let c = s ^. _Comparison 
+      rows =  map (\s ->
+             let c = s ^. _Comparison
              in ReportRow { id : c."id"
              , armA : show (min c."t1" c."t2")
              , armB : show (max c."t1" c."t2")
@@ -613,12 +603,12 @@ getRows a comps =
              , indirectness: getIndirectness a s
              , pubbias: getPubbias a s
              , judgement: getJudgement a s
-             }) 
+             })
              $ filter (isSelectedComparison selects) comps
       in rows
 
-directRows :: State -> Array ReportRow 
+directRows :: State -> Array ReportRow
 directRows a = getRows a $ getDirects a
 
-indirectRows :: State -> Array ReportRow 
-indirectRows a = getRows a $ getIndirects a  
+indirectRows :: State -> Array ReportRow
+indirectRows a = getRows a $ getIndirects a

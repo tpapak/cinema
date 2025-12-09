@@ -1,9 +1,9 @@
 module UpdateClinImpChildren where
 
 import Prelude
-import Control.Monad.Eff 
+import Effect (Effect)
 
-foreign import data UPDATE_CHILDREN :: Effect
+-- The UPDATE_CHILDREN effect is now just Effect
+-- The JS FFI still triggers Actions.Heterogeneity.updateState() etc.
 
-foreign import updateClinImpChildren :: forall eff. 
-    Eff ( updateClinImpChildren :: UPDATE_CHILDREN | eff) Unit
+foreign import updateClinImpChildren :: Effect Unit

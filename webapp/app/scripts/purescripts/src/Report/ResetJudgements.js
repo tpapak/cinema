@@ -1,7 +1,4 @@
-//module ResetJudgements
-"use strict";
-
-exports.resetJudgements = function () {
+export const resetJudgements = function () {
     if (typeof window.Model !== 'undefined'){
       if (typeof window.Model.state !== 'undefined'){
         if (typeof window.Model.state.project !== 'undefined'){

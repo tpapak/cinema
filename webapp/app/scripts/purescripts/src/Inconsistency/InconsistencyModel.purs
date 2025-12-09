@@ -1,20 +1,25 @@
 module InconsistencyModel where
 
 import Prelude
-import Control.Monad.Eff 
+import Effect 
 import Data.Array
-import Data.Foreign 
-import Data.Foreign.Class (class Decode, encode, decode)
-import Data.Foreign.Index ((!))
-import Data.Foreign.Generic (defaultOptions, genericDecode, genericDecodeJSON)
+import Data.Argonaut.Core (Json, toObject)
+import Data.Argonaut.Decode.Error (JsonDecodeError(..))
+import Data.Argonaut 
+import Data.Argonaut.Decode.Combinators (getField)
+import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
+import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)
+-- import Data.Argonaut.Index ((!)) -- REMOVED: Use getField from Data.Argonaut
+import Data.Argonaut.Decode.Generic (genericDecodeJson)
 import Data.Generic.Rep as Rep 
-import Data.Generic.Rep.Show (genericShow)
+import Data.Show.Generic (genericShow)
 import Control.Monad.Except (runExcept)
 import Data.Maybe
 import Data.Either
 import Data.Int
 import Data.Newtype
 import Data.Symbol
+import Type.Proxy (Proxy(..))
 import Data.Lens
 import Data.Lens.Record (prop)
 import Data.Lens.Zoom (Traversal, Traversal', Lens, Lens', zoom)
@@ -23,7 +28,6 @@ import Partial.Unsafe (unsafePartial)
 import Text.Model
 import ComparisonModel
 
-opts = defaultOptions { unwrapSingleConstructors = true }
 
 -- Heterogeneity <
 newtype Heterogeneity = Heterogeneity
@@ -35,12 +39,12 @@ _Heterogeneity = lens (\(Heterogeneity s) -> s) (\_ -> Heterogeneity)
 derive instance genericHeterogeneity :: Rep.Generic Heterogeneity _
 instance showHeterogeneity :: Show Heterogeneity where
     show = genericShow
-instance decodeHeterogeneity :: Decode Heterogeneity where
-  decode = genericDecode opts
+instance decodeHeterogeneity :: DecodeJson Heterogeneity where
+  decodeJson = genericDecodeJson
 heters :: forall a b r. Lens { heters :: a | r } { heters :: b | r } a b
-heters = prop (SProxy :: SProxy "heters")
+heters = prop (Proxy :: Proxy "heters")
 referenceValues :: forall a b r. Lens { referenceValues :: a | r } { referenceValues :: b | r } a b
-referenceValues = prop (SProxy :: SProxy "referenceValues")
+referenceValues = prop (Proxy :: Proxy "referenceValues")
 -- Heterogeneity >
 
 newtype Heters = Heters
@@ -52,8 +56,8 @@ _Heters = lens (\(Heters s) -> s) (\_ -> Heters)
 derive instance genericHeters :: Rep.Generic Heters _
 instance showHeters :: Show Heters where
     show = genericShow
-instance decodeHeters :: Decode Heters where
-  decode = genericDecode opts
+instance decodeHeters :: DecodeJson Heters where
+  decodeJson = genericDecodeJson
 
 
 newtype ReferenceValues = ReferenceValues
@@ -65,8 +69,8 @@ _ReferenceValues = lens (\(ReferenceValues s) -> s) (\_ -> ReferenceValues)
 derive instance genericReferenceValues :: Rep.Generic ReferenceValues _
 instance showReferenceValues :: Show ReferenceValues where
     show = genericShow
-instance decodeReferenceValues :: Decode ReferenceValues where
-  decode = genericDecode opts
+instance decodeReferenceValues :: DecodeJson ReferenceValues where
+  decodeJson = genericDecodeJson
 
 newtype HeterogeneityBox = HeterogeneityBox
     { id :: String
@@ -90,36 +94,38 @@ skeletonHeterogeneityBox = HeterogeneityBox { id : "None"
                                         , ruleLevel : -1
                                         , customized : false
                                         }
-{--instance decodeHeterogeneityBox :: Decode HeterogeneityBox where--}
-  {--decode = genericDecode opts--}
-instance decodeHeterogeneityBox :: Decode HeterogeneityBox where
-  decode p = do
-    id <- p ! "id" >>= readString
-    judgement <- p ! "judgement" >>= readInt
-    ruleLevel <- p ! "ruleLevel" >>= readInt
-    levels <- p ! "levels" >>= decode
-    let color = ""
-    let label = "--"
-    customized <- pure false
-    pure $ HeterogeneityBox { id
-                            , levels
-                            , judgement
-                            , ruleLevel
-                            , label
-                            , customized
-                            , color }
+{--instance decodeHeterogeneityBox :: DecodeJson HeterogeneityBox where--}
+  {--decode = genericDecodeJson--}
+instance decodeHeterogeneityBox :: DecodeJson HeterogeneityBox where
+  decodeJson json = case toObject json of
+    Nothing -> Left $ TypeMismatch "Object"
+    Just obj -> do
+      id <- getField obj "id"
+      judgement <- getField obj "judgement"
+      ruleLevel <- getField obj "ruleLevel"
+      levels <- getField obj "levels"
+      let color = ""
+      let label = "--"
+      customized <- pure false
+      pure $ HeterogeneityBox { id
+                              , levels
+                              , judgement
+                              , ruleLevel
+                              , label
+                              , customized
+                              , color }
 heterboxlabel :: forall a b r. Lens { label :: a | r } { label :: b | r } a b
-heterboxlabel = prop (SProxy :: SProxy "label")
+heterboxlabel = prop (Proxy :: Proxy "label")
 heterboxcolor :: forall a b r. Lens { color :: a | r } { color :: b | r } a b
-heterboxcolor = prop (SProxy :: SProxy "color")
+heterboxcolor = prop (Proxy :: Proxy "color")
 heterboxcustomized :: forall a b r. Lens { customized :: a | r } { customized :: b | r } a b
-heterboxcustomized = prop (SProxy :: SProxy "customized")
+heterboxcustomized = prop (Proxy :: Proxy "customized")
 
 
 {--type StringComparisonIds = Array String--}
   
-{--instance decodeStringComparisonIds :: Decode StringComparisonIds where--}
-  {--decode = genericDecode opts--}
+{--instance decodeStringComparisonIds :: DecodeJson StringComparisonIds where--}
+  {--decode = genericDecodeJson--}
 
 
 newtype HeterogeneityLevel = HeterogeneityLevel
@@ -131,14 +137,16 @@ _HeterogeneityLevel = lens (\(HeterogeneityLevel s) -> s) (\_ -> HeterogeneityLe
 derive instance genericHeterogeneityLevel :: Rep.Generic HeterogeneityLevel _
 instance showHeterogeneityLevel :: Show HeterogeneityLevel where
     show = genericShow
-{--instance decodeHeterogeneityLevel :: Decode HeterogeneityLevel where--}
-  {--decode = genericDecode opts--}
-instance decodeHeterogeneityLevel :: Decode HeterogeneityLevel where
-  decode p = do
-    id <- p ! "id" >>= readInt
-    color <- p ! "color" >>= readString
-    pure $ HeterogeneityLevel { id
-                              , color }
+{--instance decodeHeterogeneityLevel :: DecodeJson HeterogeneityLevel where--}
+  {--decode = genericDecodeJson--}
+instance decodeHeterogeneityLevel :: DecodeJson HeterogeneityLevel where
+  decodeJson json = case toObject json of
+    Nothing -> Left $ TypeMismatch "Object"
+    Just obj -> do
+      id <- getField obj "id"
+      color <- getField obj "color"
+      pure $ HeterogeneityLevel { id
+                                , color }
 
 -- Incoherence <
 newtype Incoherence = Incoherence
@@ -150,8 +158,8 @@ _Incoherence = lens (\(Incoherence s) -> s) (\_ -> Incoherence)
 derive instance genericIncoherence :: Rep.Generic Incoherence _
 instance showIncoherence :: Show Incoherence where
     show = genericShow
-instance decodeIncoherence :: Decode Incoherence where
-  decode = genericDecode opts
+instance decodeIncoherence :: DecodeJson Incoherence where
+  decodeJson = genericDecodeJson
 -- Incoherence >
 
 -- IncoherenceBox <
@@ -169,8 +177,8 @@ _IncoherenceBox = lens (\(IncoherenceBox s) -> s) (\_ -> IncoherenceBox)
 derive instance genericIncoherenceBox :: Rep.Generic IncoherenceBox _
 instance showIncoherenceBox :: Show IncoherenceBox where
     show = genericShow
-instance decodeIncoherenceBox :: Decode IncoherenceBox where
-  decode = genericDecode opts
+instance decodeIncoherenceBox :: DecodeJson IncoherenceBox where
+  decodeJson = genericDecodeJson
 skeletonIncoherenceBox = IncoherenceBox { id : "None"
                                         , judgement : -1
                                         , label : "--"
@@ -193,7 +201,7 @@ _IncoherenceLevel = lens (\(IncoherenceLevel s) -> s) (\_ -> IncoherenceLevel)
 derive instance genericIncoherenceLevel :: Rep.Generic IncoherenceLevel _
 instance showIncoherenceLevel :: Show IncoherenceLevel where
     show = genericShow
-instance decodeIncoherenceLevel :: Decode IncoherenceLevel where
-  decode = genericDecode opts
+instance decodeIncoherenceLevel :: DecodeJson IncoherenceLevel where
+  decodeJson = genericDecodeJson
 -- IncoherenceLevel >
 

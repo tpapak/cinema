@@ -1,9 +1,9 @@
 module ResetJudgements where
 
 import Prelude
-import Control.Monad.Eff 
+import Effect 
 
-foreign import data RESET_JUDGEMENTS :: Effect
+-- foreign import data RESET_JUDGEMENTS :: Effect -- REMOVED: Old effect type
 
 foreign import resetJudgements :: forall eff. 
-    Eff ( resetJudgements :: RESET_JUDGEMENTS | eff) Unit
+    Effect Unit

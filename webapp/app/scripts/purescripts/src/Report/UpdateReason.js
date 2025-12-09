@@ -1,7 +1,4 @@
-//module UpdateReason
-"use strict";
-  
-exports.updateReason = function(repidjudgement){
+export const updateReason = function(repidjudgement){
   var repidjdg = repidjudgement.value.split("σδεl");
   var rid =  repidjdg[0];
   var reasonid =  repidjdg[1];

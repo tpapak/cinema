@@ -1,7 +1,4 @@
-//module UpdateJudgement
-"use strict";
-  
-exports.updateJudgement = function(repidjudgement){
+export const updateJudgement = function(repidjudgement){
   var repidjdg = repidjudgement.value.split("σδεl");
   var jdg =  repidjdg[0];
   var rid =  repidjdg[1];

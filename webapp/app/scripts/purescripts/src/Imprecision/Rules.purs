@@ -1,22 +1,25 @@
 module Imprecision.Rules where
 
 import Prelude
-import Control.Monad.Eff 
-import Control.Monad.Eff.Unsafe
-import Control.Monad.Eff.Console (CONSOLE, log, logShow)
+import Effect 
+import Effect.Unsafe
+import Effect.Console (log, logShow)
 import Data.Array
-import Data.Foreign 
-import Data.Foreign.Class (class Decode, encode, decode)
-import Data.Foreign.Index ((!))
-import Data.Foreign.Generic (defaultOptions, genericDecode, genericDecodeJSON)
+import Data.Argonaut 
+import Data.Argonaut.Decode.Error (JsonDecodeError(..))
+import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
+import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)
+-- import Data.Argonaut.Index ((!)) -- REMOVED: Use getField from Data.Argonaut
+import Data.Argonaut.Decode.Generic (genericDecodeJson)
 import Data.Generic.Rep as Rep 
-import Data.Generic.Rep.Show (genericShow)
+import Data.Show.Generic (genericShow)
 import Control.Monad.Except (runExcept)
 import Data.Maybe
 import Data.Either (Either(..), isLeft, fromRight)
 import Data.Int
 import Data.String as S
 import Data.Symbol
+import Type.Proxy (Proxy(..))
 import Data.Lens
 import Data.Lens.Index
 import Data.Lens.Record (prop)
@@ -30,9 +33,8 @@ import Text.Model
 import SaveModel
 
 
-opts = defaultOptions { unwrapSingleConstructors = true }
 
-getState :: forall eff. Foreign -> Eff (console :: CONSOLE | eff) Unit
+getState :: Json  -> Effect Unit
 getState mdl = do
   let (s :: Either String State) = readState mdl
   case s of
@@ -46,10 +48,12 @@ getState mdl = do
        {--log $ "all nodes are " <> show allnodes--}
        log $ "THE  E E E E E E Eselected nodes are " <> show nds
 
-isTheSameComparison :: Foreign -> Foreign -> Boolean
+isTheSameComparison :: Json -> Json -> Boolean
 isTheSameComparison fc1 fc2 = do
-  let ec1 = runExcept $ readString fc1
-  let ec2 = runExcept $ readString fc2
+  -- TODO: Fix decoder
+  let ec1 = decodeJson fc1 :: Either JsonDecodeError String
+  -- TODO: Fix decoder
+  let ec2 = decodeJson fc2 :: Either JsonDecodeError String
   if any isLeft [ec1, ec2] then
     false
     else do
@@ -62,14 +66,14 @@ isTheSameComparison fc1 fc2 = do
       c1 == c2 && (c1 /= skeletonComparison) && (c2 /= skeletonComparison)
 
 {--CIlow effect CIhigh zonelower Null zonehigher--}
-numberOfCrosses :: Foreign -> Foreign -> Foreign -> Foreign -> Foreign -> Foreign -> Int
+numberOfCrosses :: Json -> Json -> Json -> Json -> Json -> Json -> Int
 numberOfCrosses fil feffect fih fzl fnul fzh = do
-  let eil = runExcept $ readNumber fil
-  let eeffect = runExcept $ readNumber feffect
-  let eih = runExcept $ readNumber fih
-  let ezl = runExcept $ readNumber fzl
-  let enul = runExcept $ readNumber fnul
-  let ezh = runExcept $ readNumber fzh
+  let eil = decodeJson fil
+  let eeffect = decodeJson feffect
+  let eih = decodeJson fih
+  let ezl = decodeJson fzl
+  let enul = decodeJson fnul
+  let ezh = decodeJson fzh
   let fromRight = (\e -> case e of
                    Left _ -> -1.0
                    Right v -> v)
@@ -103,14 +107,14 @@ numberOfCrosses fil feffect fih fzl fnul fzh = do
                                            true -> 0
                                            false -> 2
 
-ruleLevel :: Foreign -> Foreign -> Int
-ruleLevel fcicrs fpricrs = do
-  let ecicrs = runExcept $ readInt fcicrs
-  let epricrs = runExcept $ readInt fpricrs
-  let fromRight = (\e -> case e of
-                   Left _ -> -1
-                   Right v -> v)
-  case any isLeft [ecicrs, epricrs] of
+ruleLevel :: Json -> Json -> Int
+ruleLevel fcicrs fpricrs = 
+  let ecicrs = decodeJson fcicrs
+      epricrs = decodeJson fpricrs
+      fromRight = (\e -> case e of
+                     Left _ -> -1
+                     Right v -> v)
+  in case any isLeft [ecicrs, epricrs] of
        true -> -1
        false -> 
          let cicrs  = fromRight ecicrs

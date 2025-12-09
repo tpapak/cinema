@@ -1,7 +1,4 @@
-//module SaveModel
-"use strict";
-  
-exports.saveStateImpl = function(position, state){
+export const saveStateImpl = function(position, state){
   return function() {
     if (typeof window.Model !== 'undefined'){
       if (typeof window.Model.state !== 'undefined'){
