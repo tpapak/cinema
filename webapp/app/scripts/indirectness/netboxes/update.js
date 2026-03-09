@@ -49,7 +49,7 @@ var Update = (model) => {
       });
     },
     setState: (newState) => {
-      if(typeof deepSeek(model,"getState().project.indirectness") !== 'undefined'){
+      if(typeof deepSeek(model,'getState().project.indirectness') !== 'undefined'){
         model.getState().project.indirectness.netindr = newState;
 	updaters.saveState();
       }else{
@@ -75,11 +75,10 @@ var Update = (model) => {
         updaters.getState().customized -= 1;
       }
       tbc.judgement = parseInt(tv);
-      updaters.getState().status = 'selecting';
-      updaters.saveState();
+      // Set status to ready directly (no need for intermediate 'selecting' state with separate save)
       updaters.getState().status = 'ready';
-      Messages.alertify().success(model.getState().text.NetIndr.LimitationsSet);
       updaters.saveState();
+      Messages.alertify().success(model.getState().text.NetIndr.LimitationsSet);
     },
     saveState: () => {
       model.saveState();
@@ -146,7 +145,7 @@ var Update = (model) => {
         let project =  deepSeek(model,'getState().project');
         let levels = deepSeek(model,'getState().defaults.netIndrLevels');
         return _.map(sortStudies(rownames,studies), d => {
-        let stcs = deepSeek(project,"CM.currentCM.studycontributions");
+        let stcs = deepSeek(project,'CM.currentCM.studycontributions');
         let key = _.find(_.keys(stcs), k => {
               let aresame = (
                 ( (k.split(':')[0]===d[0].split(':')[0]) &&

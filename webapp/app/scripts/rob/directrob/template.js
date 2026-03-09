@@ -8,11 +8,20 @@ var convertHTML = require('html-to-vdom')({
 });
 
 var Template = (model,children) => {
+    // Handlebars template
     var tmpl = GRADE.templates.directrob(
       _.extend(View(model),{text:model.getState().text.directRob})
     );
+    
+    // html-to-vdom conversion
+    let converted = convertHTML(tmpl);
+    
+    // Children rendering
     let tmplchildren = _.map(children, c => {return c.render(model);});
-    return [h('div#directSelectionWrapper.col-xs-12',convertHTML(tmpl))].concat(_.flatten(tmplchildren));
+    
+    let result = [h('div#directSelectionWrapper.col-xs-12', converted)].concat(_.flatten(tmplchildren));
+    
+    return result;
 }
 
 module.exports = () => {

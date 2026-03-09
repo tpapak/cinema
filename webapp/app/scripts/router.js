@@ -104,14 +104,14 @@ var Router = {
     title: () => {
       let projectTitle = deepSeek(Router,'model.getState().project.title');
       if (_.isUndefined(projectTitle)){
-        projectTitle="--"
+        projectTitle='--'
       }
       return(projectTitle);
     },
     currentRoute: () => {
       let currentRoute = deepSeek(Router,'model.getState().router.currentRoute');
       if (_.isUndefined(currentRoute)){
-        currentRoute="--"
+        currentRoute='--'
       }
       return(currentRoute);
     },
@@ -153,28 +153,34 @@ var Router = {
   render:(model) => {
     return new Promise((resolve,reject) => {
       if (Router.view.isReady()){
+        let currentRoute = Router.view.currentRoute();
+        
+        // Header template
         var headertmpl = GRADE.templates.header({model:model.state,view:Router.view});
-        var footertmpl = GRADE.templates.footer({model:model.state,view:Router.view});
         var hnode = convertHTML(headertmpl);
+        
+        // Footer template
+        var footertmpl = GRADE.templates.footer({model:model.state,view:Router.view});
         var fnode = convertHTML(footertmpl);
+        
         let cnode = {};
         let child = _.find(Router.renderChildren, c => {
-          return c.route === Router.view.currentRoute();
+          return c.route === currentRoute;
         });
-        //// let lkj = Report.katiFn(model);
-        // console.log('giving to report',lkj);
+        
         if(typeof child === 'undefined'){
           cnode = Error.render(model);
-          // reject('didn\'t find route');
         }else{
-          if(Router.view.currentRoute() !=='rob'){
+          if(currentRoute !=='rob'){
              ConChart.destroyRender(model);
           }
-          if(Router.view.currentRoute() !=='indirectness'){
+          if(currentRoute !=='indirectness'){
              Indirectness.destroyRender(model);
           }
-          if(Router.view.currentRoute() === 'report'){
-              cnode = convertHTML(child.module.render(model.getState()));
+          
+          if(currentRoute === 'report'){
+              let htmlString = child.module.render(model.getState());
+              cnode = convertHTML(htmlString);
           }else{
             cnode = child.module.render(model);
           }
@@ -183,9 +189,10 @@ var Router = {
         let ptree = [
                      h('div#header.row',hnode),
                      cnode,
-                     h('nav.row.footerContainer',fnode) // + .navbar-fixed-bottom
+                     h('nav.row.footerContainer',fnode)
                    ];
-          resolve(ptree);
+        
+        resolve(ptree);
         }else{
         reject('not ready');
       }

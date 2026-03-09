@@ -50,7 +50,7 @@ var Update = (model) => {
       });
     },
     setState: (newState) => {
-      if(deepSeek(model,"getState().project.netRob")){
+      if(deepSeek(model,'getState().project.netRob')){
 	model.getState().project.netRob.studyLimitations = newState;
 	updaters.saveState();
       }else{
@@ -77,11 +77,10 @@ var Update = (model) => {
         updaters.getState().customized -= 1;
       }
       tbc.judgement = parseInt(tv);
-      updaters.getState().status = 'selecting';
-      updaters.saveState();
+      // Set status to ready directly (no need for intermediate 'selecting' state with separate save)
       updaters.getState().status = 'ready';
-      Messages.alertify().success(model.getState().text.NetRob.LimitationsSet);
       updaters.saveState();
+      Messages.alertify().success(model.getState().text.NetRob.LimitationsSet);
     },
     saveState: () => {
       model.saveState();
@@ -147,7 +146,7 @@ var Update = (model) => {
       let makeRules = (rownames,colnames,studies) => {
         let project =  deepSeek(model,'getState().project');
         return _.map(sortStudies(rownames,studies), d => {
-        let stcs = deepSeek(project,"CM.currentCM.studycontributions");
+        let stcs = deepSeek(project,'CM.currentCM.studycontributions');
         let key = _.find(_.keys(stcs), k => {
               let aresame = (
                 ( (k.split(':')[0]===d[0].split(':')[0]) &&
