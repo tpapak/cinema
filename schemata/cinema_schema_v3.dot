@@ -1,0 +1,689 @@
+digraph CINeMA_Schema_v3 {
+    rankdir=TB;
+    fontname="Helvetica";
+    fontsize=16;
+    node [fontname="Helvetica", fontsize=10, style=filled, shape=record];
+    edge [fontname="Helvetica", fontsize=8, arrowsize=0.7];
+    label="CINeMA Exchange Schema v3\n(aligned with PureScript model types)";
+    labelloc=t;
+    labeljust=c;
+    compound=true;
+    nodesep=0.4;
+    ranksep=0.8;
+    splines=true;
+
+    // ═══════════════════════════════════
+    // NOTATION:
+    //   Bold       = required field
+    //   (italic)   = optional (Maybe in PS)
+    //   [cond]     = conditional
+    //   (dflt: x)  = has default value
+    // ═══════════════════════════════════
+
+    // ── Primitives ──
+    subgraph cluster_primitives {
+        label="Primitive Types (PureScript ADTs)";
+        style="rounded,dashed";
+        color="#95A5A6";
+        fontsize=9;
+        fontcolor="#7F8C8D";
+        node [shape=box, fontsize=9, height=0.3];
+        treatmentId [label="treatmentId\ndata TreatmentId\n= StringId String\n| IntId Int", fillcolor="#FDEBD0", color="#E67E22"];
+        effectMeasureType [label="effectMeasureType\ndata EffectMeasureType\n= OR | RR | RD | MD | SMD", fillcolor="#FDEBD0", color="#E67E22"];
+        comparisonIdPrim [label="comparisonId\ntype alias = String\n\"TreatA:TreatB\"", fillcolor="#FDEBD0", color="#E67E22"];
+    }
+
+    // ── Root ──
+    cinema [
+        label="{cinema|\l\
+  version: \"3.0.0\" \u2588\l\
+  projects: project[ ] \u2588\l\
+  title: string\l\
+  description: string\l\
+  author: string\l\
+  createdAt: datetime\l\
+  updatedAt: datetime\l\
+}",
+        fillcolor="#2C3E50", fontcolor=white
+    ];
+
+    // ── Project ──
+    project [
+        label="{project|\l\
+  dataset: dataset \u2588\l\
+  analysis: analysis | null\l\
+  evaluation: evaluation | null\l\
+  hasEvaluation: boolean\l\
+  id: string\l\
+  title: string\l\
+  description: string\l\
+  outcome: string\l\
+  createdAt / updatedAt\l\
+\l\u2588 = required\l\
+}",
+        fillcolor="#2980B9", fontcolor=white
+    ];
+
+    cinema -> project [label="projects[ ]", style=bold, color="#2C3E50"];
+
+    // ══════════════════════════════════════
+    // DATASET
+    // ══════════════════════════════════════
+    subgraph cluster_dataset {
+        label="Dataset (one CSV)";
+        style=rounded;
+        color="#27AE60";
+        bgcolor="#EAFAF1";
+        fontsize=10;
+        fontcolor="#1E8449";
+
+        dataset [
+            label="{dataset|\l\
+  format: long|wide|iv \u2588\l\
+  type: binary|continuous \u2588\l\
+  studies: studyArm[ ] \u2588\l\
+  nodes: node[ ]   (computed by CINeMA)\l\
+  directComparisons: comparison[ ]   (computed)\l\
+  indirectComparisons: string[ ]   (computed)\l\
+  robLevels: robLevel[ ]   (computed)\l\
+}",
+            fillcolor="#27AE60", fontcolor=white
+        ];
+
+        studyArm [
+            label="{studyArm|\l\
+  study: treatmentId \u2588\l\
+  id: treatmentId \u2588\l\
+  treatment: treatmentId \u2588\l\
+  n: int \u2588\l\
+  rob: 1\u20133 \u2588\l\
+  indirectness: 1\u20133 \u2588\l\
+  \u2500\u2500 conditional on type \u2500\u2500\l\
+  events: int   [binary only]\l\
+  mean: number   [continuous only]\l\
+  sd: number   [continuous only]\l\
+}",
+            fillcolor="#2ECC71", fontcolor=white
+        ];
+
+        node_ [
+            label="{node|\l\
+  id: treatmentId \u2588\l\
+  label: string   (dflt: \"\")\l\
+  numStudies: int\l\
+  sampleSize: int\l\
+  interventionType: intType[ ]   (dflt)\l\
+}",
+            fillcolor="#2ECC71", fontcolor=white
+        ];
+
+        interventionType [
+            label="{interventionType|\l\
+  id: enum \u2588\l\
+  label: string \u2588\l\
+  isSelected: bool \u2588\l\
+  isActive: bool\l\
+  isDisabled: bool\l\
+}",
+            fillcolor="#82E0AA", fontcolor="#1E8449"
+        ];
+
+        comparison [
+            label="{comparison|\l\
+  id: comparisonId \u2588\l\
+  t1: treatmentId \u2588\l\
+  t2: treatmentId \u2588\l\
+  numStudies: int \u2588\l\
+}",
+            fillcolor="#2ECC71", fontcolor=white
+        ];
+
+        robLevel [
+            label="{robLevel|\l\
+  id: int \u2588\l\
+  color: string \u2588\l\
+  label: string \u2588\l\
+}",
+            fillcolor="#82E0AA", fontcolor="#1E8449"
+        ];
+
+        dataset -> studyArm [label="studies[ ]", color="#27AE60"];
+        dataset -> node_ [label="nodes[ ] (optional)", color="#27AE60", style=dashed];
+        dataset -> comparison [label="directComps[ ] (opt)", color="#27AE60", style=dashed];
+        dataset -> robLevel [label="robLevels[ ] (opt)", color="#27AE60", style=dashed];
+        node_ -> interventionType [label="(opt, has default)", color="#27AE60", style=dashed];
+    }
+
+    project -> dataset [style=bold, color="#27AE60"];
+
+    // ══════════════════════════════════════
+    // ANALYSIS (top level)
+    // ══════════════════════════════════════
+    subgraph cluster_analysis {
+        label="Analysis \u2014 nullable at project level\nBoth CINeMA and MetaInsight validate against this schema";
+        style=rounded;
+        color="#8E44AD";
+        bgcolor="#F4ECF7";
+        fontsize=10;
+        fontcolor="#6C3483";
+
+        analysis [
+            label="{analysis|\l\
+  params: analysisParams \u2588\l\
+  contributionMatrix \u2588\l\
+  frequentist: freqResults \u2588\l\
+  bayesian: bayesResults | null\l\
+}",
+            fillcolor="#8E44AD", fontcolor=white
+        ];
+
+        analysisParams [
+            label="{analysisParams|\l\
+  model: fixed|random \u2588\l\
+  sm: effectMeasureType \u2588\l\
+  framework: freq.|bayesian\l\
+     (dflt: freq.)\l\
+  tau: number   (Maybe)\l\
+  label: string   (Maybe)\l\
+}",
+            fillcolor="#9B59B6", fontcolor=white
+        ];
+
+        analysis -> analysisParams [label="params", color="#8E44AD"];
+    }
+
+    project -> analysis [label="analysis | null", style=bold, color="#8E44AD"];
+
+    // ══════════════════════════════════════
+    // CONTRIBUTION MATRIX (always frequentist)
+    // ══════════════════════════════════════
+    subgraph cluster_contribmatrix {
+        label="Contribution Matrix (always frequentist, via netmeta)";
+        style=rounded;
+        color="#6C3483";
+        bgcolor="#F5EEF8";
+        fontsize=10;
+        fontcolor="#6C3483";
+
+        contribMatrix [
+            label="{contributionMatrix|\l\
+  hatMatrix \u2588\l\
+  studyContributions \u2588\l\
+}",
+            fillcolor="#6C3483", fontcolor=white
+        ];
+
+        hatMatrix [
+            label="{hatMatrix|\l\
+  H: number[ ][ ] \u2588\l\
+  rowNames: comparisonId[ ] \u2588\l\
+  colNames: comparisonId[ ] \u2588\l\
+}",
+            fillcolor="#9B59B6", fontcolor=white
+        ];
+
+        studyContrib [
+            label="{studyContributions|\l\
+  Object(Object Number)\l\
+  (compId: (studyId: %))\l\
+}",
+            fillcolor="#9B59B6", fontcolor=white
+        ];
+
+        contribMatrix -> hatMatrix [color="#6C3483"];
+        contribMatrix -> studyContrib [color="#6C3483"];
+    }
+
+    analysis -> contribMatrix [style=bold, color="#6C3483"];
+
+    // ══════════════════════════════════════
+    // FREQUENTIST NMA RESULTS (always present)
+    // ══════════════════════════════════════
+    subgraph cluster_frequentist {
+        label="Frequentist Results (always present, from netmeta)";
+        style=rounded;
+        color="#8E44AD";
+        bgcolor="#F4ECF7";
+        fontsize=10;
+        fontcolor="#6C3483";
+
+        freqResults [
+            label="{frequentistResults|\l\
+  nmaResults: compResult[ ] \u2588\l\
+  pairwise   (Maybe)\l\
+  networkHeterogeneity   (Maybe)\l\
+  designByTreatment   (Maybe)\l\
+  leagueTable   (Maybe)\l\
+  sensitivityLeagueTables   (Maybe)\l\
+}",
+            fillcolor="#8E44AD", fontcolor=white
+        ];
+
+        comparisonResult [
+            label="{comparisonResult (freq)|\l\
+  comparison: comparisonId \u2588\l\
+  effect: number \u2588\l\
+  se: number \u2588\l\
+  ciLower, ciUpper \u2588\l\
+  priLower, priUpper \u2588\l\
+  propDirect: 0\u20131 \u2588\l\
+  \u2500\u2500 netsplit (Maybe) \u2500\u2500\l\
+  direct: (eff,ciL,ciU)\l\
+  indirect: (eff,ciL,ciU)\l\
+  incoherence: (eff,ci,z,p)\l\
+}",
+            fillcolor="#9B59B6", fontcolor=white
+        ];
+
+        pairwiseResult [
+            label="{pairwiseResult   (Maybe[ ])|\l\
+  comparison \u2588\l\
+  tau2: number \u2588\l\
+  I2: 0\u20131 \u2588\l\
+  I2Lower, I2Upper   (Maybe)\l\
+}",
+            fillcolor="#9B59B6", fontcolor=white
+        ];
+
+        networkHet [
+            label="{networkHeterogeneity   (Maybe)|\l\
+  tau2: number \u2588\l\
+  Qoverall, Qhet, Qinc   (Maybe)\l\
+}",
+            fillcolor="#9B59B6", fontcolor=white
+        ];
+
+        dbt [
+            label="{designByTreatment   (Maybe)|\l\
+  Q, df, pvalue \u2588\l\
+}",
+            fillcolor="#9B59B6", fontcolor=white
+        ];
+
+        freqLeagueTable [
+            label="{leagueTable   (Maybe)|\l\
+  Array(Array String)\l\
+}",
+            fillcolor="#9B59B6", fontcolor=white
+        ];
+
+        sensitivityLT [
+            label="{sensitivityLeagueTables   (Maybe)|\l\
+  lowRoB   (Maybe)\l\
+  lowModerateRoB   (Maybe)\l\
+}",
+            fillcolor="#9B59B6", fontcolor=white
+        ];
+
+        freqResults -> comparisonResult [label="nmaResults[ ]", color="#8E44AD"];
+        freqResults -> pairwiseResult [label="(Maybe)", color="#8E44AD", style=dashed];
+        freqResults -> networkHet [label="(Maybe)", color="#8E44AD", style=dashed];
+        freqResults -> dbt [label="(Maybe)", color="#8E44AD", style=dashed];
+        freqResults -> freqLeagueTable [label="(Maybe)", color="#8E44AD", style=dashed];
+        freqResults -> sensitivityLT [label="(Maybe)", color="#8E44AD", style=dashed];
+    }
+
+    analysis -> freqResults [style=bold, color="#8E44AD"];
+
+    // ══════════════════════════════════════
+    // BAYESIAN NMA RESULTS (nullable)
+    // ══════════════════════════════════════
+    subgraph cluster_bayesian {
+        label="Bayesian Results (only when framework=bayesian, from gemtc)";
+        style="rounded,dashed";
+        color="#1ABC9C";
+        bgcolor="#E8F8F5";
+        fontsize=10;
+        fontcolor="#0E6655";
+
+        bayesResults [
+            label="{bayesianResults | null|\l\
+  nmaResults: bayesCompResult[ ] \u2588\l\
+  tau: bayesianTau   (Maybe)\l\
+  nodesplit[ ]   (Maybe)\l\
+  sucra[ ]   (Maybe)\l\
+  dic   (Maybe)\l\
+  leagueTable   (Maybe)\l\
+}",
+            fillcolor="#1ABC9C", fontcolor=white
+        ];
+
+        bayesCompResult [
+            label="{bayesianComparisonResult|\l\
+  comparison: comparisonId \u2588\l\
+  effect: posterior mean \u2588\l\
+  ciLower, ciUpper: 95% CrI \u2588\l\
+  priLower, priUpper   (Maybe)\l\
+}",
+            fillcolor="#48C9B0", fontcolor=white
+        ];
+
+        bayesTau [
+            label="{bayesianTau   (Maybe)|\l\
+  mean: number \u2588\l\
+  ciLower, ciUpper: 95% CrI \u2588\l\
+}",
+            fillcolor="#48C9B0", fontcolor=white
+        ];
+
+        bayesNodesplit [
+            label="{bayesianNodesplit   (Maybe[ ])|\l\
+  comparison \u2588\l\
+  direct: (eff,ciL,ciU) \u2588\l\
+  indirect: (eff,ciL,ciU) \u2588\l\
+  pvalue \u2588\l\
+}",
+            fillcolor="#48C9B0", fontcolor=white
+        ];
+
+        sucraResult [
+            label="{sucraResult   (Maybe[ ])|\l\
+  treatment: treatmentId \u2588\l\
+  sucra: 0\u2013100 \u2588\l\
+  rankProbabilities[ ]   (Maybe)\l\
+}",
+            fillcolor="#48C9B0", fontcolor=white
+        ];
+
+        dicNode [
+            label="{dic   (Maybe)|\l\
+  Dbar, pD, DIC \u2588\l\
+  dataPoints \u2588\l\
+}",
+            fillcolor="#48C9B0", fontcolor=white
+        ];
+
+        bayesLeagueTable [
+            label="{leagueTable (Bayesian)   (Maybe)|\l\
+  Array(Array String)\l\
+  posterior medians + 95% CrI\l\
+}",
+            fillcolor="#48C9B0", fontcolor=white
+        ];
+
+        bayesResults -> bayesCompResult [label="nmaResults[ ]", color="#1ABC9C"];
+        bayesResults -> bayesTau [label="(Maybe)", color="#1ABC9C", style=dashed];
+        bayesResults -> bayesNodesplit [label="(Maybe)", color="#1ABC9C", style=dashed];
+        bayesResults -> sucraResult [label="(Maybe)", color="#1ABC9C", style=dashed];
+        bayesResults -> dicNode [label="(Maybe)", color="#1ABC9C", style=dashed];
+        bayesResults -> bayesLeagueTable [label="(Maybe)", color="#1ABC9C", style=dashed];
+    }
+
+    analysis -> bayesResults [label="bayesian | null", style=dashed, color="#1ABC9C"];
+
+    // ══════════════════════════════════════
+    // EVALUATION
+    // ══════════════════════════════════════
+    subgraph cluster_evaluation {
+        label="Evaluation (CINeMA domains) \u2014 nullable at project level";
+        style=rounded;
+        color="#D35400";
+        bgcolor="#FDF2E9";
+        fontsize=10;
+        fontcolor="#A04000";
+
+        evaluation [
+            label="{evaluation|\l\
+  studyLimitations\l\
+  heterogeneity\l\
+  incoherence\l\
+  imprecision\l\
+  indirectness\l\
+  reportingBias\l\
+  clinicalImportance\l\
+  report\l\
+}",
+            fillcolor="#D35400", fontcolor=white
+        ];
+
+        slDomain [
+            label="{studyLimitations (NetRobModel)|\l\
+  status: empty|ready\l\
+  rule: string\l\
+  customized: number\l\
+}",
+            fillcolor="#E67E22", fontcolor=white
+        ];
+
+        netRobBox [
+            label="{netRobBox (NetRob)|\l\
+  id: comparisonId \u2588\l\
+  judgement: int \u2588   (dflt: \u22121)\l\
+  color: string\l\
+  rules: robRule[ ]\l\
+}",
+            fillcolor="#F5B041", fontcolor="#4A235A"
+        ];
+
+        robRule [
+            label="{robRule|\l\
+  id: string \u2588\l\
+  name: string \u2588\l\
+  value: int \u2588\l\
+  isActive: bool\l\
+  label: string\l\
+}",
+            fillcolor="#FAD7A0", fontcolor="#7E5109"
+        ];
+
+        hetDomain [
+            label="{heterogeneity|\l\
+  heters: (status, boxes)\l\
+  referenceValues:\l\
+    (status, treatments: node[ ])\l\
+}",
+            fillcolor="#E67E22", fontcolor=white
+        ];
+
+        hetBox [
+            label="{heterogeneityBox|\l\
+  id \u2588, judgement \u2588\l\
+  ruleLevel: int\l\
+  levels: domainLevel[ ]\l\
+  label   (dflt: \"--\")\l\
+  color   (dflt: \"\")\l\
+  customized   (dflt: false)\l\
+}",
+            fillcolor="#F5B041", fontcolor="#4A235A"
+        ];
+
+        incDomain [
+            label="{incoherence|\l\
+  status: empty|ready\l\
+}",
+            fillcolor="#E67E22", fontcolor=white
+        ];
+
+        incBox [
+            label="{incoherenceBox|\l\
+  id \u2588, judgement \u2588\l\
+  ruleJudgement: int\l\
+    (NOT ruleLevel!)\l\
+  levels: incoherenceLevel[ ]\l\
+  label, color, customized\l\
+}",
+            fillcolor="#F5B041", fontcolor="#4A235A"
+        ];
+
+        incLevel [
+            label="{incoherenceLevel|\l\
+  id: int \u2588\l\
+  label: string\l\
+  isActive: bool\l\
+  color: string\l\
+}",
+            fillcolor="#FAD7A0", fontcolor="#7E5109"
+        ];
+
+        otherDomains [
+            label="{imprecision / indirectness\n/ reportingBias|\l\
+  status: empty|ready\l\
+}",
+            fillcolor="#E67E22", fontcolor=white
+        ];
+
+        otherBox [
+            label="{imprecision/indirectness/\npubbiasBox|\l\
+  id \u2588, judgement \u2588\l\
+  ruleLevel: int   (pub dflt: \u22121)\l\
+  levels: domainLevel[ ]\l\
+  label   (dflt: \"--\")\l\
+  color   (dflt: \"\")\l\
+  customized   (dflt: false)\l\
+}",
+            fillcolor="#F5B041", fontcolor="#4A235A"
+        ];
+
+        domainLevel [
+            label="{domainLevel|\l\
+  id: int \u2588\l\
+  color: string \u2588\l\
+}",
+            fillcolor="#FAD7A0", fontcolor="#7E5109"
+        ];
+
+        clinImp [
+            label="{clinicalImportance (ClinImp)|\l\
+  status: empty|ready\l\
+  question: string\l\
+  baseValue: number\l\
+  upperBound: number\l\
+  lowerBound: number\l\
+  emtype: effectMeasureType\l\
+}",
+            fillcolor="#E67E22", fontcolor=white
+        ];
+
+        evaluation -> slDomain [color="#D35400"];
+        evaluation -> hetDomain [color="#D35400"];
+        evaluation -> incDomain [color="#D35400"];
+        evaluation -> otherDomains [color="#D35400"];
+        evaluation -> clinImp [color="#D35400"];
+        slDomain -> netRobBox [label="boxes[ ]", color="#E67E22"];
+        netRobBox -> robRule [label="rules[ ]", color="#E67E22", style=dashed];
+        hetDomain -> hetBox [label="boxes[ ]", color="#E67E22"];
+        incDomain -> incBox [label="boxes[ ]", color="#E67E22"];
+        incBox -> incLevel [label="levels[ ]", color="#E67E22", style=dashed];
+        otherDomains -> otherBox [label="boxes[ ]", color="#E67E22"];
+        otherBox -> domainLevel [label="levels[ ]", color="#E67E22", style=dashed];
+        hetBox -> domainLevel [label="levels[ ]", color="#E67E22", style=dashed];
+    }
+
+    project -> evaluation [label="evaluation | null", style=bold, color="#D35400"];
+
+    // ══════════════════════════════════════
+    // REPORT
+    // ══════════════════════════════════════
+    subgraph cluster_report {
+        label="Report (inside evaluation)";
+        style=rounded;
+        color="#E74C3C";
+        bgcolor="#FDEDEC";
+        fontsize=10;
+        fontcolor="#922B21";
+
+        report [
+            label="{report|\l\
+  status: ready|notReady\l\
+  hasChanged: boolean\l\
+}",
+            fillcolor="#E74C3C", fontcolor=white
+        ];
+
+        reportRow [
+            label="{reportRow|\l\
+  id: comparisonId \u2588\l\
+  armA, armB: string\l\
+  numberOfStudies: int\l\
+  studyLimitation: reportStudyLim\l\
+  heterogeneity: hetBox\l\
+  incoherence: incBox\l\
+  imprecision: impBox\l\
+  indirectness: indrBox\l\
+  pubbias: pubBox\l\
+}",
+            fillcolor="#C0392B", fontcolor=white
+        ];
+
+        reportStudyLim [
+            label="{reportStudyLimitation|\l\
+  id: string \u2588\l\
+  value: int \u2588\l\
+  customized: bool\l\
+  label, color: string\l\
+  rules: robRule[ ]\l\
+}",
+            fillcolor="#D98880", fontcolor=white
+        ];
+
+        reportJudgement [
+            label="{reportJudgement|\l\
+  selected: reportLevel\l\
+  levels: reportLevel[ ]\l\
+  reasons: reportReason[ ]\l\
+}",
+            fillcolor="#C0392B", fontcolor=white
+        ];
+
+        reportLevel [
+            label="{reportLevel|\l\
+  id: int (0 to \u22123) \u2588\l\
+  label: string \u2588\l\
+  color: string\l\
+  selected: bool\l\
+}",
+            fillcolor="#E74C3C", fontcolor=white
+        ];
+
+        reportReason [
+            label="{reportReason|\l\
+  id: 1\u20136 \u2588\l\
+  label: string \u2588\l\
+  color: string\l\
+  allowed: bool\l\
+  selected: bool\l\
+}",
+            fillcolor="#E74C3C", fontcolor=white
+        ];
+
+        report -> reportRow [label="directRows[ ]\nindirectRows[ ]", color="#E74C3C"];
+        reportRow -> reportStudyLim [label="studyLimitation", color="#C0392B", style=dashed];
+        reportRow -> reportJudgement [label="judgement", color="#C0392B"];
+        reportJudgement -> reportLevel [label="selected / levels[ ]", color="#C0392B", style=dashed];
+        reportJudgement -> reportReason [label="reasons[ ]", color="#C0392B", style=dashed];
+    }
+
+    evaluation -> report [color="#D35400"];
+
+    // ── Legend ──
+    subgraph cluster_legend {
+        label="Legend";
+        style="rounded,dashed";
+        color="#BDC3C7";
+        fontsize=9;
+        fontcolor="#7F8C8D";
+        node [shape=box, fontsize=9, height=0.3, width=1.5];
+
+        l_req [label="\u2588 = required field", fillcolor=white, color="#2C3E50"];
+        l_maybe [label="(Maybe) = optional / nullable\nin PureScript", fillcolor=white, color="#8E44AD"];
+        l_cond [label="[cond] = conditional on\noutcome type / evidence", fillcolor=white, color="#E67E22"];
+        l_dflt [label="(dflt: x) = has default\nvalue if missing", fillcolor=white, color="#27AE60"];
+        l_dash [label="dashed edge = optional\nsolid edge = required", fillcolor=white, color="#7F8C8D"];
+
+        l_req -> l_maybe -> l_cond -> l_dflt -> l_dash [style=invis];
+
+        // Color swatches
+        l1 [label="Root", fillcolor="#2C3E50", fontcolor=white, width=0.8];
+        l2 [label="Project", fillcolor="#2980B9", fontcolor=white, width=0.8];
+        l3 [label="Dataset", fillcolor="#27AE60", fontcolor=white, width=0.8];
+        l4 [label="Analysis/Freq", fillcolor="#8E44AD", fontcolor=white, width=0.8];
+        l4b [label="Contrib Matrix", fillcolor="#6C3483", fontcolor=white, width=0.8];
+        l4c [label="Bayesian", fillcolor="#1ABC9C", fontcolor=white, width=0.8];
+        l5 [label="Evaluation", fillcolor="#D35400", fontcolor=white, width=0.8];
+        l6 [label="Domain Boxes", fillcolor="#F5B041", fontcolor="#4A235A", width=0.8];
+        l7 [label="Leaf types", fillcolor="#FAD7A0", fontcolor="#7E5109", width=0.8];
+        l8 [label="Report", fillcolor="#E74C3C", fontcolor=white, width=0.8];
+
+        l1 -> l2 -> l3 -> l4 -> l4b -> l4c -> l5 -> l6 -> l7 -> l8 [style=invis];
+    }
+}

@@ -1,0 +1,1274 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cinema.ispm.unibe.ch/schema/v3",
+  "title": "CINeMA Exchange Schema v3",
+  "description": "Schema for CINeMA (Confidence in Network Meta-Analysis) project files. A .cnm file contains a collection of self-contained projects, each with one dataset, one analysis, and optionally one CINeMA evaluation. Designed for interoperability with MetaInsight and other NMA software. Type definitions mirror the PureScript model (Model.purs, ComparisonModel.purs, etc.).",
+  "type": "object",
+  "properties": {
+    "cinema": {
+      "type": "object",
+      "description": "Root container for a CINeMA file.",
+      "properties": {
+
+        "version": {
+          "type": "string",
+          "description": "Schema version.",
+          "const": "3.0.0"
+        },
+
+        "title": {
+          "type": "string",
+          "description": "Collection title (e.g. systematic review name)."
+        },
+
+        "description": {
+          "type": "string",
+          "description": "Collection description."
+        },
+
+        "author": {
+          "type": "string",
+          "description": "Author or team name."
+        },
+
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when this collection was created."
+        },
+
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of last modification."
+        },
+
+        "projects": {
+          "type": "array",
+          "description": "Array of self-contained projects. Each project has one dataset, one analysis, and optionally one CINeMA evaluation. A file may contain one or many projects (e.g. MetaInsight may export up to 4: frequentist/Bayesian x full/subset).",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/project"
+          }
+        }
+
+      },
+      "required": ["version", "projects"]
+    }
+  },
+  "required": ["cinema"],
+
+  "definitions": {
+
+    "treatmentId": {
+      "description": "Mirrors PureScript `data TreatmentId = StringId String | IntId Int`. In JSON the value may appear as a string ('ACE', '1') or a bare integer (1). Strings that parse as integers are normalised to IntId by the decoder. Consumers should normalise by converting integers to strings for display.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "integer" }
+      ]
+    },
+
+    "comparisonId": {
+      "description": "Treatment comparison identifier: 'TreatA:TreatB' (alphabetically sorted). Always a string.",
+      "type": "string",
+      "pattern": "^.+:.+$"
+    },
+
+    "effectMeasureType": {
+      "description": "Mirrors PureScript `data EffectMeasureType = RR | OR | RD | MD | SMD`. Decoded from a JSON string.",
+      "type": "string",
+      "enum": ["OR", "RR", "RD", "MD", "SMD"]
+    },
+
+    "project": {
+      "type": "object",
+      "description": "A self-contained project: one dataset + one analysis + one optional CINeMA evaluation. Each project is independently exportable.",
+      "properties": {
+
+        "id": {
+          "type": "string",
+          "description": "Unique project identifier (UUID or hash)."
+        },
+
+        "title": {
+          "type": "string",
+          "description": "Project title (e.g. 'Mortality - Frequentist Random-Effects OR')."
+        },
+
+        "description": {
+          "type": "string",
+          "description": "Project description."
+        },
+
+        "outcome": {
+          "type": "string",
+          "description": "Outcome being analysed (e.g. 'mortality', 'hospitalization')."
+        },
+
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when this project was created."
+        },
+
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of last modification."
+        },
+
+        "dataset": {
+          "$ref": "#/definitions/dataset",
+          "description": "The study data for this project (one CSV worth of arm-level data)."
+        },
+
+        "analysis": {
+          "oneOf": [
+            { "$ref": "#/definitions/analysis" },
+            { "type": "null" }
+          ],
+          "description": "NMA analysis results. Null if not yet computed."
+        },
+
+        "evaluation": {
+          "oneOf": [
+            { "$ref": "#/definitions/evaluation" },
+            { "type": "null" }
+          ],
+          "description": "CINeMA domain assessments and confidence report. Null if not yet evaluated."
+        },
+
+        "hasEvaluation": {
+          "type": "boolean",
+          "description": "Quick flag: true if this project has a CINeMA evaluation."
+        }
+
+      },
+      "required": ["dataset"]
+    },
+
+    "dataset": {
+      "type": "object",
+      "description": "Study data for one NMA. Corresponds to one uploaded CSV. Contains both the raw arm-level data and the processed network structure.",
+      "properties": {
+
+        "format": {
+          "type": "string",
+          "enum": ["long", "wide", "iv"],
+          "description": "Data format: 'long' (arm-level), 'wide' (contrast-level), or 'iv' (inverse-variance pre-computed)."
+        },
+
+        "type": {
+          "type": "string",
+          "enum": ["binary", "continuous"],
+          "description": "Outcome type."
+        },
+
+        "studies": {
+          "type": "array",
+          "description": "Study arm-level data. Each element is one arm of one study.",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/definitions/studyArm"
+          }
+        },
+
+        "nodes": {
+          "type": "array",
+          "description": "Treatment nodes in the network (computed from studies). Mirrors PureScript `Node`.",
+          "items": {
+            "$ref": "#/definitions/node"
+          }
+        },
+
+        "directComparisons": {
+          "type": "array",
+          "description": "Direct comparisons observed in the data. Mirrors PureScript `Comparison`.",
+          "items": {
+            "$ref": "#/definitions/comparison"
+          }
+        },
+
+        "indirectComparisons": {
+          "type": "array",
+          "description": "Indirect comparison IDs (treatment pairs not directly observed).",
+          "items": {
+            "$ref": "#/definitions/comparisonId"
+          }
+        },
+
+        "robLevels": {
+          "type": "array",
+          "description": "Risk of bias level definitions. Mirrors PureScript `RoBLevel`.",
+          "items": {
+            "$ref": "#/definitions/robLevel"
+          }
+        }
+
+      },
+      "required": ["format", "type", "studies"]
+    },
+
+    "studyArm": {
+      "type": "object",
+      "description": "One arm of one study. Mirrors PureScript `StudyArm` from SchemaV2. Fields `study`, `id`, and `treatment` use `TreatmentId` (string-or-integer union).",
+      "properties": {
+        "study": {
+          "$ref": "#/definitions/treatmentId",
+          "description": "Study label. Can be a string ('ALLHAT') or a numeric identifier (1)."
+        },
+        "id": {
+          "$ref": "#/definitions/treatmentId",
+          "description": "Study identifier. Must be consistent across arms of the same study."
+        },
+        "treatment": {
+          "$ref": "#/definitions/treatmentId",
+          "description": "Treatment name. Can be a string ('ACE') or a numeric identifier (1)."
+        },
+        "events": {
+          "type": "integer",
+          "description": "Number of events (binary outcomes only).",
+          "minimum": 0
+        },
+        "n": {
+          "type": "integer",
+          "description": "Sample size.",
+          "minimum": 1
+        },
+        "mean": {
+          "type": "number",
+          "description": "Mean outcome (continuous outcomes only)."
+        },
+        "sd": {
+          "type": "number",
+          "description": "Standard deviation (continuous outcomes only).",
+          "exclusiveMinimum": 0
+        },
+        "rob": {
+          "type": "integer",
+          "description": "Risk of bias: 1=Low, 2=Some concerns/Unclear, 3=High.",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "indirectness": {
+          "type": "integer",
+          "description": "Indirectness: 1=Low, 2=Moderate, 3=High.",
+          "minimum": 1,
+          "maximum": 3
+        }
+      },
+      "required": ["study", "id", "treatment", "n", "rob", "indirectness"],
+      "oneOf": [
+        {
+          "description": "Binary outcome: events required, mean/sd forbidden.",
+          "required": ["events"],
+          "not": {
+            "anyOf": [
+              { "required": ["mean"] },
+              { "required": ["sd"] }
+            ]
+          }
+        },
+        {
+          "description": "Continuous outcome: mean and sd required, events forbidden.",
+          "required": ["mean", "sd"],
+          "not": { "required": ["events"] }
+        }
+      ]
+    },
+
+    "node": {
+      "type": "object",
+      "description": "A treatment node in the network. Mirrors PureScript `Node` from ComparisonModel.",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/treatmentId",
+          "description": "Treatment identifier (TreatmentId: string or integer)."
+        },
+        "label": {
+          "type": "string",
+          "description": "Human-readable treatment label."
+        },
+        "numStudies": {
+          "type": "integer",
+          "description": "Number of studies involving this treatment.",
+          "minimum": 0
+        },
+        "sampleSize": {
+          "type": "integer",
+          "description": "Total sample size across all studies for this treatment.",
+          "minimum": 0
+        },
+        "interventionType": {
+          "type": "array",
+          "description": "Intervention classification. Mirrors PureScript `InterventionType`.",
+          "items": {
+            "$ref": "#/definitions/interventionType"
+          }
+        }
+      },
+      "required": ["id"]
+    },
+
+    "interventionType": {
+      "type": "object",
+      "description": "Intervention classification for a treatment node. Mirrors PureScript `InterventionType`.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Type identifier.",
+          "enum": ["notset", "Pharmacological", "Placebo/Control", "Non-pharmacological"]
+        },
+        "label": { "type": "string" },
+        "isSelected": { "type": "boolean" },
+        "isActive": { "type": "boolean" },
+        "isDisabled": { "type": "boolean" }
+      },
+      "required": ["id", "label", "isSelected"]
+    },
+
+    "comparison": {
+      "type": "object",
+      "description": "A direct comparison between two treatments. Mirrors PureScript `Comparison`.",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/comparisonId",
+          "description": "Comparison identifier ('TreatA:TreatB')."
+        },
+        "t1": {
+          "$ref": "#/definitions/treatmentId",
+          "description": "First treatment (TreatmentId)."
+        },
+        "t2": {
+          "$ref": "#/definitions/treatmentId",
+          "description": "Second treatment (TreatmentId)."
+        },
+        "numStudies": {
+          "type": "integer",
+          "description": "Number of studies for this comparison.",
+          "minimum": 1
+        }
+      },
+      "required": ["id", "t1", "t2", "numStudies"]
+    },
+
+    "robLevel": {
+      "type": "object",
+      "description": "Risk of bias level definition. Mirrors PureScript `RoBLevel`.",
+      "properties": {
+        "id": { "type": "integer" },
+        "color": { "type": "string" },
+        "label": { "type": "string" }
+      },
+      "required": ["id", "color", "label"]
+    },
+
+    "analysis": {
+      "type": "object",
+      "description": "A complete NMA analysis. Separates the contribution matrix infrastructure (always frequentist, always needed for CINeMA) from framework-specific NMA results. Both MetaInsight and CINeMA validate against this definition. When framework='frequentist', bayesian is null. When framework='bayesian', both frequentist and bayesian blocks are populated. PREFERENCE RULE: when framework='bayesian' and a quantity exists in both blocks (effect estimates, prediction intervals, nodesplit, league table, tau), CINeMA reads from the bayesian block. The frequentist block provides fallback values and quantities the Bayesian model cannot compute (hat matrix, study contributions, propDirect, design-by-treatment test, sensitivity league tables).",
+      "properties": {
+
+        "params": {
+          "$ref": "#/definitions/analysisParams"
+        },
+
+        "contributionMatrix": {
+          "$ref": "#/definitions/contributionMatrix",
+          "description": "Hat matrix and study contribution percentages. Always computed via frequentist methods (netmeta). Required for all CINeMA domain assessments."
+        },
+
+        "frequentist": {
+          "$ref": "#/definitions/frequentistResults",
+          "description": "Frequentist NMA results from netmeta. Always present regardless of framework. Provides netsplit (direct/indirect decomposition), prediction intervals, heterogeneity statistics, and league tables."
+        },
+
+        "bayesian": {
+          "oneOf": [
+            { "$ref": "#/definitions/bayesianResults" },
+            { "type": "null" }
+          ],
+          "description": "Bayesian NMA results from gemtc or similar. Present only when params.framework='bayesian'. Contains posterior treatment effects, credible intervals, tau posterior, nodesplit, SUCRA, and DIC."
+        }
+
+      },
+      "required": ["params", "contributionMatrix", "frequentist"]
+    },
+
+    "analysisParams": {
+      "type": "object",
+      "description": "Parameters identifying this analysis. The tuple (model, sm, framework) serves as the cache key. Both CINeMA and MetaInsight use this to label and identify the analysis.",
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": ["fixed", "random"],
+          "description": "Meta-analysis model type. Maps to PureScript CMParameters.MAModel."
+        },
+        "sm": {
+          "$ref": "#/definitions/effectMeasureType",
+          "description": "Summary measure (OR, RR, RD, MD, SMD)."
+        },
+        "framework": {
+          "type": "string",
+          "enum": ["frequentist", "bayesian"],
+          "description": "Primary statistical framework. Determines which result set is used for reporting. Both frequentist and bayesian blocks may coexist.",
+          "default": "frequentist"
+        },
+        "tau": {
+          "type": "number",
+          "description": "Frequentist heterogeneity standard deviation (tau). 0 for fixed-effect models.",
+          "minimum": 0
+        },
+        "label": {
+          "type": "string",
+          "description": "Human-readable label for this analysis (e.g. 'Random-effects OR, frequentist')."
+        }
+      },
+      "required": ["model", "sm"]
+    },
+
+    "contributionMatrix": {
+      "type": "object",
+      "description": "Hat matrix and study contributions. Always computed via frequentist methods (netmeta). This is the core infrastructure CINeMA needs for domain assessments (study limitations weighting, etc.).",
+      "properties": {
+        "hatMatrix": {
+          "$ref": "#/definitions/hatMatrix"
+        },
+        "studyContributions": {
+          "$ref": "#/definitions/studyContributions"
+        }
+      },
+      "required": ["hatMatrix", "studyContributions"]
+    },
+
+    "frequentistResults": {
+      "type": "object",
+      "description": "Frequentist NMA results from netmeta. Always present regardless of framework. When framework='frequentist', these are the primary results. When framework='bayesian', these serve as fallback and provide quantities the Bayesian model cannot compute (propDirect, pairwise heterogeneity decomposition, design-by-treatment test, sensitivity league tables). Contains per-comparison effects (with netsplit decomposition and prediction intervals), pairwise heterogeneity, network heterogeneity, design-by-treatment test, and league tables.",
+      "properties": {
+        "nmaResults": {
+          "type": "array",
+          "description": "Per-comparison frequentist NMA results including netsplit and prediction intervals. Mirrors PureScript `ComparisonResult`.",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/comparisonResult"
+          }
+        },
+        "pairwise": {
+          "type": "array",
+          "description": "Per-direct-comparison pairwise meta-analysis heterogeneity. Mirrors PureScript `PairwiseResult`.",
+          "items": {
+            "$ref": "#/definitions/pairwiseResult"
+          }
+        },
+        "networkHeterogeneity": {
+          "$ref": "#/definitions/networkHeterogeneity"
+        },
+        "designByTreatment": {
+          "$ref": "#/definitions/designByTreatment"
+        },
+        "leagueTable": {
+          "$ref": "#/definitions/leagueTable"
+        },
+        "sensitivityLeagueTables": {
+          "$ref": "#/definitions/sensitivityLeagueTables"
+        }
+      },
+      "required": ["nmaResults"]
+    },
+
+    "bayesianResults": {
+      "type": "object",
+      "description": "Bayesian NMA results from gemtc or similar MCMC-based software. Present only when params.framework='bayesian'. When present, these are the PRIMARY results for CINeMA: effect estimates, prediction intervals, nodesplit, league table, and tau should all be read from here rather than from the frequentist block. The frequentist block still provides the contribution matrix infrastructure, propDirect, and any quantities the Bayesian model does not compute.",
+      "properties": {
+        "nmaResults": {
+          "type": "array",
+          "description": "Per-comparison Bayesian NMA results. These are the PRIMARY effect estimates when framework='bayesian'. CINeMA should prefer these over frequentist.nmaResults for reporting, imprecision assessment, and any domain that uses treatment effects or intervals.",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/bayesianComparisonResult"
+          }
+        },
+        "tau": {
+          "$ref": "#/definitions/bayesianTau",
+          "description": "Posterior between-study SD. When present, this is the PRIMARY tau for CINeMA (preferred over frequentist networkHeterogeneity.tau2)."
+        },
+        "nodesplit": {
+          "type": "array",
+          "description": "Bayesian nodesplit (inconsistency) results. When present, these are the PRIMARY inconsistency estimates (preferred over frequentist netsplit in comparisonResult.direct/indirect/incoherence). From gemtc::mtc.nodesplit.",
+          "items": {
+            "$ref": "#/definitions/bayesianNodesplit"
+          }
+        },
+        "sucra": {
+          "type": "array",
+          "description": "SUCRA rankings per treatment. Bayesian-specific (no frequentist equivalent).",
+          "items": {
+            "$ref": "#/definitions/sucraResult"
+          }
+        },
+        "dic": {
+          "$ref": "#/definitions/dic",
+          "description": "Deviance Information Criterion. Bayesian-specific (no frequentist equivalent)."
+        },
+        "leagueTable": {
+          "$ref": "#/definitions/leagueTable",
+          "description": "Bayesian league table (posterior medians + 95% CrI). When present, this is the PRIMARY league table (preferred over frequentist leagueTable)."
+        }
+      },
+      "required": ["nmaResults"]
+    },
+
+    "bayesianComparisonResult": {
+      "type": "object",
+      "description": "Bayesian NMA result for a single treatment comparison. When params.framework='bayesian', these are the PRIMARY effect estimates for CINeMA. Contains posterior means/medians with credible intervals and optionally predictive intervals. From gemtc::relative.effect.table.",
+      "properties": {
+        "comparison": {
+          "$ref": "#/definitions/comparisonId",
+          "description": "Treatment comparison identifier."
+        },
+        "effect": {
+          "type": "number",
+          "description": "Posterior mean/median treatment effect (log-scale for ratio measures)."
+        },
+        "se": {
+          "type": "number",
+          "description": "Posterior standard deviation of the treatment effect (if available).",
+          "minimum": 0
+        },
+        "ciLower": {
+          "type": "number",
+          "description": "Lower bound of the 95% credible interval."
+        },
+        "ciUpper": {
+          "type": "number",
+          "description": "Upper bound of the 95% credible interval."
+        },
+        "priLower": {
+          "type": "number",
+          "description": "Lower bound of the 95% predictive interval. When provided by the Bayesian model, CINeMA prefers this over the frequentist prediction interval."
+        },
+        "priUpper": {
+          "type": "number",
+          "description": "Upper bound of the 95% predictive interval. When provided by the Bayesian model, CINeMA prefers this over the frequentist prediction interval."
+        }
+      },
+      "required": ["comparison", "effect", "ciLower", "ciUpper"]
+    },
+
+    "bayesianTau": {
+      "type": "object",
+      "description": "Posterior between-study standard deviation from the Bayesian model. From gemtc summary sd.d parameter.",
+      "properties": {
+        "mean": {
+          "type": "number",
+          "description": "Posterior mean of between-study SD.",
+          "minimum": 0
+        },
+        "ciLower": {
+          "type": "number",
+          "description": "Lower bound of the 95% credible interval for SD.",
+          "minimum": 0
+        },
+        "ciUpper": {
+          "type": "number",
+          "description": "Upper bound of the 95% credible interval for SD.",
+          "minimum": 0
+        }
+      },
+      "required": ["mean", "ciLower", "ciUpper"]
+    },
+
+    "bayesianNodesplit": {
+      "type": "object",
+      "description": "Bayesian nodesplit (inconsistency test) for one comparison. From gemtc::mtc.nodesplit. Decomposes the network estimate into direct and indirect posterior estimates.",
+      "properties": {
+        "comparison": {
+          "$ref": "#/definitions/comparisonId"
+        },
+        "direct": {
+          "type": "object",
+          "description": "Direct evidence posterior estimate.",
+          "properties": {
+            "effect": { "type": "number" },
+            "ciLower": { "type": "number" },
+            "ciUpper": { "type": "number" }
+          },
+          "required": ["effect", "ciLower", "ciUpper"]
+        },
+        "indirect": {
+          "type": "object",
+          "description": "Indirect evidence posterior estimate.",
+          "properties": {
+            "effect": { "type": "number" },
+            "ciLower": { "type": "number" },
+            "ciUpper": { "type": "number" }
+          },
+          "required": ["effect", "ciLower", "ciUpper"]
+        },
+        "pvalue": {
+          "type": "number",
+          "description": "Bayesian p-value for inconsistency.",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": ["comparison", "direct", "indirect", "pvalue"]
+    },
+
+    "sucraResult": {
+      "type": "object",
+      "description": "SUCRA ranking result for one treatment. From gemtc or BUGSnet ranking functions.",
+      "properties": {
+        "treatment": {
+          "$ref": "#/definitions/treatmentId",
+          "description": "Treatment identifier."
+        },
+        "sucra": {
+          "type": "number",
+          "description": "SUCRA percentage (0-100). Higher = better ranking.",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "rankProbabilities": {
+          "type": "array",
+          "description": "Probability of each rank (1=best to n_treatments=worst).",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "required": ["treatment", "sucra"]
+    },
+
+    "dic": {
+      "type": "object",
+      "description": "Deviance Information Criterion from the Bayesian model. From gemtc::summary()$DIC.",
+      "properties": {
+        "Dbar": {
+          "type": "number",
+          "description": "Posterior mean of the deviance."
+        },
+        "pD": {
+          "type": "number",
+          "description": "Effective number of parameters."
+        },
+        "DIC": {
+          "type": "number",
+          "description": "Deviance Information Criterion (Dbar + pD)."
+        },
+        "dataPoints": {
+          "type": "integer",
+          "description": "Number of data points.",
+          "minimum": 1
+        }
+      },
+      "required": ["Dbar", "pD", "DIC", "dataPoints"]
+    },
+
+    "hatMatrix": {
+      "type": "object",
+      "description": "The hat (projection) matrix H from NMA. Mirrors PureScript `HatMatrix`.",
+      "properties": {
+        "H": {
+          "type": "array",
+          "description": "2D numeric matrix. Rows = all network comparisons, Columns = direct comparisons.",
+          "minItems": 1,
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "number" }
+          }
+        },
+        "rowNames": {
+          "type": "array",
+          "description": "Row labels (all network comparisons).",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/definitions/comparisonId" }
+        },
+        "colNames": {
+          "type": "array",
+          "description": "Column labels (direct comparisons).",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/definitions/comparisonId" }
+        }
+      },
+      "required": ["H", "rowNames", "colNames"]
+    },
+
+    "comparisonResult": {
+      "type": "object",
+      "description": "NMA results for a single treatment comparison. Mirrors PureScript `ComparisonResult`.",
+      "properties": {
+
+        "comparison": {
+          "$ref": "#/definitions/comparisonId",
+          "description": "Treatment comparison identifier."
+        },
+
+        "effect": {
+          "type": "number",
+          "description": "Pooled NMA treatment effect (log-scale for ratio measures)."
+        },
+        "se": {
+          "type": "number",
+          "description": "Standard error of the NMA treatment effect.",
+          "minimum": 0
+        },
+        "ciLower": {
+          "type": "number",
+          "description": "Lower bound of the 95% confidence interval."
+        },
+        "ciUpper": {
+          "type": "number",
+          "description": "Upper bound of the 95% confidence interval."
+        },
+        "priLower": {
+          "type": "number",
+          "description": "Lower bound of the 95% prediction interval."
+        },
+        "priUpper": {
+          "type": "number",
+          "description": "Upper bound of the 95% prediction interval."
+        },
+        "propDirect": {
+          "type": "number",
+          "description": "Proportion of direct evidence (0 to 1).",
+          "minimum": 0,
+          "maximum": 1
+        },
+
+        "direct": {
+          "type": "object",
+          "description": "Direct evidence estimate. Mirrors PureScript `DirectEstimate`. Present only for comparisons with direct evidence.",
+          "properties": {
+            "effect": { "type": "number" },
+            "ciLower": { "type": "number" },
+            "ciUpper": { "type": "number" }
+          },
+          "required": ["effect", "ciLower", "ciUpper"]
+        },
+
+        "indirect": {
+          "type": "object",
+          "description": "Indirect evidence estimate. Mirrors PureScript `IndirectEstimate`. Present only for comparisons with indirect evidence.",
+          "properties": {
+            "effect": { "type": "number" },
+            "ciLower": { "type": "number" },
+            "ciUpper": { "type": "number" }
+          },
+          "required": ["effect", "ciLower", "ciUpper"]
+        },
+
+        "incoherence": {
+          "type": "object",
+          "description": "SIDE incoherence test. Mirrors PureScript `IncoherenceTest`. Present only for comparisons with both direct and indirect evidence.",
+          "properties": {
+            "effect": { "type": "number", "description": "Incoherence factor." },
+            "ciLower": { "type": "number" },
+            "ciUpper": { "type": "number" },
+            "z": { "type": "number", "description": "Z test statistic." },
+            "pvalue": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "required": ["effect", "ciLower", "ciUpper", "z", "pvalue"]
+        }
+
+      },
+      "required": ["comparison", "effect", "se", "ciLower", "ciUpper", "priLower", "priUpper", "propDirect"],
+      "dependencies": {
+        "incoherence": ["direct", "indirect"]
+      }
+    },
+
+    "pairwiseResult": {
+      "type": "object",
+      "description": "Pairwise meta-analysis heterogeneity for a direct comparison. Mirrors PureScript `PairwiseResult`.",
+      "properties": {
+        "comparison": {
+          "$ref": "#/definitions/comparisonId"
+        },
+        "tau2": {
+          "type": "number",
+          "description": "Between-study variance (tau-squared).",
+          "minimum": 0
+        },
+        "I2": {
+          "type": "number",
+          "description": "I-squared heterogeneity statistic (0 to 1).",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "I2Lower": {
+          "type": "number",
+          "description": "Lower 95% CI for I-squared."
+        },
+        "I2Upper": {
+          "type": "number",
+          "description": "Upper 95% CI for I-squared."
+        }
+      },
+      "required": ["comparison", "tau2", "I2"]
+    },
+
+    "networkHeterogeneity": {
+      "type": "object",
+      "description": "Network-level heterogeneity statistics. Mirrors PureScript `NetworkHeterogeneity`.",
+      "properties": {
+        "tau2": { "type": "number", "minimum": 0 },
+        "Qoverall": { "type": "number", "minimum": 0 },
+        "Qheterogeneity": { "type": "number", "minimum": 0 },
+        "Qinconsistency": { "type": "number", "minimum": 0 }
+      },
+      "required": ["tau2"]
+    },
+
+    "designByTreatment": {
+      "type": "object",
+      "description": "Design-by-treatment interaction test for global network inconsistency. Mirrors PureScript `DesignByTreatment`.",
+      "properties": {
+        "Q": { "type": "number", "minimum": 0 },
+        "df": { "type": "number", "minimum": 0 },
+        "pvalue": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "required": ["Q", "df", "pvalue"]
+    },
+
+    "studyContributions": {
+      "type": "object",
+      "description": "Per-comparison, per-study percentage contributions. Mirrors PureScript `type StudyContributions = Object (Object Number)`. Keys are comparison IDs, values map study identifiers to percentages (0-100).",
+      "patternProperties": {
+        "^.+:.+$": {
+          "type": "object",
+          "patternProperties": {
+            "^.+$": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "leagueTable": {
+      "type": "array",
+      "description": "League table matrix. Mirrors PureScript `type LeagueTable = Array (Array String)`. Diagonal = treatment names, off-diagonal = formatted effect estimates with 95% CIs.",
+      "items": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+
+    "sensitivityLeagueTables": {
+      "type": "object",
+      "description": "Sensitivity analysis league tables filtered by RoB. Mirrors PureScript `SensitivityLeagueTables`.",
+      "properties": {
+        "lowRoB": {
+          "$ref": "#/definitions/leagueTable",
+          "description": "League table using only studies with rob=1 (Low)."
+        },
+        "lowModerateRoB": {
+          "$ref": "#/definitions/leagueTable",
+          "description": "League table using studies with rob=1 or rob=2."
+        }
+      }
+    },
+
+    "evaluation": {
+      "type": "object",
+      "description": "CINeMA domain assessments and confidence report for one project. Groups all six domains, clinical importance settings, and the final report.",
+      "properties": {
+
+        "studyLimitations": {
+          "$ref": "#/definitions/studyLimitationsDomain",
+          "description": "Within-study bias (Risk of Bias) domain. Mirrors PureScript `NetRobModel`."
+        },
+
+        "heterogeneity": {
+          "$ref": "#/definitions/heterogeneityDomain",
+          "description": "Heterogeneity domain. Mirrors PureScript `Heterogeneity`."
+        },
+
+        "incoherence": {
+          "$ref": "#/definitions/incoherenceDomain",
+          "description": "Incoherence domain. Mirrors PureScript `Incoherence`."
+        },
+
+        "imprecision": {
+          "$ref": "#/definitions/imprecisionDomain",
+          "description": "Imprecision domain. Mirrors PureScript `Imprecision`."
+        },
+
+        "indirectness": {
+          "$ref": "#/definitions/indirectnessDomain",
+          "description": "Indirectness domain. Mirrors PureScript `Indirectness`."
+        },
+
+        "reportingBias": {
+          "$ref": "#/definitions/pubbiasDomain",
+          "description": "Reporting bias domain. Mirrors PureScript `Pubbias`."
+        },
+
+        "clinicalImportance": {
+          "$ref": "#/definitions/clinicalImportance",
+          "description": "Clinical importance thresholds. Mirrors PureScript `ClinImp`."
+        },
+
+        "report": {
+          "$ref": "#/definitions/report",
+          "description": "The CINeMA confidence report. Mirrors PureScript `Report`."
+        }
+
+      }
+    },
+
+    "studyLimitationsDomain": {
+      "type": "object",
+      "description": "Within-study bias domain. Mirrors PureScript `NetRobModel > StudyLimitations`.",
+      "properties": {
+        "status": { "type": "string", "enum": ["empty", "ready"] },
+        "rule": { "type": "string", "description": "Aggregation rule (e.g. 'majority', 'maximum', 'mean')." },
+        "customized": { "type": "number", "description": "Number of manually overridden judgements." },
+        "boxes": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/netRobBox" }
+        }
+      }
+    },
+
+    "netRobBox": {
+      "type": "object",
+      "description": "Study limitations judgement for one comparison. Mirrors PureScript `NetRob`.",
+      "properties": {
+        "id": { "$ref": "#/definitions/comparisonId" },
+        "judgement": { "type": "integer", "description": "Judgement level. -1 = not set.", "default": -1 },
+        "color": { "type": "string" },
+        "rules": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/robRule" }
+        }
+      },
+      "required": ["id", "judgement"]
+    },
+
+    "robRule": {
+      "type": "object",
+      "description": "An aggregation rule option. Mirrors PureScript `RobRule`.",
+      "properties": {
+        "id": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "label": { "type": "string" },
+        "name": { "type": "string" },
+        "value": { "type": "integer" }
+      },
+      "required": ["id", "name", "value"]
+    },
+
+    "heterogeneityDomain": {
+      "type": "object",
+      "description": "Heterogeneity domain. Mirrors PureScript `Heterogeneity`.",
+      "properties": {
+        "heters": {
+          "type": "object",
+          "description": "Heterogeneity assessment boxes. Mirrors PureScript `Heters`.",
+          "properties": {
+            "status": { "type": "string", "enum": ["empty", "ready"] },
+            "boxes": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/heterogeneityBox" }
+            }
+          }
+        },
+        "referenceValues": {
+          "type": "object",
+          "description": "Reference values for heterogeneity. Mirrors PureScript `ReferenceValues`.",
+          "properties": {
+            "status": { "type": "string" },
+            "treatments": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/node" }
+            }
+          }
+        }
+      }
+    },
+
+    "heterogeneityBox": {
+      "type": "object",
+      "description": "Heterogeneity judgement for one comparison. Mirrors PureScript `HeterogeneityBox`.",
+      "properties": {
+        "id": { "$ref": "#/definitions/comparisonId" },
+        "judgement": { "type": "integer" },
+        "label": { "type": "string", "default": "--" },
+        "levels": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/domainLevel" }
+        },
+        "color": { "type": "string", "default": "" },
+        "ruleLevel": { "type": "integer" },
+        "customized": { "type": "boolean", "default": false }
+      },
+      "required": ["id", "judgement"]
+    },
+
+    "incoherenceDomain": {
+      "type": "object",
+      "description": "Incoherence domain. Mirrors PureScript `Incoherence`.",
+      "properties": {
+        "status": { "type": "string", "enum": ["empty", "ready"] },
+        "boxes": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/incoherenceBox" }
+        }
+      }
+    },
+
+    "incoherenceBox": {
+      "type": "object",
+      "description": "Incoherence judgement for one comparison. Mirrors PureScript `IncoherenceBox`. Note: uses `ruleJudgement` (not `ruleLevel` like other boxes).",
+      "properties": {
+        "id": { "$ref": "#/definitions/comparisonId" },
+        "judgement": { "type": "integer" },
+        "label": { "type": "string" },
+        "levels": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/incoherenceLevel" }
+        },
+        "color": { "type": "string" },
+        "ruleJudgement": { "type": "integer", "description": "Rule-derived judgement (distinct field name from other box types)." },
+        "customized": { "type": "boolean" }
+      },
+      "required": ["id", "judgement"]
+    },
+
+    "incoherenceLevel": {
+      "type": "object",
+      "description": "Incoherence level option. Mirrors PureScript `IncoherenceLevel`. Has extra fields vs other domain levels.",
+      "properties": {
+        "id": { "type": "integer" },
+        "label": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "color": { "type": "string" }
+      },
+      "required": ["id"]
+    },
+
+    "imprecisionDomain": {
+      "type": "object",
+      "description": "Imprecision domain. Mirrors PureScript `Imprecision`.",
+      "properties": {
+        "status": { "type": "string", "enum": ["empty", "ready"] },
+        "boxes": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/imprecisionBox" }
+        }
+      }
+    },
+
+    "imprecisionBox": {
+      "type": "object",
+      "description": "Imprecision judgement for one comparison. Mirrors PureScript `ImprecisionBox`.",
+      "properties": {
+        "id": { "$ref": "#/definitions/comparisonId" },
+        "judgement": { "type": "integer" },
+        "label": { "type": "string", "default": "--" },
+        "levels": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/domainLevel" }
+        },
+        "color": { "type": "string", "default": "" },
+        "ruleLevel": { "type": "integer" },
+        "customized": { "type": "boolean", "default": false }
+      },
+      "required": ["id", "judgement"]
+    },
+
+    "indirectnessDomain": {
+      "type": "object",
+      "description": "Indirectness domain. Mirrors PureScript `Indirectness`.",
+      "properties": {
+        "status": { "type": "string", "enum": ["empty", "ready"] },
+        "boxes": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/indirectnessBox" }
+        }
+      }
+    },
+
+    "indirectnessBox": {
+      "type": "object",
+      "description": "Indirectness judgement for one comparison. Mirrors PureScript `IndirectnessBox`.",
+      "properties": {
+        "id": { "$ref": "#/definitions/comparisonId" },
+        "judgement": { "type": "integer" },
+        "label": { "type": "string", "default": "--" },
+        "levels": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/domainLevel" }
+        },
+        "color": { "type": "string", "default": "" },
+        "ruleLevel": { "type": "integer" },
+        "customized": { "type": "boolean", "default": false }
+      },
+      "required": ["id", "judgement"]
+    },
+
+    "pubbiasDomain": {
+      "type": "object",
+      "description": "Reporting bias domain. Mirrors PureScript `Pubbias`.",
+      "properties": {
+        "status": { "type": "string", "enum": ["empty", "ready"] },
+        "boxes": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/pubbiasBox" }
+        }
+      }
+    },
+
+    "pubbiasBox": {
+      "type": "object",
+      "description": "Reporting bias judgement for one comparison. Mirrors PureScript `PubbiasBox`. Note: ruleLevel defaults to -1.",
+      "properties": {
+        "id": { "$ref": "#/definitions/comparisonId" },
+        "judgement": { "type": "integer" },
+        "label": { "type": "string", "default": "--" },
+        "levels": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/domainLevel" }
+        },
+        "color": { "type": "string", "default": "" },
+        "ruleLevel": { "type": "integer", "default": -1 },
+        "customized": { "type": "boolean", "default": false }
+      },
+      "required": ["id", "judgement"]
+    },
+
+    "domainLevel": {
+      "type": "object",
+      "description": "A judgement level option shared by heterogeneity, imprecision, indirectness, and pubbias domains. Mirrors PureScript `HeterogeneityLevel` / `ImprecisionLevel` / `IndirectnessLevel` / `PubbiasLevel`.",
+      "properties": {
+        "id": { "type": "integer" },
+        "color": { "type": "string" }
+      },
+      "required": ["id", "color"]
+    },
+
+    "clinicalImportance": {
+      "type": "object",
+      "description": "Clinical importance thresholds. Mirrors PureScript `ClinImp`.",
+      "properties": {
+        "status": { "type": "string", "enum": ["empty", "ready"] },
+        "question": { "type": "string", "description": "The clinical question being addressed." },
+        "baseValue": { "type": "number", "description": "Baseline risk or mean." },
+        "upperBound": { "type": "number", "description": "Upper clinically important threshold." },
+        "lowerBound": { "type": "number", "description": "Lower clinically important threshold." },
+        "emtype": {
+          "$ref": "#/definitions/effectMeasureType",
+          "description": "Effect measure type used for clinical importance."
+        }
+      }
+    },
+
+    "report": {
+      "type": "object",
+      "description": "CINeMA confidence report. Mirrors PureScript `Report`.",
+      "properties": {
+        "status": { "type": "string", "enum": ["ready", "notReady"] },
+        "hasChanged": { "type": "boolean", "description": "Whether domain judgements changed since last generation." },
+        "directRows": {
+          "type": "array",
+          "description": "Report rows for direct comparisons.",
+          "items": { "$ref": "#/definitions/reportRow" }
+        },
+        "indirectRows": {
+          "type": "array",
+          "description": "Report rows for indirect comparisons.",
+          "items": { "$ref": "#/definitions/reportRow" }
+        }
+      }
+    },
+
+    "reportRow": {
+      "type": "object",
+      "description": "One row of the CINeMA confidence report. Mirrors PureScript `ReportRow`. Each domain field uses the actual domain box type.",
+      "properties": {
+        "id": { "$ref": "#/definitions/comparisonId" },
+        "armA": { "type": "string", "description": "First treatment." },
+        "armB": { "type": "string", "description": "Second treatment." },
+        "numberOfStudies": { "type": "integer", "minimum": 0 },
+        "studyLimitation": {
+          "$ref": "#/definitions/reportStudyLimitation",
+          "description": "Mirrors PureScript `StudyLimitation` from Report.Model (distinct from NetRob)."
+        },
+        "heterogeneity": { "$ref": "#/definitions/heterogeneityBox" },
+        "incoherence": { "$ref": "#/definitions/incoherenceBox" },
+        "imprecision": { "$ref": "#/definitions/imprecisionBox" },
+        "indirectness": { "$ref": "#/definitions/indirectnessBox" },
+        "pubbias": { "$ref": "#/definitions/pubbiasBox" },
+        "judgement": { "$ref": "#/definitions/reportJudgement" }
+      },
+      "required": ["id"]
+    },
+
+    "reportStudyLimitation": {
+      "type": "object",
+      "description": "Study limitation as stored in a report row. Mirrors PureScript `StudyLimitation` from Report.Model (distinct from the domain-level `NetRob`).",
+      "properties": {
+        "id": { "type": "string" },
+        "customized": { "type": "boolean" },
+        "label": { "type": "string" },
+        "value": { "type": "integer" },
+        "rules": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/robRule" }
+        },
+        "color": { "type": "string" }
+      },
+      "required": ["id", "value"]
+    },
+
+    "reportJudgement": {
+      "type": "object",
+      "description": "Overall confidence rating for a comparison. Mirrors PureScript `ReportJudgement`.",
+      "properties": {
+        "selected": { "$ref": "#/definitions/reportLevel" },
+        "levels": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/reportLevel" }
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/reportReason" }
+        }
+      }
+    },
+
+    "reportLevel": {
+      "type": "object",
+      "description": "A confidence level option. Mirrors PureScript `ReportLevel`. Values: 0=High (green), -1=Moderate (blue), -2=Low (yellow), -3=Very Low (red).",
+      "properties": {
+        "id": { "type": "integer" },
+        "label": { "type": "string" },
+        "color": { "type": "string" },
+        "selected": { "type": "boolean" }
+      },
+      "required": ["id", "label"]
+    },
+
+    "reportReason": {
+      "type": "object",
+      "description": "A reason for downgrading confidence. Mirrors PureScript `ReasonLevel`. Values: 1=Within-study bias, 2=Reporting bias, 3=Indirectness, 4=Imprecision, 5=Heterogeneity, 6=Incoherence.",
+      "properties": {
+        "id": { "type": "integer" },
+        "label": { "type": "string" },
+        "color": { "type": "string" },
+        "allowed": { "type": "boolean" },
+        "selected": { "type": "boolean" }
+      },
+      "required": ["id", "label"]
+    }
+
+  }
+}
