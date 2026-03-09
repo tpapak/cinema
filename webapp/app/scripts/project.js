@@ -26,6 +26,7 @@ var ConMat = require('./conmat/conmat.js')();
 var ComparisonModel = require('./purescripts/output/ComparisonModel');
 var download = require('downloadjs');
 var V2Bridge = require('./lib/v2bridge.js');
+var V3Bridge = require('./lib/v3bridge.js');
 
 var PR = {
   actions: {
@@ -243,6 +244,12 @@ var PR = {
         return FR.handleFileSelect(evt).then(statestring => {
            return(JSON.parse(statestring));
         }).then((parsed) => {
+          // Detect v3 exchange format and transform to legacy state
+          if (V3Bridge.isV3Format(parsed)) {
+            console.log('Detected CINeMA v3 exchange format, transforming to legacy state');
+            let legacyState = V3Bridge.v3ToLegacyState(parsed, PR.model.getState());
+            return legacyState;
+          }
           // Detect v2 exchange format and transform to legacy state
           if (V2Bridge.isV2Format(parsed)) {
             console.log('Detected CINeMA v2 exchange format, transforming to legacy state');
@@ -449,13 +456,38 @@ var PR = {
       PR.model.loadCachedModel();
     },
     saveProject: () => {
-        let project = PR.model.getState().project;
+        let state = PR.model.getState();
+        let project = state.project;
         let creation = new Date(PR.view.getProject().creationDate);
         let datestring = creation.getHours().toString() +'.'+ creation.getMinutes().toString()+'_'+creation.toLocaleDateString();
-        let filename = (project.title+'_'+datestring).replace(/\,/g,'_')+'.cnm';
-        let blob = localStorage.state;
-        download(blob,filename);
+        // Export as v3 schema-compliant .cnm
+        let v3 = V3Bridge.legacyStateToV3(state);
+        if (v3) {
+          let filename = (project.title+'_'+datestring).replace(/\,/g,'_')+'.cnm';
+          let blob = JSON.stringify(v3, null, 2);
+          download(blob, filename);
+        } else {
+          // Fallback: save raw internal state (legacy behavior)
+          // let blob = localStorage.state;
+          // download(blob, filename);
+          Messages.alertify().error('No project data to export');
+        }
     },
+    // saveProjectV3: merged into saveProject — v3 is now the default export format
+    // saveProjectV3: () => {
+    //     let state = PR.model.getState();
+    //     let v3 = V3Bridge.legacyStateToV3(state);
+    //     if (!v3) {
+    //       Messages.alertify().error('No project to export');
+    //       return;
+    //     }
+    //     let project = state.project;
+    //     let creation = new Date(PR.view.getProject().creationDate);
+    //     let datestring = creation.getHours().toString() +'.'+ creation.getMinutes().toString()+'_'+creation.toLocaleDateString();
+    //     let filename = (project.title+'_v3_'+datestring).replace(/\,/g,'_')+'.cnm';
+    //     let blob = JSON.stringify(v3, null, 2);
+    //     download(blob, filename);
+    // },
     resetApp: () => {
       Messages.alertify().confirm('Reset CINeMA','All changes will be lost - reset will probably fix weird behavior',
         () => {

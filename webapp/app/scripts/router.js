@@ -8,6 +8,7 @@ var convertHTML = require('html-to-vdom')({
 });
 var Messages = require('./messages.js').Messages;
 var Welcome = require('./welcome.js')();
+var ProjectManager = require('./projectManager.js')();
 var Project = require('./project.js')();
 var Doc = require('./doc.js')();
 var Error = require('./error.js')();
@@ -65,7 +66,7 @@ var Router = {
         return false;
       }
     },
-    menuRoutes: ['welcome', 'project', 'doc'],
+    menuRoutes: ['welcome', 'collections', 'project', 'doc'],
     evalRoutes: ['general', 'rob', 'pubbias', 'indirectness', 'imprecision', 'heterogeneity', 'incoherence', 'report'],
     dependencies: {
       project: [],
@@ -233,6 +234,9 @@ var Router = {
     },
     { route: 'doc',
       module: Doc
+    },
+    { route: 'collections',
+      module: ProjectManager
     },
     { route: 'project',
       module: Project

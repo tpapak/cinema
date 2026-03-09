@@ -1,0 +1,110 @@
+$icon-font-path: '../fonts/';
+
+// bower:scss
+@import "bower_components/bootstrap-sass/assets/stylesheets/_bootstrap.scss";
+// endbower
+
+#project-manager {
+  padding-top: 20px;
+
+  .pm-toolbar {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .pm-upload-wrap {
+    display: inline-block;
+  }
+
+  .pm-empty {
+    padding: 40px 0;
+    text-align: center;
+    color: #999;
+    font-size: 16px;
+  }
+
+  .pm-collections {
+    margin-top: 10px;
+  }
+
+  .pm-collection {
+    margin-bottom: 15px;
+  }
+
+  .pm-collection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .pm-collection-title {
+    margin: 0;
+    flex: 1;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    .badge {
+      margin-left: 10px;
+      font-weight: normal;
+    }
+  }
+
+  .pm-collection-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .pm-project-toolbar {
+    margin-bottom: 15px;
+  }
+
+  .pm-empty-projects {
+    padding: 20px 0;
+    text-align: center;
+  }
+
+  .pm-project-table {
+    th {
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      color: #666;
+    }
+
+    td {
+      vertical-align: middle;
+    }
+  }
+
+  .pm-project-actions {
+    white-space: nowrap;
+
+    .btn {
+      margin-right: 2px;
+    }
+  }
+
+  .pm-project-row:hover {
+    background-color: #f5f9fc;
+  }
+
+  .pm-save-back {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f0f8e8;
+    border: 1px solid #c3e6a0;
+    border-radius: 4px;
+    text-align: center;
+  }
+}

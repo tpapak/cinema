@@ -1,0 +1,164 @@
+<div class="container-fluid routed" id="project-manager">
+  <div class="col-xs-12 col-md-offset-1 col-md-10">
+
+    <h2>Project Manager</h2>
+    <p class="comments">
+      Manage your collections and projects. A collection is a <em>.cnm</em> file
+      containing one or more CINeMA projects.
+    </p>
+
+    <!-- Toolbar -->
+    <div class="pm-toolbar">
+      <button onClick="Actions.ProjectManager.createCollection()"
+              class="btn btn-primary btn-sm">
+        <i class="fa fa-plus" aria-hidden="true"></i> New Collection
+      </button>
+      <span class="pm-upload-wrap">
+        <label for="pmUploadCollection" class="btn btn-default btn-sm">
+          <i class="fa fa-upload" aria-hidden="true"></i> Upload Collection (.cnm)
+        </label>
+        <input type="file" id="pmUploadCollection" accept=".cnm,.CNM,.json,.JSON"
+               style="display:none" />
+      </span>
+    </div>
+
+    {{#unless view.hasCollections}}
+    <div class="pm-empty">
+      <p>No collections yet. Create a new one or upload a <em>.cnm</em> file.</p>
+    </div>
+    {{/unless}}
+
+    {{#if view.hasCollections}}
+    <!-- Collections list -->
+    <div class="pm-collections">
+      {{#each view.collections}}
+      <div class="pm-collection panel panel-default
+                  {{#if_eq id (../view.activeCollectionId)}}panel-primary{{/if_eq}}">
+        <div class="panel-heading pm-collection-header">
+          <h4 class="panel-title pm-collection-title">
+            <a href="#" onClick="Actions.ProjectManager.selectCollection('{{id}}')">
+              <i class="fa fa-folder-open" aria-hidden="true"></i>
+              {{title}}
+            </a>
+            <span class="badge">{{projects.length}} projects</span>
+          </h4>
+          <div class="pm-collection-actions">
+            <button onClick="Actions.ProjectManager.renameCollection('{{id}}')"
+                    class="btn btn-xs btn-default" title="Rename">
+              <i class="fa fa-pencil" aria-hidden="true"></i>
+            </button>
+            <button onClick="Actions.ProjectManager.exportCollection('{{id}}')"
+                    class="btn btn-xs btn-default" title="Export as .cnm">
+              <i class="fa fa-download" aria-hidden="true"></i>
+            </button>
+            <button onClick="Actions.ProjectManager.promptMerge('{{id}}')"
+                    class="btn btn-xs btn-default" title="Merge with another collection">
+              <i class="fa fa-compress" aria-hidden="true"></i>
+            </button>
+            <button onClick="Actions.ProjectManager.removeCollection('{{id}}')"
+                    class="btn btn-xs btn-danger" title="Remove">
+              <i class="fa fa-trash" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        {{#if_eq id (../view.activeCollectionId)}}
+        <div class="panel-body">
+          {{#if description}}
+          <p class="text-muted">{{description}}</p>
+          {{/if}}
+
+          <!-- Project toolbar -->
+          <div class="pm-project-toolbar">
+            <button onClick="Actions.ProjectManager.createProject('{{id}}')"
+                    class="btn btn-sm btn-default">
+              <i class="fa fa-plus" aria-hidden="true"></i> New Project
+            </button>
+          </div>
+
+          {{#unless projects.length}}
+          <p class="text-muted pm-empty-projects">
+            No projects in this collection. Create one or upload a .cnm file.
+          </p>
+          {{/unless}}
+
+          {{#if projects.length}}
+          <table class="table table-hover pm-project-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Outcome</th>
+                <th>Studies</th>
+                <th>Evaluated</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each projects}}
+              <tr class="pm-project-row">
+                <td>
+                  <strong>{{title}}</strong>
+                  {{#if description}}
+                  <br><small class="text-muted">{{description}}</small>
+                  {{/if}}
+                </td>
+                <td>{{outcome}}</td>
+                <td>
+                  {{#if dataset.studies.length}}
+                    {{dataset.studies.length}} arms
+                  {{else}}
+                    --
+                  {{/if}}
+                </td>
+                <td>
+                  {{#if hasEvaluation}}
+                    <i class="fa fa-check text-success" aria-hidden="true"></i>
+                  {{else}}
+                    <i class="fa fa-minus text-muted" aria-hidden="true"></i>
+                  {{/if}}
+                </td>
+                <td class="pm-project-actions">
+                  <button onClick="Actions.ProjectManager.openProject('{{../id}}','{{id}}')"
+                          class="btn btn-xs btn-primary" title="Open in CINeMA">
+                    <i class="fa fa-folder-open" aria-hidden="true"></i> Open
+                  </button>
+                  <button onClick="Actions.ProjectManager.renameProject('{{../id}}','{{id}}')"
+                          class="btn btn-xs btn-default" title="Rename">
+                    <i class="fa fa-pencil" aria-hidden="true"></i>
+                  </button>
+                  <button onClick="Actions.ProjectManager.exportProject('{{../id}}','{{id}}')"
+                          class="btn btn-xs btn-default" title="Export as atomic .cnm">
+                    <i class="fa fa-download" aria-hidden="true"></i>
+                  </button>
+                  <button onClick="Actions.ProjectManager.splitProject('{{../id}}','{{id}}')"
+                          class="btn btn-xs btn-default" title="Split into new collection">
+                    <i class="fa fa-external-link" aria-hidden="true"></i>
+                  </button>
+                  <button onClick="Actions.ProjectManager.removeProject('{{../id}}','{{id}}')"
+                          class="btn btn-xs btn-danger" title="Remove">
+                    <i class="fa fa-trash" aria-hidden="true"></i>
+                  </button>
+                </td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+          {{/if}}
+        </div>
+        {{/if_eq}}
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if view.hasActiveProject}}
+    <div class="pm-save-back">
+      <button onClick="Actions.ProjectManager.saveBackToCollection()"
+              class="btn btn-success">
+        <i class="fa fa-save" aria-hidden="true"></i> Save progress back to collection
+      </button>
+    </div>
+    {{/if}}
+
+  </div>
+</div>
