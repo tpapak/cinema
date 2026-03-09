@@ -136,14 +136,20 @@ var Update = (model) => {
           if (r.indr > memo){
             return r.indr;
           }else{
-            memo;
+            // fix: was missing return statement
+            return memo;
           }
         },0);
         return res;
       };
       let makeRules = (rownames,colnames,studies) => {
         let project =  deepSeek(model,'getState().project');
-        let levels = deepSeek(model,'getState().defaults.netIndrLevels');
+        let levels = deepSeek(model,'getState().defaults.netIndrLevels') || [];
+        let textRules = deepSeek(model, 'getState().text.NetIndr.rules') || {};
+        let safeLabel = (idx) => {
+          let entry = levels[idx];
+          return entry ? (entry.label || '') : '';
+        };
         return _.map(sortStudies(rownames,studies), d => {
         let stcs = deepSeek(project,'CM.currentCM.studycontributions');
         let key = _.find(_.keys(stcs), k => {
@@ -161,6 +167,9 @@ var Update = (model) => {
               amount
             }
           });
+          let majVal = majRule(contributions);
+          let meanVal = meanRule(contributions);
+          let maxVal = maxRule(contributions);
           return {
             id: d[0],
             judgement: -1,
@@ -171,21 +180,21 @@ var Update = (model) => {
             levels : deepSeek(model,'getState().defaults.netIndrLevels'),
             rules: [{ 
                 id: 'majRule',
-                name: model.getState().text.NetIndr.rules.majRule, 
-                label: levels[majRule(contributions).indr-1].label,
-                value: majRule(contributions).indr,
+                name: textRules.majRule || 'Majority Indirectness', 
+                label: safeLabel(majVal.indr - 1),
+                value: majVal.indr,
                 isActive : false
               },
               { id: 'meanRule',
-                name: model.getState().text.NetIndr.rules.meanRule, 
-                label: levels[meanRule(contributions)-1].label,
-                value: meanRule(contributions),
+                name: textRules.meanRule || 'Average Indirectness', 
+                label: safeLabel(meanVal - 1),
+                value: meanVal,
                 isActive : false
               },
               { id: 'maxRule',
-                name: model.getState().text.NetIndr.rules.maxRule, 
-                label: levels[maxRule(contributions)-1].label,
-                value: maxRule(contributions),
+                name: textRules.maxRule || 'Highest Indirectness', 
+                label: safeLabel(maxVal - 1),
+                value: maxVal,
                 isActive : false
             }],
           }

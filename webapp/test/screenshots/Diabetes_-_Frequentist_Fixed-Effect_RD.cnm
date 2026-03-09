@@ -1,0 +1,1649 @@
+{
+  "cinema": {
+    "version": "3.0.0",
+    "title": "Diabetes - Frequentist Fixed-Effect RD",
+    "author": "MetaInsight / CINeMA",
+    "createdAt": "2026-03-09T15:42:44.031788Z",
+    "updatedAt": "2026-03-09T16:44:28.043Z",
+    "projects": [
+      {
+        "id": "diabetes-freq-fixed-RD",
+        "title": "Diabetes - Frequentist Fixed-Effect RD",
+        "description": "All studies, frequentist fixed-effect model, risk difference.",
+        "outcome": "mortality",
+        "createdAt": "2026-03-09T15:42:44.031788Z",
+        "updatedAt": "2026-03-09T15:42:44.031788Z",
+        "hasEvaluation": false,
+        "dataset": {
+          "format": "long",
+          "type": "binary",
+          "studies": [
+            {
+              "study": "AASK",
+              "id": 1,
+              "treatment": "ACE",
+              "n": 410,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 45
+            },
+            {
+              "study": "AASK",
+              "id": 1,
+              "treatment": "BBlocker",
+              "n": 405,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 70
+            },
+            {
+              "study": "AASK",
+              "id": 1,
+              "treatment": "CCB",
+              "n": 202,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 32
+            },
+            {
+              "study": "ALLHAT",
+              "id": 2,
+              "treatment": "ACE",
+              "n": 4096,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 119
+            },
+            {
+              "study": "ALLHAT",
+              "id": 2,
+              "treatment": "CCB",
+              "n": 3954,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 154
+            },
+            {
+              "study": "ALLHAT",
+              "id": 2,
+              "treatment": "Diuretic",
+              "n": 6766,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 302
+            },
+            {
+              "study": "ALPINE",
+              "id": 3,
+              "treatment": "Diuretic",
+              "n": 196,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 8
+            },
+            {
+              "study": "ALPINE",
+              "id": 3,
+              "treatment": "ARB",
+              "n": 196,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 1
+            },
+            {
+              "study": "ANBP-2",
+              "id": 4,
+              "treatment": "ACE",
+              "n": 2800,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 138
+            },
+            {
+              "study": "ANBP-2",
+              "id": 4,
+              "treatment": "Diuretic",
+              "n": 2826,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 200
+            },
+            {
+              "study": "ASCOT",
+              "id": 5,
+              "treatment": "BBlocker",
+              "n": 7040,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 799
+            },
+            {
+              "study": "ASCOT",
+              "id": 5,
+              "treatment": "CCB",
+              "n": 7072,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 567
+            },
+            {
+              "study": "CAPPP",
+              "id": 6,
+              "treatment": "ACE",
+              "n": 5183,
+              "rob": 2,
+              "indirectness": 1,
+              "events": 337
+            },
+            {
+              "study": "CAPPP",
+              "id": 6,
+              "treatment": "BBlocker",
+              "n": 5230,
+              "rob": 2,
+              "indirectness": 1,
+              "events": 380
+            },
+            {
+              "study": "CHARM",
+              "id": 7,
+              "treatment": "ARB",
+              "n": 2715,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 163
+            },
+            {
+              "study": "CHARM",
+              "id": 7,
+              "treatment": "Placebo",
+              "n": 2721,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 202
+            },
+            {
+              "study": "DREAM",
+              "id": 8,
+              "treatment": "ACE",
+              "n": 2623,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 449
+            },
+            {
+              "study": "DREAM",
+              "id": 8,
+              "treatment": "Placebo",
+              "n": 2646,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 489
+            },
+            {
+              "study": "EWPHE",
+              "id": 9,
+              "treatment": "Diuretic",
+              "n": 416,
+              "rob": 2,
+              "indirectness": 1,
+              "events": 29
+            },
+            {
+              "study": "EWPHE",
+              "id": 9,
+              "treatment": "Placebo",
+              "n": 424,
+              "rob": 2,
+              "indirectness": 1,
+              "events": 20
+            },
+            {
+              "study": "FEVER",
+              "id": 10,
+              "treatment": "CCB",
+              "n": 4841,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 177
+            },
+            {
+              "study": "FEVER",
+              "id": 10,
+              "treatment": "Placebo",
+              "n": 4870,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 154
+            },
+            {
+              "study": "HAPPHY",
+              "id": 11,
+              "treatment": "BBlocker",
+              "n": 3297,
+              "rob": 3,
+              "indirectness": 1,
+              "events": 86
+            },
+            {
+              "study": "HAPPHY",
+              "id": 11,
+              "treatment": "Diuretic",
+              "n": 3272,
+              "rob": 3,
+              "indirectness": 1,
+              "events": 75
+            },
+            {
+              "study": "HOPE",
+              "id": 12,
+              "treatment": "ACE",
+              "n": 2837,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 102
+            },
+            {
+              "study": "HOPE",
+              "id": 12,
+              "treatment": "Placebo",
+              "n": 2883,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 155
+            },
+            {
+              "study": "INSIGHT",
+              "id": 13,
+              "treatment": "CCB",
+              "n": 2508,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 136
+            },
+            {
+              "study": "INSIGHT",
+              "id": 13,
+              "treatment": "Diuretic",
+              "n": 2511,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 176
+            },
+            {
+              "study": "INVEST",
+              "id": 14,
+              "treatment": "BBlocker",
+              "n": 8078,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 665
+            },
+            {
+              "study": "INVEST",
+              "id": 14,
+              "treatment": "CCB",
+              "n": 8098,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 569
+            },
+            {
+              "study": "LIFE",
+              "id": 15,
+              "treatment": "BBlocker",
+              "n": 3979,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 320
+            },
+            {
+              "study": "LIFE",
+              "id": 15,
+              "treatment": "ARB",
+              "n": 4020,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 242
+            },
+            {
+              "study": "MRC",
+              "id": 16,
+              "treatment": "BBlocker",
+              "n": 1102,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 37
+            },
+            {
+              "study": "MRC",
+              "id": 16,
+              "treatment": "Diuretic",
+              "n": 1081,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 43
+            },
+            {
+              "study": "MRC",
+              "id": 16,
+              "treatment": "Placebo",
+              "n": 2213,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 34
+            },
+            {
+              "study": "NORDIL",
+              "id": 17,
+              "treatment": "BBlocker",
+              "n": 5059,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 251
+            },
+            {
+              "study": "NORDIL",
+              "id": 17,
+              "treatment": "CCB",
+              "n": 5095,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 216
+            },
+            {
+              "study": "PEACE",
+              "id": 18,
+              "treatment": "ACE",
+              "n": 3432,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 335
+            },
+            {
+              "study": "PEACE",
+              "id": 18,
+              "treatment": "Placebo",
+              "n": 3472,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 399
+            },
+            {
+              "study": "SCOPE",
+              "id": 19,
+              "treatment": "ARB",
+              "n": 2167,
+              "rob": 2,
+              "indirectness": 1,
+              "events": 93
+            },
+            {
+              "study": "SCOPE",
+              "id": 19,
+              "treatment": "Placebo",
+              "n": 2175,
+              "rob": 2,
+              "indirectness": 1,
+              "events": 115
+            },
+            {
+              "study": "SHEP",
+              "id": 20,
+              "treatment": "Diuretic",
+              "n": 1631,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 140
+            },
+            {
+              "study": "SHEP",
+              "id": 20,
+              "treatment": "Placebo",
+              "n": 1578,
+              "rob": 1,
+              "indirectness": 1,
+              "events": 118
+            },
+            {
+              "study": "STOP-2",
+              "id": 21,
+              "treatment": "ACE",
+              "n": 1970,
+              "rob": 2,
+              "indirectness": 1,
+              "events": 93
+            },
+            {
+              "study": "STOP-2",
+              "id": 21,
+              "treatment": "BBlocker",
+              "n": 1960,
+              "rob": 2,
+              "indirectness": 1,
+              "events": 97
+            },
+            {
+              "study": "STOP-2",
+              "id": 21,
+              "treatment": "CCB",
+              "n": 1965,
+              "rob": 2,
+              "indirectness": 1,
+              "events": 95
+            },
+            {
+              "study": "VALUE",
+              "id": 22,
+              "treatment": "CCB",
+              "n": 5074,
+              "rob": 2,
+              "indirectness": 1,
+              "events": 845
+            },
+            {
+              "study": "VALUE",
+              "id": 22,
+              "treatment": "ARB",
+              "n": 5087,
+              "rob": 2,
+              "indirectness": 1,
+              "events": 690
+            }
+          ],
+          "nodes": [
+            {
+              "id": "ACE",
+              "label": "ACE",
+              "numStudies": 8,
+              "sampleSize": 23351
+            },
+            {
+              "id": "ARB",
+              "label": "ARB",
+              "numStudies": 5,
+              "sampleSize": 14185
+            },
+            {
+              "id": "BBlocker",
+              "label": "BBlocker",
+              "numStudies": 9,
+              "sampleSize": 36150
+            },
+            {
+              "id": "CCB",
+              "label": "CCB",
+              "numStudies": 9,
+              "sampleSize": 38809
+            },
+            {
+              "id": "Diuretic",
+              "label": "Diuretic",
+              "numStudies": 8,
+              "sampleSize": 18699
+            },
+            {
+              "id": "Placebo",
+              "label": "Placebo",
+              "numStudies": 9,
+              "sampleSize": 22982
+            }
+          ],
+          "directComparisons": [
+            {
+              "id": "ACE:BBlocker",
+              "t1": "ACE",
+              "t2": "BBlocker",
+              "numStudies": 3
+            },
+            {
+              "id": "ACE:CCB",
+              "t1": "ACE",
+              "t2": "CCB",
+              "numStudies": 3
+            },
+            {
+              "id": "ACE:Diuretic",
+              "t1": "ACE",
+              "t2": "Diuretic",
+              "numStudies": 2
+            },
+            {
+              "id": "ACE:Placebo",
+              "t1": "ACE",
+              "t2": "Placebo",
+              "numStudies": 3
+            },
+            {
+              "id": "ARB:BBlocker",
+              "t1": "ARB",
+              "t2": "BBlocker",
+              "numStudies": 1
+            },
+            {
+              "id": "ARB:CCB",
+              "t1": "ARB",
+              "t2": "CCB",
+              "numStudies": 1
+            },
+            {
+              "id": "ARB:Diuretic",
+              "t1": "ARB",
+              "t2": "Diuretic",
+              "numStudies": 1
+            },
+            {
+              "id": "ARB:Placebo",
+              "t1": "ARB",
+              "t2": "Placebo",
+              "numStudies": 2
+            },
+            {
+              "id": "BBlocker:CCB",
+              "t1": "BBlocker",
+              "t2": "CCB",
+              "numStudies": 5
+            },
+            {
+              "id": "BBlocker:Diuretic",
+              "t1": "BBlocker",
+              "t2": "Diuretic",
+              "numStudies": 2
+            },
+            {
+              "id": "BBlocker:Placebo",
+              "t1": "BBlocker",
+              "t2": "Placebo",
+              "numStudies": 1
+            },
+            {
+              "id": "CCB:Diuretic",
+              "t1": "CCB",
+              "t2": "Diuretic",
+              "numStudies": 2
+            },
+            {
+              "id": "CCB:Placebo",
+              "t1": "CCB",
+              "t2": "Placebo",
+              "numStudies": 1
+            },
+            {
+              "id": "Diuretic:Placebo",
+              "t1": "Diuretic",
+              "t2": "Placebo",
+              "numStudies": 3
+            }
+          ],
+          "indirectComparisons": [
+            "ACE:ARB"
+          ],
+          "robLevels": [
+            {
+              "id": 1,
+              "color": "#02c000",
+              "label": "Low"
+            },
+            {
+              "id": 2,
+              "color": "#e0df02",
+              "label": "Moderate"
+            },
+            {
+              "id": 3,
+              "color": "#c00000",
+              "label": "High"
+            }
+          ]
+        },
+        "analysis": {
+          "params": {
+            "model": "fixed",
+            "sm": "RD",
+            "framework": "frequentist"
+          },
+          "contributionMatrix": {
+            "hatMatrix": {
+              "H": [
+                [
+                  0.1176,
+                  0.1061,
+                  0.086,
+                  0.1482,
+                  0.1434,
+                  0.1022,
+                  0.025,
+                  0.1873,
+                  0.0046,
+                  0.0252,
+                  0.004,
+                  0.0153,
+                  0.0146,
+                  0.0205
+                ],
+                [
+                  0.3376,
+                  0.1068,
+                  0.1209,
+                  0.074,
+                  0.0181,
+                  0.0007,
+                  0.0012,
+                  0.0162,
+                  0.1464,
+                  0.1027,
+                  0.0344,
+                  0.0176,
+                  0.0227,
+                  0.0007
+                ],
+                [
+                  0.1138,
+                  0.3091,
+                  0.112,
+                  0.0994,
+                  0.0003,
+                  0.0106,
+                  0.0014,
+                  0.0089,
+                  0.1406,
+                  0.0225,
+                  0.0045,
+                  0.0853,
+                  0.0886,
+                  0.0027
+                ],
+                [
+                  0.09,
+                  0.0825,
+                  0.4882,
+                  0.0731,
+                  0.0007,
+                  0.0001,
+                  0.0043,
+                  0.0051,
+                  0.0031,
+                  0.0974,
+                  0.0036,
+                  0.0876,
+                  0.0082,
+                  0.0563
+                ],
+                [
+                  0.0735,
+                  0.0911,
+                  0.0938,
+                  0.4192,
+                  0.0158,
+                  0.0071,
+                  0.0032,
+                  0.0261,
+                  0.0191,
+                  0.0067,
+                  0.0452,
+                  0.0122,
+                  0.1153,
+                  0.0718
+                ],
+                [
+                  0.0341,
+                  0.0005,
+                  0.0018,
+                  0.0354,
+                  0.3683,
+                  0.1008,
+                  0.0228,
+                  0.1409,
+                  0.1394,
+                  0.0483,
+                  0.0427,
+                  0.0022,
+                  0.0413,
+                  0.0215
+                ],
+                [
+                  0.0018,
+                  0.0305,
+                  0.0003,
+                  0.029,
+                  0.1556,
+                  0.2393,
+                  0.0229,
+                  0.1722,
+                  0.1595,
+                  0.0029,
+                  0.0086,
+                  0.0428,
+                  0.1178,
+                  0.0167
+                ],
+                [
+                  0.0164,
+                  0.0127,
+                  0.0722,
+                  0.0432,
+                  0.1527,
+                  0.1024,
+                  0.0629,
+                  0.1615,
+                  0.0005,
+                  0.1426,
+                  0.0067,
+                  0.1148,
+                  0.0246,
+                  0.087
+                ],
+                [
+                  0.02,
+                  0.0085,
+                  0.0063,
+                  0.0348,
+                  0.0923,
+                  0.088,
+                  0.0203,
+                  0.5251,
+                  0.0189,
+                  0.0165,
+                  0.0368,
+                  0.0036,
+                  0.0948,
+                  0.0341
+                ],
+                [
+                  0.0526,
+                  0.0478,
+                  0.0015,
+                  0.0063,
+                  0.0253,
+                  0.0188,
+                  0,
+                  0.0065,
+                  0.6404,
+                  0.0651,
+                  0.0273,
+                  0.0589,
+                  0.0448,
+                  0.0047
+                ],
+                [
+                  0.0788,
+                  0.0162,
+                  0.1004,
+                  0.0054,
+                  0.0185,
+                  0.0006,
+                  0.0086,
+                  0.0093,
+                  0.1455,
+                  0.4116,
+                  0.029,
+                  0.1166,
+                  0.0133,
+                  0.0462
+                ],
+                [
+                  0.0812,
+                  0.0105,
+                  0.0118,
+                  0.1035,
+                  0.0549,
+                  0.0086,
+                  0.0013,
+                  0.0648,
+                  0.1831,
+                  0.084,
+                  0.1591,
+                  0.0023,
+                  0.1617,
+                  0.0733
+                ],
+                [
+                  0.0158,
+                  0.0721,
+                  0.1005,
+                  0.0126,
+                  0.0009,
+                  0.0128,
+                  0.0086,
+                  0.0033,
+                  0.1525,
+                  0.1368,
+                  0.0007,
+                  0.3509,
+                  0.0706,
+                  0.0619
+                ],
+                [
+                  0.0175,
+                  0.0635,
+                  0.0076,
+                  0.0885,
+                  0.0176,
+                  0.0317,
+                  0.0013,
+                  0.0506,
+                  0.098,
+                  0.0107,
+                  0.0523,
+                  0.0635,
+                  0.4321,
+                  0.0653
+                ],
+                [
+                  0.0009,
+                  0.0041,
+                  0.1293,
+                  0.1261,
+                  0.019,
+                  0.007,
+                  0.0112,
+                  0.0372,
+                  0.0223,
+                  0.0928,
+                  0.0505,
+                  0.112,
+                  0.1314,
+                  0.2561
+                ]
+              ],
+              "rowNames": [
+                "ACE:ARB",
+                "ACE:BBlocker",
+                "ACE:CCB",
+                "ACE:Diuretic",
+                "ACE:Placebo",
+                "ARB:BBlocker",
+                "ARB:CCB",
+                "ARB:Diuretic",
+                "ARB:Placebo",
+                "BBlocker:CCB",
+                "BBlocker:Diuretic",
+                "BBlocker:Placebo",
+                "CCB:Diuretic",
+                "CCB:Placebo",
+                "Diuretic:Placebo"
+              ],
+              "colNames": [
+                "ACE:BBlocker",
+                "ACE:CCB",
+                "ACE:Diuretic",
+                "ACE:Placebo",
+                "ARB:BBlocker",
+                "ARB:CCB",
+                "ARB:Diuretic",
+                "ARB:Placebo",
+                "BBlocker:CCB",
+                "BBlocker:Diuretic",
+                "BBlocker:Placebo",
+                "CCB:Diuretic",
+                "CCB:Placebo",
+                "Diuretic:Placebo"
+              ]
+            },
+            "studyContributions": {
+              "ACE:ARB": {
+                "AASK": 0.0044,
+                "ALLHAT": 0.1448,
+                "ALPINE": 0.025,
+                "ANBP_2": 0.0265,
+                "ASCOT": 0.0011,
+                "CAPPP": 0.0849,
+                "CHARM": 0.0893,
+                "DREAM": 0.022,
+                "EWPHE": 0.0023,
+                "FEVER": 0.0146,
+                "HAPPHY": 0.0236,
+                "HOPE": 0.0818,
+                "INSIGHT": 0.0053,
+                "INVEST": 0.0015,
+                "LIFE": 0.1434,
+                "MRC": 0.0174,
+                "NORDIL": 0.0016,
+                "PEACE": 0.0444,
+                "SCOPE": 0.098,
+                "SHEP": 0.0065,
+                "STOP_2": 0.0595,
+                "VALUE": 0.1022
+              },
+              "ACE:BBlocker": {
+                "AASK": 0.0103,
+                "ALLHAT": 0.171,
+                "ALPINE": 0.0012,
+                "ANBP_2": 0.0372,
+                "ASCOT": 0.0348,
+                "CAPPP": 0.2438,
+                "CHARM": 0.0077,
+                "DREAM": 0.011,
+                "EWPHE": 0.0001,
+                "FEVER": 0.0227,
+                "HAPPHY": 0.0963,
+                "HOPE": 0.0408,
+                "INSIGHT": 0.0061,
+                "INVEST": 0.0494,
+                "LIFE": 0.0181,
+                "MRC": 0.0413,
+                "NORDIL": 0.0498,
+                "PEACE": 0.0222,
+                "SCOPE": 0.0085,
+                "SHEP": 0.0002,
+                "STOP_2": 0.1269,
+                "VALUE": 0.0007
+              },
+              "ACE:CCB": {
+                "AASK": 0.0076,
+                "ALLHAT": 0.3528,
+                "ALPINE": 0.0014,
+                "ANBP_2": 0.0345,
+                "ASCOT": 0.0334,
+                "CAPPP": 0.0822,
+                "CHARM": 0.0043,
+                "DREAM": 0.0147,
+                "EWPHE": 0.0003,
+                "FEVER": 0.0886,
+                "HAPPHY": 0.0211,
+                "HOPE": 0.0548,
+                "INSIGHT": 0.0294,
+                "INVEST": 0.0474,
+                "LIFE": 0.0003,
+                "MRC": 0.0075,
+                "NORDIL": 0.0478,
+                "PEACE": 0.0298,
+                "SCOPE": 0.0047,
+                "SHEP": 0.0009,
+                "STOP_2": 0.1257,
+                "VALUE": 0.0106
+              },
+              "ACE:Diuretic": {
+                "AASK": 0.0034,
+                "ALLHAT": 0.4539,
+                "ALPINE": 0.0043,
+                "ANBP_2": 0.1502,
+                "ASCOT": 0.0007,
+                "CAPPP": 0.065,
+                "CHARM": 0.0024,
+                "DREAM": 0.0108,
+                "EWPHE": 0.0062,
+                "FEVER": 0.0082,
+                "HAPPHY": 0.0913,
+                "HOPE": 0.0403,
+                "INSIGHT": 0.0302,
+                "INVEST": 0.0011,
+                "LIFE": 0.0007,
+                "MRC": 0.042,
+                "NORDIL": 0.0011,
+                "PEACE": 0.0219,
+                "SCOPE": 0.0027,
+                "SHEP": 0.0177,
+                "STOP_2": 0.0458,
+                "VALUE": 0.0001
+              },
+              "ACE:Placebo": {
+                "AASK": 0.0032,
+                "ALLHAT": 0.1376,
+                "ALPINE": 0.0032,
+                "ANBP_2": 0.0289,
+                "ASCOT": 0.0045,
+                "CAPPP": 0.053,
+                "CHARM": 0.0125,
+                "DREAM": 0.0622,
+                "EWPHE": 0.0079,
+                "FEVER": 0.1153,
+                "HAPPHY": 0.0062,
+                "HOPE": 0.2313,
+                "INSIGHT": 0.0042,
+                "INVEST": 0.0064,
+                "LIFE": 0.0158,
+                "MRC": 0.0869,
+                "NORDIL": 0.0065,
+                "PEACE": 0.1257,
+                "SCOPE": 0.0137,
+                "SHEP": 0.0226,
+                "STOP_2": 0.0453,
+                "VALUE": 0.0071
+              },
+              "ARB:BBlocker": {
+                "AASK": 0.0013,
+                "ALLHAT": 0.003,
+                "ALPINE": 0.0228,
+                "ANBP_2": 0.0005,
+                "ASCOT": 0.0332,
+                "CAPPP": 0.0246,
+                "CHARM": 0.0672,
+                "DREAM": 0.0053,
+                "EWPHE": 0.0024,
+                "FEVER": 0.0413,
+                "HAPPHY": 0.0452,
+                "HOPE": 0.0195,
+                "INSIGHT": 0.0008,
+                "INVEST": 0.047,
+                "LIFE": 0.3683,
+                "MRC": 0.0581,
+                "NORDIL": 0.0474,
+                "PEACE": 0.0106,
+                "SCOPE": 0.0737,
+                "SHEP": 0.0068,
+                "STOP_2": 0.0201,
+                "VALUE": 0.1008
+              },
+              "ARB:CCB": {
+                "AASK": 0.0009,
+                "ALLHAT": 0.0499,
+                "ALPINE": 0.0229,
+                "ANBP_2": 0.0001,
+                "ASCOT": 0.0379,
+                "CAPPP": 0.0013,
+                "CHARM": 0.0821,
+                "DREAM": 0.0043,
+                "EWPHE": 0.0018,
+                "FEVER": 0.1178,
+                "HAPPHY": 0.0027,
+                "HOPE": 0.016,
+                "INSIGHT": 0.0148,
+                "INVEST": 0.0538,
+                "LIFE": 0.1556,
+                "MRC": 0.0184,
+                "NORDIL": 0.0543,
+                "PEACE": 0.0087,
+                "SCOPE": 0.0901,
+                "SHEP": 0.0053,
+                "STOP_2": 0.0219,
+                "VALUE": 0.2393
+              },
+              "ARB:Diuretic": {
+                "AASK": 0.0006,
+                "ALLHAT": 0.1342,
+                "ALPINE": 0.0629,
+                "ANBP_2": 0.0222,
+                "ASCOT": 0.0001,
+                "CAPPP": 0.0118,
+                "CHARM": 0.077,
+                "DREAM": 0.0064,
+                "EWPHE": 0.0096,
+                "FEVER": 0.0246,
+                "HAPPHY": 0.1336,
+                "HOPE": 0.0238,
+                "INSIGHT": 0.0396,
+                "INVEST": 0.0002,
+                "LIFE": 0.1527,
+                "MRC": 0.0657,
+                "NORDIL": 0.0002,
+                "PEACE": 0.0129,
+                "SCOPE": 0.0845,
+                "SHEP": 0.0274,
+                "STOP_2": 0.0077,
+                "VALUE": 0.1024
+              },
+              "ARB:Placebo": {
+                "AASK": 0.0007,
+                "ALLHAT": 0.0127,
+                "ALPINE": 0.0203,
+                "ANBP_2": 0.0019,
+                "ASCOT": 0.0045,
+                "CAPPP": 0.0145,
+                "CHARM": 0.2504,
+                "DREAM": 0.0052,
+                "EWPHE": 0.0038,
+                "FEVER": 0.0948,
+                "HAPPHY": 0.0155,
+                "HOPE": 0.0192,
+                "INSIGHT": 0.0012,
+                "INVEST": 0.0064,
+                "LIFE": 0.0923,
+                "MRC": 0.0575,
+                "NORDIL": 0.0064,
+                "PEACE": 0.0104,
+                "SCOPE": 0.2747,
+                "SHEP": 0.0107,
+                "STOP_2": 0.009,
+                "VALUE": 0.088
+              },
+              "BBlocker:CCB": {
+                "AASK": 0.0039,
+                "ALLHAT": 0.0735,
+                "ALPINE": 0,
+                "ANBP_2": 0.0005,
+                "ASCOT": 0.1523,
+                "CAPPP": 0.038,
+                "CHARM": 0.0031,
+                "DREAM": 0.0009,
+                "EWPHE": 0.0005,
+                "FEVER": 0.0448,
+                "HAPPHY": 0.061,
+                "HOPE": 0.0035,
+                "INSIGHT": 0.0203,
+                "INVEST": 0.2161,
+                "LIFE": 0.0253,
+                "MRC": 0.0341,
+                "NORDIL": 0.2178,
+                "PEACE": 0.0019,
+                "SCOPE": 0.0034,
+                "SHEP": 0.0015,
+                "STOP_2": 0.0788,
+                "VALUE": 0.0188
+              },
+              "BBlocker:Diuretic": {
+                "AASK": 0.0026,
+                "ALLHAT": 0.1574,
+                "ALPINE": 0.0086,
+                "ANBP_2": 0.0309,
+                "ASCOT": 0.0346,
+                "CAPPP": 0.0569,
+                "CHARM": 0.0044,
+                "DREAM": 0.0008,
+                "EWPHE": 0.0051,
+                "FEVER": 0.0133,
+                "HAPPHY": 0.3857,
+                "HOPE": 0.003,
+                "INSIGHT": 0.0402,
+                "INVEST": 0.0491,
+                "LIFE": 0.0185,
+                "MRC": 0.0815,
+                "NORDIL": 0.0495,
+                "PEACE": 0.0016,
+                "SCOPE": 0.0048,
+                "SHEP": 0.0146,
+                "STOP_2": 0.0363,
+                "VALUE": 0.0006
+              },
+              "BBlocker:Placebo": {
+                "AASK": 0.0027,
+                "ALLHAT": 0.0171,
+                "ALPINE": 0.0013,
+                "ANBP_2": 0.0036,
+                "ASCOT": 0.0435,
+                "CAPPP": 0.0586,
+                "CHARM": 0.0309,
+                "DREAM": 0.0154,
+                "EWPHE": 0.0081,
+                "FEVER": 0.1617,
+                "HAPPHY": 0.0787,
+                "HOPE": 0.0571,
+                "INSIGHT": 0.0008,
+                "INVEST": 0.0618,
+                "LIFE": 0.0549,
+                "MRC": 0.2065,
+                "NORDIL": 0.0623,
+                "PEACE": 0.031,
+                "SCOPE": 0.0339,
+                "SHEP": 0.0231,
+                "STOP_2": 0.0384,
+                "VALUE": 0.0086
+              },
+              "CCB:Diuretic": {
+                "AASK": 0.0019,
+                "ALLHAT": 0.3506,
+                "ALPINE": 0.0086,
+                "ANBP_2": 0.0309,
+                "ASCOT": 0.0363,
+                "CAPPP": 0.0114,
+                "CHARM": 0.0016,
+                "DREAM": 0.0019,
+                "EWPHE": 0.0068,
+                "FEVER": 0.0706,
+                "HAPPHY": 0.1282,
+                "HOPE": 0.007,
+                "INSIGHT": 0.121,
+                "INVEST": 0.0515,
+                "LIFE": 0.0009,
+                "MRC": 0.0449,
+                "NORDIL": 0.0518,
+                "PEACE": 0.0038,
+                "SCOPE": 0.0017,
+                "SHEP": 0.0195,
+                "STOP_2": 0.0364,
+                "VALUE": 0.0128
+              },
+              "CCB:Placebo": {
+                "AASK": 0.0016,
+                "ALLHAT": 0.0919,
+                "ALPINE": 0.0013,
+                "ANBP_2": 0.0023,
+                "ASCOT": 0.0233,
+                "CAPPP": 0.0126,
+                "CHARM": 0.0241,
+                "DREAM": 0.0131,
+                "EWPHE": 0.0072,
+                "FEVER": 0.4321,
+                "HAPPHY": 0.01,
+                "HOPE": 0.0489,
+                "INSIGHT": 0.0219,
+                "INVEST": 0.0331,
+                "LIFE": 0.0176,
+                "MRC": 0.0904,
+                "NORDIL": 0.0333,
+                "PEACE": 0.0265,
+                "SCOPE": 0.0265,
+                "SHEP": 0.0205,
+                "STOP_2": 0.03,
+                "VALUE": 0.0317
+              },
+              "Diuretic:Placebo": {
+                "AASK": 0.0001,
+                "ALLHAT": 0.1658,
+                "ALPINE": 0.0112,
+                "ANBP_2": 0.0398,
+                "ASCOT": 0.0053,
+                "CAPPP": 0.0007,
+                "CHARM": 0.0177,
+                "DREAM": 0.0187,
+                "EWPHE": 0.0283,
+                "FEVER": 0.1314,
+                "HAPPHY": 0.087,
+                "HOPE": 0.0696,
+                "INSIGHT": 0.0386,
+                "INVEST": 0.0075,
+                "LIFE": 0.019,
+                "MRC": 0.2035,
+                "NORDIL": 0.0076,
+                "PEACE": 0.0378,
+                "SCOPE": 0.0194,
+                "SHEP": 0.0806,
+                "STOP_2": 0.0032,
+                "VALUE": 0.007
+              }
+            }
+          },
+          "frequentist": {
+            "nmaResults": [
+              {
+                "comparison": "ACE:ARB",
+                "effect": 0.0086,
+                "se": 0.0038,
+                "ciLower": 0.0012,
+                "ciUpper": 0.016,
+                "priLower": -0.0127,
+                "priUpper": 0.0293,
+                "propDirect": 0,
+                "indirect": {
+                  "effect": 0.0086,
+                  "ciLower": 0.0012,
+                  "ciUpper": 0.016
+                }
+              },
+              {
+                "comparison": "ACE:BBlocker",
+                "effect": -0.0189,
+                "se": 0.0024,
+                "ciLower": -0.0237,
+                "ciUpper": -0.0141,
+                "priLower": -0.0385,
+                "priUpper": -0.0003,
+                "propDirect": 0.3821,
+                "direct": {
+                  "effect": -0.0073,
+                  "ciLower": -0.0151,
+                  "ciUpper": 0.0005
+                },
+                "indirect": {
+                  "effect": -0.026,
+                  "ciLower": -0.0321,
+                  "ciUpper": -0.0199
+                },
+                "incoherence": {
+                  "effect": 0.0187,
+                  "ciLower": 0.0088,
+                  "ciUpper": 0.0286,
+                  "z": 3.714,
+                  "pvalue": 0.0002
+                }
+              },
+              {
+                "comparison": "ACE:CCB",
+                "effect": -0.0078,
+                "se": 0.0024,
+                "ciLower": -0.0125,
+                "ciUpper": -0.003,
+                "priLower": -0.0279,
+                "priUpper": 0.0104,
+                "propDirect": 0.4912,
+                "direct": {
+                  "effect": -0.0082,
+                  "ciLower": -0.0149,
+                  "ciUpper": -0.0014
+                },
+                "indirect": {
+                  "effect": -0.0074,
+                  "ciLower": -0.0141,
+                  "ciUpper": -0.0008
+                },
+                "incoherence": {
+                  "effect": -0.0007,
+                  "ciLower": -0.0102,
+                  "ciUpper": 0.0087,
+                  "z": -0.153,
+                  "pvalue": 0.8784
+                }
+              },
+              {
+                "comparison": "ACE:Diuretic",
+                "effect": -0.0183,
+                "se": 0.0025,
+                "ciLower": -0.0231,
+                "ciUpper": -0.0135,
+                "priLower": -0.0402,
+                "priUpper": -0.0017,
+                "propDirect": 0.6058,
+                "direct": {
+                  "effect": -0.017,
+                  "ciLower": -0.0232,
+                  "ciUpper": -0.0109
+                },
+                "indirect": {
+                  "effect": -0.0201,
+                  "ciLower": -0.0278,
+                  "ciUpper": -0.0125
+                },
+                "incoherence": {
+                  "effect": 0.0031,
+                  "ciLower": -0.0067,
+                  "ciUpper": 0.0129,
+                  "z": 0.618,
+                  "pvalue": 0.5365
+                }
+              },
+              {
+                "comparison": "ACE:Placebo",
+                "effect": -0.0057,
+                "se": 0.0026,
+                "ciLower": -0.0108,
+                "ciUpper": -0.0005,
+                "priLower": -0.0263,
+                "priUpper": 0.0119,
+                "propDirect": 0.4192,
+                "direct": {
+                  "effect": -0.017,
+                  "ciLower": -0.025,
+                  "ciUpper": -0.0091
+                },
+                "indirect": {
+                  "effect": 0.0025,
+                  "ciLower": -0.0042,
+                  "ciUpper": 0.0093
+                },
+                "incoherence": {
+                  "effect": -0.0196,
+                  "ciLower": -0.03,
+                  "ciUpper": -0.0091,
+                  "z": -3.6728,
+                  "pvalue": 0.0002
+                }
+              },
+              {
+                "comparison": "ARB:BBlocker",
+                "effect": -0.0275,
+                "se": 0.0035,
+                "ciLower": -0.0343,
+                "ciUpper": -0.0207,
+                "priLower": -0.0482,
+                "priUpper": -0.0073,
+                "propDirect": 0.3683,
+                "direct": {
+                  "effect": -0.0202,
+                  "ciLower": -0.0314,
+                  "ciUpper": -0.009
+                },
+                "indirect": {
+                  "effect": -0.0317,
+                  "ciLower": -0.0403,
+                  "ciUpper": -0.0232
+                },
+                "incoherence": {
+                  "effect": 0.0115,
+                  "ciLower": -0.0026,
+                  "ciUpper": 0.0256,
+                  "z": 1.5994,
+                  "pvalue": 0.1097
+                }
+              },
+              {
+                "comparison": "ARB:CCB",
+                "effect": -0.0164,
+                "se": 0.0035,
+                "ciLower": -0.0232,
+                "ciUpper": -0.0096,
+                "priLower": -0.0375,
+                "priUpper": 0.0033,
+                "propDirect": 0.2393,
+                "direct": {
+                  "effect": -0.0309,
+                  "ciLower": -0.0448,
+                  "ciUpper": -0.017
+                },
+                "indirect": {
+                  "effect": -0.0118,
+                  "ciLower": -0.0196,
+                  "ciUpper": -0.004
+                },
+                "incoherence": {
+                  "effect": -0.0191,
+                  "ciLower": -0.035,
+                  "ciUpper": -0.0031,
+                  "z": -2.3444,
+                  "pvalue": 0.0191
+                }
+              },
+              {
+                "comparison": "ARB:Diuretic",
+                "effect": -0.0269,
+                "se": 0.0038,
+                "ciLower": -0.0343,
+                "ciUpper": -0.0195,
+                "priLower": -0.0502,
+                "priUpper": -0.0084,
+                "propDirect": 0.0629,
+                "direct": {
+                  "effect": -0.0357,
+                  "ciLower": -0.0652,
+                  "ciUpper": -0.0063
+                },
+                "indirect": {
+                  "effect": -0.0263,
+                  "ciLower": -0.0339,
+                  "ciUpper": -0.0187
+                },
+                "incoherence": {
+                  "effect": -0.0094,
+                  "ciLower": -0.0398,
+                  "ciUpper": 0.021,
+                  "z": -0.6081,
+                  "pvalue": 0.5431
+                }
+              },
+              {
+                "comparison": "ARB:Placebo",
+                "effect": -0.0143,
+                "se": 0.0034,
+                "ciLower": -0.0209,
+                "ciUpper": -0.0076,
+                "priLower": -0.0357,
+                "priUpper": 0.0046,
+                "propDirect": 0.5251,
+                "direct": {
+                  "effect": -0.012,
+                  "ciLower": -0.0212,
+                  "ciUpper": -0.0028
+                },
+                "indirect": {
+                  "effect": -0.0168,
+                  "ciLower": -0.0265,
+                  "ciUpper": -0.0072
+                },
+                "incoherence": {
+                  "effect": 0.0048,
+                  "ciLower": -0.0085,
+                  "ciUpper": 0.0182,
+                  "z": 0.7123,
+                  "pvalue": 0.4763
+                }
+              },
+              {
+                "comparison": "BBlocker:CCB",
+                "effect": 0.0111,
+                "se": 0.0019,
+                "ciLower": 0.0073,
+                "ciUpper": 0.0149,
+                "priLower": -0.0078,
+                "priUpper": 0.0291,
+                "propDirect": 0.6693,
+                "direct": {
+                  "effect": 0.014,
+                  "ciLower": 0.0094,
+                  "ciUpper": 0.0187
+                },
+                "indirect": {
+                  "effect": 0.0052,
+                  "ciLower": -0.0014,
+                  "ciUpper": 0.0118
+                },
+                "incoherence": {
+                  "effect": 0.0089,
+                  "ciLower": 0.0008,
+                  "ciUpper": 0.017,
+                  "z": 2.1498,
+                  "pvalue": 0.0316
+                }
+              },
+              {
+                "comparison": "BBlocker:Diuretic",
+                "effect": 0.0006,
+                "se": 0.0024,
+                "ciLower": -0.004,
+                "ciUpper": 0.0053,
+                "priLower": -0.0207,
+                "priUpper": 0.0176,
+                "propDirect": 0.4724,
+                "direct": {
+                  "effect": 0.0014,
+                  "ciLower": -0.0053,
+                  "ciUpper": 0.0082
+                },
+                "indirect": {
+                  "effect": -0.0001,
+                  "ciLower": -0.0065,
+                  "ciUpper": 0.0063
+                },
+                "incoherence": {
+                  "effect": 0.0016,
+                  "ciLower": -0.0077,
+                  "ciUpper": 0.0109,
+                  "z": 0.3312,
+                  "pvalue": 0.7405
+                }
+              },
+              {
+                "comparison": "BBlocker:Placebo",
+                "effect": 0.0132,
+                "se": 0.0026,
+                "ciLower": 0.0081,
+                "ciUpper": 0.0183,
+                "priLower": -0.0071,
+                "priUpper": 0.0315,
+                "propDirect": 0.1841,
+                "direct": {
+                  "effect": 0.0182,
+                  "ciLower": 0.0064,
+                  "ciUpper": 0.03
+                },
+                "indirect": {
+                  "effect": 0.0121,
+                  "ciLower": 0.0065,
+                  "ciUpper": 0.0177
+                },
+                "incoherence": {
+                  "effect": 0.0061,
+                  "ciLower": -0.0069,
+                  "ciUpper": 0.0192,
+                  "z": 0.9199,
+                  "pvalue": 0.3576
+                }
+              },
+              {
+                "comparison": "CCB:Diuretic",
+                "effect": -0.0105,
+                "se": 0.0024,
+                "ciLower": -0.0151,
+                "ciUpper": -0.0058,
+                "priLower": -0.0313,
+                "priUpper": 0.0069,
+                "propDirect": 0.4772,
+                "direct": {
+                  "effect": -0.0083,
+                  "ciLower": -0.015,
+                  "ciUpper": -0.0015
+                },
+                "indirect": {
+                  "effect": -0.0125,
+                  "ciLower": -0.0189,
+                  "ciUpper": -0.0061
+                },
+                "incoherence": {
+                  "effect": 0.0043,
+                  "ciLower": -0.005,
+                  "ciUpper": 0.0136,
+                  "z": 0.8967,
+                  "pvalue": 0.3699
+                }
+              },
+              {
+                "comparison": "CCB:Placebo",
+                "effect": 0.0021,
+                "se": 0.0024,
+                "ciLower": -0.0026,
+                "ciUpper": 0.0068,
+                "priLower": -0.0177,
+                "priUpper": 0.0208,
+                "propDirect": 0.4321,
+                "direct": {
+                  "effect": 0.0049,
+                  "ciLower": -0.0023,
+                  "ciUpper": 0.0122
+                },
+                "indirect": {
+                  "effect": -0.0001,
+                  "ciLower": -0.0064,
+                  "ciUpper": 0.0062
+                },
+                "incoherence": {
+                  "effect": 0.005,
+                  "ciLower": -0.0046,
+                  "ciUpper": 0.0146,
+                  "z": 1.024,
+                  "pvalue": 0.3058
+                }
+              },
+              {
+                "comparison": "Diuretic:Placebo",
+                "effect": 0.0126,
+                "se": 0.0027,
+                "ciLower": 0.0073,
+                "ciUpper": 0.0179,
+                "priLower": -0.0056,
+                "priUpper": 0.0331,
+                "propDirect": 0.2848,
+                "direct": {
+                  "effect": 0.0204,
+                  "ciLower": 0.0104,
+                  "ciUpper": 0.0304
+                },
+                "indirect": {
+                  "effect": 0.0095,
+                  "ciLower": 0.0032,
+                  "ciUpper": 0.0158
+                },
+                "incoherence": {
+                  "effect": 0.011,
+                  "ciLower": -0.0008,
+                  "ciUpper": 0.0228,
+                  "z": 1.8204,
+                  "pvalue": 0.0687
+                }
+              }
+            ]
+          },
+          "bayesian": null
+        },
+        "evaluation": null
+      }
+    ]
+  }
+}

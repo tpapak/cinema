@@ -138,13 +138,15 @@ var Update = (model) => {
           if (r.rob > memo){
             return r.rob;
           }else{
-            memo;
+            // fix: was missing return statement
+            return memo;
           }
         },0);
         return res;
       };
       let makeRules = (rownames,colnames,studies) => {
         let project =  deepSeek(model,'getState().project');
+        let textRules = deepSeek(model, 'getState().text.NetRob.rules') || {};
         return _.map(sortStudies(rownames,studies), d => {
         let stcs = deepSeek(project,'CM.currentCM.studycontributions');
         let key = _.find(_.keys(stcs), k => {
@@ -162,6 +164,14 @@ var Update = (model) => {
               amount
             }
           });
+          let majVal = majRule(contributions);
+          let meanVal = meanRule(contributions);
+          let maxVal = maxRule(contributions);
+          let sll = project.studyLimitationLevels || [];
+          let safeLabel = (idx) => {
+            let entry = sll[idx];
+            return entry ? (entry.label || '') : '';
+          };
           return {
             id: d[0],
             judgement: 'nothing',
@@ -169,21 +179,21 @@ var Update = (model) => {
             contributions,
             rules: [{ 
                 id: 'majRule',
-                name: model.getState().text.NetRob.rules.majRule, 
-                label: project.studyLimitationLevels[majRule(contributions).rob-1].label,
-                value: majRule(contributions).rob,
+                name: textRules.majRule || 'Majority RoB', 
+                label: safeLabel(majVal.rob - 1),
+                value: majVal.rob,
                 isActive : false
               },
               { id: 'meanRule',
-                name: model.getState().text.NetRob.rules.meanRule, 
-                label: project.studyLimitationLevels[meanRule(contributions)-1].label,
-                value: meanRule(contributions),
+                name: textRules.meanRule || 'Average RoB', 
+                label: safeLabel(meanVal - 1),
+                value: meanVal,
                 isActive : false
               },
               { id: 'maxRule',
-                name: model.getState().text.NetRob.rules.maxRule, 
-                label: project.studyLimitationLevels[maxRule(contributions)-1].label,
-                value: maxRule(contributions),
+                name: textRules.maxRule || 'Highest RoB', 
+                label: safeLabel(maxVal - 1),
+                value: maxVal,
                 isActive : false
             }],
           }

@@ -50,8 +50,10 @@ var PM = {
     updateState: (model) => {
       PM.model = model;
       // Initialize projectManager state if not present
-      if (typeof PM.model.getState().projectManager === 'undefined') {
-        PM.model.getState().projectManager = {
+      // Guard: getState() may return undefined during early init
+      var state = PM.model.getState();
+      if (state && typeof state.projectManager === 'undefined') {
+        state.projectManager = {
           collections: [],
           activeCollectionId: null,
           activeProjectId: null,
@@ -59,7 +61,16 @@ var PM = {
       }
     },
     getManager: () => {
-      return PM.model.getState().projectManager;
+      var state = PM.model.getState();
+      if (!state) return { collections: [], activeCollectionId: null, activeProjectId: null };
+      if (!state.projectManager) {
+        state.projectManager = {
+          collections: [],
+          activeCollectionId: null,
+          activeProjectId: null,
+        };
+      }
+      return state.projectManager;
     },
     // ==========================================
     // Collection operations
@@ -331,6 +342,13 @@ var PM = {
         Messages.alertify().error('Project has no study data. Upload data first.');
         return;
       }
+      // Preserve projectManager state across setState (which replaces entire state)
+      var currentMgr = PM.update.getManager();
+      var savedMgr = {
+        collections: currentMgr.collections || [],
+        activeCollectionId: collectionId,
+        activeProjectId: projectId,
+      };
       // Build v3 wrapper for the bridge
       var v3wrapper = {
         cinema: {
@@ -342,21 +360,10 @@ var PM = {
         },
       };
       var legacyState = V3Bridge.v3ToLegacyState(v3wrapper, PM.model.getState());
+      // Inject projectManager into the new state before setState
+      legacyState.projectManager = savedMgr;
+      legacyState.router = { currentRoute: 'general' };
       PM.model.setState(legacyState);
-      // Track which collection/project is active
-      var mgr = PM.update.getManager();
-      if (!mgr) {
-        PM.model.getState().projectManager = {
-          collections: [],
-          activeCollectionId: collectionId,
-          activeProjectId: projectId,
-        };
-      } else {
-        mgr.activeCollectionId = collectionId;
-        mgr.activeProjectId = projectId;
-      }
-      PM.model.getState().router.currentRoute = 'general';
-      PM.model.saveState();
       Messages.alertify().success('Project loaded: ' + proj.title);
     },
     // Save current evaluation state back into the active project in its collection

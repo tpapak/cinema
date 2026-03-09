@@ -575,6 +575,23 @@ var v3ProjectToLegacyState = (v3project, v3meta, currentState) => {
   var text = currentState ? currentState.text : Locales['EN'];
   var defaults = currentState ? currentState.defaults : {};
 
+  // Ensure defaults levels have labels from text (modules expect .label on defaults)
+  if (defaults.robLevels && text.robLevels) {
+    _.each(defaults.robLevels, function(r) { r.label = text.robLevels[r.id - 1]; });
+  }
+  if (defaults.studyLimitationLevels && text.NetRob && text.NetRob.levels) {
+    _.each(defaults.studyLimitationLevels, function(r) { r.label = text.NetRob.levels[r.id - 1]; });
+  }
+  if (defaults.indrLevels && text.indrLevels) {
+    _.each(defaults.indrLevels, function(r) { r.label = text.indrLevels[r.id - 1]; });
+  }
+  if (defaults.netIndrLevels && text.NetIndr && text.NetIndr.levels) {
+    _.each(defaults.netIndrLevels, function(r) { r.label = text.NetIndr.levels[r.id - 1]; });
+  }
+  if (defaults.pubbiasLevels && text.pubbiasLevels) {
+    _.each(defaults.pubbiasLevels, function(r) { r.label = text.pubbiasLevels[r.id - 1]; });
+  }
+
   var timestamp = new Date();
   var title = v3project.title || v3meta.title || ('v3_import_' + timestamp.getTime());
 

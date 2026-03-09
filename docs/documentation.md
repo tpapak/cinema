@@ -403,3 +403,46 @@ models for multi-arm studies. Res Synth Methods. 2012 Jun;3(2):98–110.
 mixed treatment comparison meta-analysis. Stat Med. 2010 Mar
 30;29(7–8):932–44.
 </span>
+
+Collections and Project Manager
+===============================
+
+CINeMA now supports managing multiple projects through **Collections**. A collection is a `.cnm` file in v3 format containing one or more CINeMA projects.
+
+### Accessing the Project Manager
+
+Click **Collections** in the top menu bar, or the **COLLECTIONS** button on the Welcome page.
+
+### Collection operations
+
+- **New Collection**: create an empty collection to add projects to
+- **Upload Collection (.cnm)**: import a v3 `.cnm` file containing one or more projects
+- **Export**: download the collection as a `.cnm` file
+- **Merge**: combine two collections into one
+- **Rename**: change the collection title
+- **Remove**: delete the collection from the browser
+
+### Project operations (within a collection)
+
+- **New Project**: create an empty project in the collection
+- **Open**: load the project into the CINeMA evaluation workspace
+- **Export**: download the project as an atomic `.cnm` file (single-project collection, easy to share and merge)
+- **Split**: extract the project into its own new collection
+- **Rename**: change the project title
+- **Remove**: delete the project from the collection
+
+### Saving progress
+
+After evaluating a project (within-study bias, heterogeneity, etc.), click **Save progress back to collection** to persist your evaluation results into the collection. You can then export the entire collection as a `.cnm` file.
+
+### File format (v3)
+
+CINeMA v3 `.cnm` files are JSON documents following the schema at `schemata/cinema_schema_v3.json`. Projects saved from CINeMA and exported from MetaInsight both use this format.
+
+### Importing from MetaInsight
+
+MetaInsight can export analyses as `.cnm` files. Upload them through the Collections page. CINeMA will automatically detect the v3 format and make the projects available for evaluation.
+
+### Legacy file support
+
+CINeMA also supports uploading legacy `.cnm` files (v1 internal state format) and v2 exchange format files through the **My Projects** page. These are automatically transformed to the internal format on import.
