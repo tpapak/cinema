@@ -117,46 +117,50 @@ var buildStudiesFromV3 = (dataset) => {
   // Build wide-format from long
   var wide = buildWideFromLong(long, projectType);
 
-  // Build nodes — prefer v3 pre-computed nodes, fall back to computing
-  var nodes;
-  if (dataset.nodes && dataset.nodes.length > 0) {
-    nodes = _.map(dataset.nodes, (n) => {
-      return {
-        id: typeof n.id === 'string' ? n.id : String(n.id),
-        label: n.label || String(n.id),
-        numStudies: n.numStudies || 0,
-        sampleSize: n.sampleSize || 0,
-        rSum: 0,
-        type: 'node',
-        studies: [],
-        rob: [],
-        indirectness: [],
-      };
-    });
-  } else {
-    nodes = buildNodes(long, projectType);
-  }
+  // Always compute nodes from long data to get complete internal fields
+  // (low/unclear/high, indrlow/indrunclear/indrhigh, rob arrays, etc.)
+  // v3 pre-computed nodes lack these derived fields needed for pie charts
+  // if (dataset.nodes && dataset.nodes.length > 0) {
+  //   nodes = _.map(dataset.nodes, (n) => {
+  //     return {
+  //       id: typeof n.id === 'string' ? n.id : String(n.id),
+  //       label: n.label || String(n.id),
+  //       numStudies: n.numStudies || 0,
+  //       sampleSize: n.sampleSize || 0,
+  //       rSum: 0,
+  //       type: 'node',
+  //       studies: [],
+  //       rob: [],
+  //       indirectness: [],
+  //     };
+  //   });
+  // } else {
+  //   nodes = buildNodes(long, projectType);
+  // }
+  var nodes = buildNodes(long, projectType);
 
-  // Build direct comparisons — prefer v3 pre-computed, fall back
-  var directComparisons;
-  if (dataset.directComparisons && dataset.directComparisons.length > 0) {
-    directComparisons = _.map(dataset.directComparisons, (c) => {
-      return {
-        type: 'edge',
-        id: c.id,
-        t1: typeof c.t1 === 'string' ? c.t1 : String(c.t1),
-        t2: typeof c.t2 === 'string' ? c.t2 : String(c.t2),
-        source: typeof c.t1 === 'string' ? c.t1 : String(c.t1),
-        target: typeof c.t2 === 'string' ? c.t2 : String(c.t2),
-        numStudies: c.numStudies || 1,
-        studies: [],
-        rob: [],
-        indirectness: [],
-      };
-    });
-  } else {
-    directComparisons = buildDirectComparisons(wide, projectType);
-  }
+  // Always compute direct comparisons from wide data to get complete fields
+  // (rob arrays, majrob/meanrob/maxrob, indirectness rules, sampleSize, etc.)
+  // v3 pre-computed edges lack these derived fields needed for edge coloring
+  // if (dataset.directComparisons && dataset.directComparisons.length > 0) {
+  //   directComparisons = _.map(dataset.directComparisons, (c) => {
+  //     return {
+  //       type: 'edge',
+  //       id: c.id,
+  //       t1: typeof c.t1 === 'string' ? c.t1 : String(c.t1),
+  //       t2: typeof c.t2 === 'string' ? c.t2 : String(c.t2),
+  //       source: typeof c.t1 === 'string' ? c.t1 : String(c.t1),
+  //       target: typeof c.t2 === 'string' ? c.t2 : String(c.t2),
+  //       numStudies: c.numStudies || 1,
+  //       studies: [],
+  //       rob: [],
+  //       indirectness: [],
+  //     };
+  //   });
+  // } else {
+  //   directComparisons = buildDirectComparisons(wide, projectType);
+  // }
+  var directComparisons = buildDirectComparisons(wide, projectType);
 
   // Build indirect comparisons
   var indirectComparisons;
