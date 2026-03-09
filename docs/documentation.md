@@ -1,11 +1,13 @@
 Below you can find a brief guide of using CINeMA to evaluate confidence
 in network meta-analysis treatment effects.
 
-My projects
+<!-- "My Projects" section replaced by Collections — see below -->
+
+Collections
 ===========
 
 CINeMA requires a .csv file with the study **outcome** data and study-level
-**risk of bias** (RoB) and **indirectness** judgements which you can upload in My Projects. We
+**risk of bias** (RoB) and **indirectness** judgements which you can upload via the Collections page. We
 describe below how the data should be formatted.
 
 Binary data
@@ -407,42 +409,48 @@ mixed treatment comparison meta-analysis. Stat Med. 2010 Mar
 Collections and Project Manager
 ===============================
 
-CINeMA now supports managing multiple projects through **Collections**. A collection is a `.cnm` file in v3 format containing one or more CINeMA projects.
+CINeMA organises work into **Collections**. One collection is loaded at a time and contains one or more CINeMA projects. Two file extensions are used:
 
-### Accessing the Project Manager
+- **`.cdb`** — a collection file containing one or more projects
+- **`.cnm`** — a single-project file (always exactly 1 project)
+
+Both use the same v3 JSON schema internally (`schemata/cinema_schema_v3.json`).
+
+### Accessing the Collections page
 
 Click **Collections** in the top menu bar, or the **COLLECTIONS** button on the Welcome page.
 
 ### Collection operations
 
 - **New Collection**: create an empty collection to add projects to
-- **Upload Collection (.cnm)**: import a v3 `.cnm` file containing one or more projects
-- **Export**: download the collection as a `.cnm` file
-- **Merge**: combine two collections into one
+- **Upload Collection (.cdb)**: import a v3 `.cdb` file. If a collection is already loaded, you will be prompted to export it first.
+- **Upload Project (.cnm)**: import a single-project `.cnm` file into the active collection (auto-creates a collection if none exists)
+- **Upload Dataset (.csv)**: upload a CSV dataset and proceed to the configuration page for column mapping
+- **Export (.cdb)**: download the entire collection as a `.cdb` file
 - **Rename**: change the collection title
-- **Remove**: delete the collection from the browser
+- **Clear**: remove the collection from the browser (prompts for confirmation)
 
 ### Project operations (within a collection)
 
 - **New Project**: create an empty project in the collection
 - **Open**: load the project into the CINeMA evaluation workspace
-- **Export**: download the project as an atomic `.cnm` file (single-project collection, easy to share and merge)
-- **Split**: extract the project into its own new collection
+- **Export (.cnm)**: download the project as a `.cnm` file (single project, easy to share)
 - **Rename**: change the project title
 - **Remove**: delete the project from the collection
 
 ### Saving progress
 
-After evaluating a project (within-study bias, heterogeneity, etc.), click **Save progress back to collection** to persist your evaluation results into the collection. You can then export the entire collection as a `.cnm` file.
+After evaluating a project (within-study bias, heterogeneity, etc.), navigate back to the Collections page and click **Save progress back to collection** to persist your evaluation results. You can then export the collection as a `.cdb` file.
 
 ### File format (v3)
 
-CINeMA v3 `.cnm` files are JSON documents following the schema at `schemata/cinema_schema_v3.json`. Projects saved from CINeMA and exported from MetaInsight both use this format.
+CINeMA v3 files are JSON documents following the schema at `schemata/cinema_schema_v3.json`. Projects saved from CINeMA and exported from MetaInsight both use this format.
 
 ### Importing from MetaInsight
 
-MetaInsight can export analyses as `.cnm` files. Upload them through the Collections page. CINeMA will automatically detect the v3 format and make the projects available for evaluation.
+MetaInsight can export analyses as `.cnm` files. Upload them through the Collections page using **Upload Project (.cnm)**. CINeMA will automatically detect the v3 format and make the project available for evaluation.
 
-### Legacy file support
-
-CINeMA also supports uploading legacy `.cnm` files (v1 internal state format) and v2 exchange format files through the **My Projects** page. These are automatically transformed to the internal format on import.
+<!-- Legacy file support note (old v1/v2 formats): -->
+<!-- CINeMA previously supported uploading legacy .cnm files (v1 internal state format) -->
+<!-- and v2 exchange format files through the "My Projects" page. -->
+<!-- The "My Projects" page has been replaced by the Collections page. -->

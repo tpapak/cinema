@@ -2,6 +2,7 @@ var deepSeek = require('safe-access');
 var h = require('virtual-dom/h');
 var VNode = require('vtree/vnode');
 var VText = require('vtree/vtext');
+var md5 = require('../../bower_components/js-md5/js/md5.min.js');
 var convertHTML = require('html-to-vdom')({
      VNode: VNode,
      VText: VText
@@ -34,6 +35,10 @@ var Router = {
         let reportStatus = deepSeek(Router,'model.getState().project.report.status');
         let imprecisionStatus = deepSeek(Router,'model.getState().project.imprecision.status');
         switch(route) {
+          case 'project':
+            // Project page — always available (shows upload form or project details)
+            return true;
+            break;
           case 'general':
             if(Router.model.getState().project && typeof Router.model.getState().project.studies !== 'undefined'){
               return true;
@@ -66,7 +71,8 @@ var Router = {
         return false;
       }
     },
-    menuRoutes: ['welcome', 'collections', 'project', 'doc'],
+    // menuRoutes: ['welcome', 'collections', 'project', 'doc'],
+    menuRoutes: ['welcome', 'collections', 'doc'],
     evalRoutes: ['general', 'rob', 'pubbias', 'indirectness', 'imprecision', 'heterogeneity', 'incoherence', 'report'],
     dependencies: {
       project: [],
@@ -156,8 +162,32 @@ var Router = {
       if (Router.view.isReady()){
         let currentRoute = Router.view.currentRoute();
         
+        // Pre-compute banner data for the active project
+        var bannerData = { hasProject: false };
+        var projectTitle = deepSeek(Router,'model.getState().project.title');
+        if (!_.isUndefined(projectTitle) && projectTitle) {
+          bannerData.hasProject = true;
+          bannerData.projectTitle = projectTitle;
+          // Check if project is from a collection
+          var pmState = deepSeek(Router,'model.getState().projectManager');
+          if (pmState && pmState.activeProjectId && pmState.collection) {
+            bannerData.collectionTitle = pmState.collection.title;
+            bannerData.fromCollection = true;
+            // Check for unsaved changes
+            if (pmState.lastSavedHash) {
+              var currentProjectHash = md5(JSON.stringify(Router.model.getState().project || {}));
+              bannerData.hasUnsavedChanges = currentProjectHash !== pmState.lastSavedHash;
+            }
+          }
+          // Include format/type info if available
+          var projectFormat = deepSeek(Router,'model.getState().project.format');
+          var projectType = deepSeek(Router,'model.getState().project.type');
+          if (projectFormat) bannerData.format = projectFormat;
+          if (projectType) bannerData.type = projectType;
+        }
+        
         // Header template
-        var headertmpl = GRADE.templates.header({model:model.state,view:Router.view});
+        var headertmpl = GRADE.templates.header({model:model.state,view:Router.view,banner:bannerData});
         var hnode = convertHTML(headertmpl);
         
         // Footer template

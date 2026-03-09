@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
  * V3 Project Manager End-to-End Test for CINeMA webapp
+ * (Single-collection model)
  *
  * Demonstrates the project manager UI and v3 file upload flow.
  * Takes screenshots at each step for screen capture / demo.
@@ -89,7 +90,7 @@ async function screenshot(page, name, step) {
 }
 
 async function runTests() {
-  console.log('CINeMA V3 Project Manager Test\n');
+  console.log('CINeMA V3 Project Manager Test (single-collection model)\n');
   console.log('  Mode: ' + (HEADLESS ? 'headless' : 'interactive'));
   console.log('  Speed: ' + (SLOW ? 'slow (demo)' : 'normal'));
 
@@ -199,62 +200,59 @@ async function runTests() {
     // 3. Create a new collection
     // =========================================================
     console.log('\n--- Step 3: Create a collection ---');
-    await page.evaluate(() => window.Actions.ProjectManager.createCollection('Diabetes Review'));
+    // Pass title directly to avoid prompt dialog
+    await page.evaluate(() => window.Actions.ProjectManager.newCollection('Diabetes Review'));
     await page.waitForTimeout(DELAY);
 
     const hasCollection = await page.evaluate(() => {
       const mgr = window.Model.getState().projectManager;
-      return mgr && mgr.collections && mgr.collections.length === 1;
+      return mgr && mgr.collection && mgr.collection.title === 'Diabetes Review';
     });
-    check(hasCollection, 'Collection created');
+    check(hasCollection, 'Collection created: Diabetes Review');
     await screenshot(page, 'collection_created', step++);
 
     // =========================================================
-    // 4. Upload v3 .cnm file as a collection
+    // 4. Upload v3 .cnm file into the collection as a project
     // =========================================================
-    console.log('\n--- Step 4: Upload v3 .cnm file ---');
-    const fileInput = await page.$('input#pmUploadCollection');
-    check(fileInput !== null, 'Upload file input found');
+    console.log('\n--- Step 4: Upload v3 .cnm file as project ---');
+    const fileInputProject = await page.$('input#pmUploadProject');
+    check(fileInputProject !== null, 'Upload project file input found');
 
-    await fileInput.setInputFiles(V3_FILE);
-    await page.waitForTimeout(DELAY * 2);
-
-    const v3Detected = allConsoleMessages.some(m =>
-      m.text.includes('v3') || m.text.includes('Collection uploaded')
-    );
-
-    const collectionCount = await page.evaluate(() => {
-      const mgr = window.Model.getState().projectManager;
-      return mgr ? mgr.collections.length : 0;
-    });
-    check(collectionCount === 2, 'Two collections now (empty + uploaded): got ' + collectionCount);
-    await screenshot(page, 'collection_uploaded', step++);
-
-    // =========================================================
-    // 5. Select the uploaded collection to see its projects
-    // =========================================================
-    console.log('\n--- Step 5: Browse uploaded collection ---');
-    const uploadedColId = await page.evaluate(() => {
-      const mgr = window.Model.getState().projectManager;
-      // Find the collection with projects (the uploaded one)
-      const col = mgr.collections.find(c => c.projects && c.projects.length > 0);
-      if (col) {
-        window.Actions.ProjectManager.selectCollection(col.id);
-        return col.id;
-      }
-      return null;
-    });
-    await page.waitForTimeout(DELAY);
-
-    check(uploadedColId !== null, 'Uploaded collection found and selected');
+    if (fileInputProject) {
+      await fileInputProject.setInputFiles(V3_FILE);
+      await page.waitForTimeout(DELAY * 2);
+    }
 
     const projectCount = await page.evaluate(() => {
       const mgr = window.Model.getState().projectManager;
-      const col = mgr.collections.find(c => c.id === mgr.activeCollectionId);
-      return col ? col.projects.length : 0;
+      return mgr && mgr.collection ? mgr.collection.projects.length : 0;
     });
-    check(projectCount > 0, 'Collection has ' + projectCount + ' project(s)');
-    await screenshot(page, 'collection_projects', step++);
+    check(projectCount > 0, 'Collection has ' + projectCount + ' project(s) after upload');
+    await screenshot(page, 'project_uploaded', step++);
+
+    // =========================================================
+    // 5. Verify collection state
+    // =========================================================
+    console.log('\n--- Step 5: Verify collection state ---');
+    const colState = await page.evaluate(() => {
+      const mgr = window.Model.getState().projectManager;
+      if (!mgr || !mgr.collection) return null;
+      return {
+        title: mgr.collection.title,
+        projectCount: mgr.collection.projects.length,
+        firstProjectTitle: mgr.collection.projects[0] ? mgr.collection.projects[0].title : null,
+        hasStudies: mgr.collection.projects[0] &&
+                    mgr.collection.projects[0].dataset &&
+                    mgr.collection.projects[0].dataset.studies &&
+                    mgr.collection.projects[0].dataset.studies.length > 0,
+      };
+    });
+    check(colState !== null, 'Collection state accessible');
+    if (colState) {
+      check(colState.projectCount > 0, 'Has ' + colState.projectCount + ' project(s)');
+      check(colState.firstProjectTitle !== null, 'First project: ' + colState.firstProjectTitle);
+      check(colState.hasStudies === true, 'First project has study data');
+    }
 
     // =========================================================
     // 6. Open the first project in CINeMA workspace
@@ -262,10 +260,9 @@ async function runTests() {
     console.log('\n--- Step 6: Open project in CINeMA ---');
     const openResult = await page.evaluate(() => {
       const mgr = window.Model.getState().projectManager;
-      const col = mgr.collections.find(c => c.id === mgr.activeCollectionId);
-      if (col && col.projects.length > 0) {
-        const proj = col.projects[0];
-        window.Actions.ProjectManager.openProject(col.id, proj.id);
+      if (mgr && mgr.collection && mgr.collection.projects.length > 0) {
+        const proj = mgr.collection.projects[0];
+        window.Actions.ProjectManager.openProject(proj.id);
         return { title: proj.title, id: proj.id };
       }
       return null;
@@ -349,97 +346,91 @@ async function runTests() {
     }
 
     // =========================================================
-    // 9. Navigate back to Project Manager
+    // 9. Navigate back to Collections page
     // =========================================================
     console.log('\n--- Step 9: Back to Collections ---');
     await page.evaluate(() => window.Actions.Router.gotoRoute('collections'));
     await page.waitForTimeout(DELAY);
     await screenshot(page, 'back_to_collections', step++);
 
+    // Verify collection is still intact after round-trip
+    const afterRoundTrip = await page.evaluate(() => {
+      const mgr = window.Model.getState().projectManager;
+      return mgr && mgr.collection && mgr.collection.projects.length > 0;
+    });
+    check(afterRoundTrip, 'Collection intact after round-trip through evaluation');
+
     // =========================================================
-    // 10. Export project as atomic .cnm
+    // 10. Export project as .cnm
     // =========================================================
-    console.log('\n--- Step 10: Export atomic project ---');
+    console.log('\n--- Step 10: Export project as .cnm ---');
     // Set up download listener
     const downloadPromise = page.waitForEvent('download', { timeout: 5000 }).catch(() => null);
 
     await page.evaluate(() => {
       const mgr = window.Model.getState().projectManager;
-      const col = mgr.collections.find(c => c.projects && c.projects.length > 0);
-      if (col && col.projects[0]) {
-        window.Actions.ProjectManager.exportProject(col.id, col.projects[0].id);
+      if (mgr && mgr.collection && mgr.collection.projects[0]) {
+        window.Actions.ProjectManager.exportProject(mgr.collection.projects[0].id);
       }
     });
 
-    const download = await downloadPromise;
-    if (download) {
-      const dlPath = path.join(SCREENSHOT_DIR, await download.suggestedFilename());
-      await download.saveAs(dlPath);
-      check(true, 'Atomic .cnm exported: ' + await download.suggestedFilename());
+    const dl = await downloadPromise;
+    if (dl) {
+      const dlPath = path.join(SCREENSHOT_DIR, await dl.suggestedFilename());
+      await dl.saveAs(dlPath);
+      check(true, 'Project .cnm exported: ' + await dl.suggestedFilename());
 
       // Validate exported file is valid v3
       const exported = JSON.parse(fs.readFileSync(dlPath, 'utf8'));
       check(exported.cinema && exported.cinema.version === '3.0.0', 'Exported file is v3 format');
-      check(exported.cinema.projects.length === 1, 'Exported file has 1 project (atomic)');
+      check(exported.cinema.projects.length === 1, 'Exported file has 1 project');
     } else {
       console.log('  (i) Download event not captured (may need --headless=false)');
     }
 
     // =========================================================
-    // 11. Split project into new collection
+    // 11. Export collection as .cdb
     // =========================================================
-    console.log('\n--- Step 11: Split project to new collection ---');
+    console.log('\n--- Step 11: Export collection as .cdb ---');
+    const dlPromise2 = page.waitForEvent('download', { timeout: 5000 }).catch(() => null);
+
     await page.evaluate(() => {
-      const mgr = window.Model.getState().projectManager;
-      const col = mgr.collections.find(c => c.projects && c.projects.length > 0);
-      if (col && col.projects[0]) {
-        window.Actions.ProjectManager.splitProject(col.id, col.projects[0].id);
-      }
+      window.Actions.ProjectManager.exportCollection();
     });
-    await page.waitForTimeout(DELAY);
 
-    const finalColCount = await page.evaluate(() => {
-      return window.Model.getState().projectManager.collections.length;
-    });
-    check(finalColCount === 3, 'Now 3 collections (empty + uploaded + split): got ' + finalColCount);
-    await screenshot(page, 'after_split', step++);
+    const dl2 = await dlPromise2;
+    if (dl2) {
+      const dlPath2 = path.join(SCREENSHOT_DIR, await dl2.suggestedFilename());
+      await dl2.saveAs(dlPath2);
+      check(true, 'Collection .cdb exported: ' + await dl2.suggestedFilename());
+
+      const exportedCol = JSON.parse(fs.readFileSync(dlPath2, 'utf8'));
+      check(exportedCol.cinema && exportedCol.cinema.version === '3.0.0', 'Exported .cdb is v3 format');
+      check(exportedCol.cinema.projects.length > 0, 'Exported .cdb has projects');
+    } else {
+      console.log('  (i) Download event not captured (may need --headless=false)');
+    }
 
     // =========================================================
-    // 12. Merge collections
+    // 12. Verify UI elements on collections page
     // =========================================================
-    console.log('\n--- Step 12: Merge collections ---');
-    await page.evaluate(() => {
-      const mgr = window.Model.getState().projectManager;
-      if (mgr.collections.length >= 2) {
-        // Programmatically merge first two
-        const id1 = mgr.collections[0].id;
-        const id2 = mgr.collections[1].id;
-        // Direct call (bypasses confirm dialog)
-        const col1 = mgr.collections.find(c => c.id === id1);
-        const col2 = mgr.collections.find(c => c.id === id2);
-        const now = new Date().toISOString();
-        const merged = {
-          id: 'merged_' + Date.now(),
-          title: col1.title + ' + ' + col2.title,
-          description: 'Merged',
-          author: '',
-          createdAt: now,
-          updatedAt: now,
-          projects: (col1.projects || []).concat(col2.projects || []),
-        };
-        mgr.collections.push(merged);
-        mgr.activeCollectionId = merged.id;
-        // re-render
-        window.Model.saveState();
-      }
+    console.log('\n--- Step 12: Verify collections page UI ---');
+    const uiState = await page.evaluate(() => {
+      return {
+        hasResetButton: document.querySelector('[onclick*="resetApp"]') !== null
+                     || document.querySelector('button.btn-danger') !== null,
+        hasUploadCnm: document.querySelector('#pmUploadProject') !== null,
+        hasUploadCsv: document.querySelector('#pmUploadCSV') !== null,
+        hasUploadCdb: document.querySelector('#pmUploadCollection'),
+        projectCount: window.Model.getState().projectManager.collection.projects.length,
+      };
     });
-    await page.waitForTimeout(DELAY);
-
-    const mergedCount = await page.evaluate(() => {
-      return window.Model.getState().projectManager.collections.length;
-    });
-    check(mergedCount === 4, 'Now 4 collections (3 + merged): got ' + mergedCount);
-    await screenshot(page, 'after_merge', step++);
+    check(uiState.hasResetButton, 'Reset CINeMA button present');
+    check(uiState.hasUploadCnm, 'Upload Project (.cnm) button present');
+    check(uiState.hasUploadCsv, 'Upload Dataset (.csv) button present');
+    check(!uiState.hasUploadCdb, 'Upload Collection (.cdb) hidden when collection active');
+    check(uiState.projectCount === 1, 'Collection still has 1 project');
+    await screenshot(page, 'collections_ui_verified', step++);
 
     // =========================================================
     // 13. Check for critical JS errors

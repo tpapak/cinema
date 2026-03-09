@@ -27,10 +27,10 @@ var FR = {
     });
   },
   convertCSVtoJSON: (stri) =>{
-    return new Promise( (res, rej) => {
-      Converter({delimiter:[',',';'],trim:true,checkColumn:true,checkType:true})
+    // csvtojson v2 API: .fromString() returns a Promise (v1 used .on('end_parsed'))
+    return Converter({delimiter:[',',';'],trim:true,checkColumn:true,checkType:true})
       .fromString(stri)
-      .on('end_parsed', (jsonData) => {
+      .then((jsonData) => {
 //        trimming keys and values!!
         let newjson = _.reduce(jsonData,(memo, json)=> {
           let keys = Object.keys(json);
@@ -41,12 +41,15 @@ var FR = {
           let nrow = _.object(nkv);
           return memo.concat([nrow]);
         },[]);
-        res(newjson);
-      })
-      .on('error',function(errMsg,errData){
-        rej(errMsg+errData);
+        return newjson;
       });
-    });
+    // Old csvtojson v1 API (kept for reference):
+    // return new Promise( (res, rej) => {
+    //   Converter({delimiter:[',',';'],trim:true,checkColumn:true,checkType:true})
+    //   .fromString(stri)
+    //   .on('end_parsed', (jsonData) => { res(newjson); })
+    //   .on('error',function(errMsg,errData){ rej(errMsg+errData); });
+    // });
   },
 };
 

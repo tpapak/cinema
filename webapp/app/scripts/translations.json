@@ -25,9 +25,9 @@
         "info": "Welcome to our App, CINeMA app helps you evaluate NMAs"
       },
       "collections":{
-        "label": "Collections",
-        "title": "Project Manager",
-        "info": "Manage your collections and projects"
+        "label": "Projects",
+        "title": "Projects",
+        "info": "Manage your projects"
       },
       "project":{
         "label": "My Projects",

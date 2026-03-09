@@ -507,25 +507,36 @@ var v3ProjectToLegacyState = (v3project, v3meta, currentState) => {
   var split = splitComparisons(savedComparisons, directComparisonIds);
 
   // Re-key study contributions from study name to study ID
+  // R/netmeta sanitizes names: replaces hyphens, dots, spaces with underscores.
+  // Build both exact and normalized (R-style) lookup maps.
   var studyNameToId = {};
+  var normalizedNameToId = {};
   _.each(dataset.studies, (arm) => {
     var studyName = typeof arm.study === 'string' ? arm.study : String(arm.study);
     var studyIdStr = typeof arm.id === 'string' ? arm.id : String(arm.id);
     studyNameToId[studyName] = studyIdStr;
+    // R-style normalization: replace hyphens, dots, spaces with underscores
+    var normalized = studyName.replace(/[-. ]/g, '_');
+    normalizedNameToId[normalized] = studyIdStr;
   });
   var allStudyIdStrings = _.uniq(_.values(studyNameToId));
+  // v3 stores contributions as proportions (0-1), internal state uses percentages (0-100)
   var studycontributions = _.mapObject(studyContributions, (studyMap) => {
     var filled = {};
     _.each(allStudyIdStrings, (sid) => {
       filled[sid] = 0;
     });
+    // Detect scale: if all values sum to ~1, multiply by 100 to get percentages
+    var rawSum = _.reduce(_.values(studyMap), (a, b) => { return a + b; }, 0);
+    var scale = (rawSum > 0 && rawSum <= 1.5) ? 100 : 1;
     _.each(studyMap, (value, studyName) => {
-      var studyId = studyNameToId[studyName];
+      // Try exact match first, then normalized (R-style) match
+      var studyId = studyNameToId[studyName] || normalizedNameToId[studyName];
       if (studyId) {
-        filled[studyId] = value;
+        filled[studyId] = value * scale;
       } else {
         // Key might already be an ID
-        filled[studyName] = value;
+        filled[studyName] = value * scale;
       }
     });
     return filled;
@@ -996,13 +1007,21 @@ var legacyStateToV3 = (state) => {
     }
 
     // Contribution matrix
+    // Internal state uses percentages (0-100), v3 stores proportions (0-1)
+    var rawStudyContrs = cm.studycontributions || {};
+    var v3StudyContributions = _.mapObject(rawStudyContrs, (studyMap) => {
+      // Detect scale: if values sum to ~100, divide by 100 to get proportions
+      var rawSum = _.reduce(_.values(studyMap), (a, b) => { return a + b; }, 0);
+      var scale = (rawSum > 1.5) ? 0.01 : 1;
+      return _.mapObject(studyMap, (val) => { return val * scale; });
+    });
     var contributionMatrix = {
       hatMatrix: {
         H: hm.H || [],
         rowNames: hm.rowNames || [],
         colNames: hm.colNames || [],
       },
-      studyContributions: cm.studycontributions || {},
+      studyContributions: v3StudyContributions,
     };
 
     // Frequentist results

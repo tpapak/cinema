@@ -271,3 +271,64 @@ border: 0px solid white;
   background-color: #E5F4F4!important;
   border-radius: 100em;
 }
+
+// Project banner — shows active project below navbar
+.project-banner {
+  background-color: #f0f6fc;
+  border-bottom: 1px solid #d0dbe6;
+  padding: 6px 0;
+  font-size: 13px;
+  color: #333;
+}
+
+.project-banner-inner {
+  max-width: 1170px;
+  margin: 0 auto;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  > .fa {
+    color: #459edb;
+  }
+}
+
+.project-banner-title {
+  font-weight: 600;
+  color: #2c4d6d;
+}
+
+.project-banner-meta {
+  color: #777;
+  font-size: 12px;
+
+  &::before {
+    content: '\2014';
+    margin-right: 6px;
+    color: #ccc;
+  }
+}
+
+.project-banner-unsaved {
+  color: #c09853;
+  font-size: 11px;
+  font-weight: 600;
+
+  .fa {
+    font-size: 8px;
+    vertical-align: middle;
+    margin-right: 2px;
+  }
+}
+
+.project-banner-collection {
+  margin-left: auto;
+  color: #888;
+  font-size: 12px;
+
+  .fa {
+    margin-right: 3px;
+  }
+}

@@ -32,6 +32,27 @@
   </ol>
 </div>
 </nav>
+{{#if banner.hasProject}}
+<div class="project-banner">
+  <div class="project-banner-inner">
+    <i class="fa fa-file-text-o" aria-hidden="true"></i>
+    <span class="project-banner-title">{{banner.projectTitle}}</span>
+    {{#if banner.format}}
+    <span class="project-banner-meta">{{banner.type}} &middot; {{banner.format}}</span>
+    {{/if}}
+    {{#if banner.hasUnsavedChanges}}
+    <span class="project-banner-unsaved">
+      <i class="fa fa-circle" aria-hidden="true"></i> unsaved
+    </span>
+    {{/if}}
+    {{#if banner.fromCollection}}
+    <span class="project-banner-collection">
+      <i class="fa fa-folder-open-o" aria-hidden="true"></i> {{banner.collectionTitle}}
+    </span>
+    {{/if}}
+  </div>
+</div>
+{{/if}}
 <div class="visible-print">
   <h2>
     Confidence In Network Meta Analysis - CINeMA 2.0.0 - Project: 
