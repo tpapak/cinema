@@ -109,15 +109,19 @@
                   <strong>{{title}}</strong>
                   {{#if isActive}}
                   <span class="label label-primary pm-active-badge">active</span>
-                  {{#if ../view.hasUnsavedChanges}}
-                  <span class="label label-warning pm-unsaved-badge">unsaved</span>
-                  {{/if}}
+                  <!-- unsaved badge removed — auto-saves to collection on every persist -->
                   {{/if}}
                   {{#if description}}
                   <br><small class="text-muted">{{description}}</small>
                   {{/if}}
                 </td>
-                <td>{{outcome}}</td>
+                <td>
+                  {{#if outcome}}{{outcome}}{{else}}<em class="text-muted">--</em>{{/if}}
+                  <button onClick="Actions.ProjectManager.editOutcome('{{id}}')"
+                          class="btn btn-xs btn-link" title="Edit outcome">
+                    <i class="fa fa-pencil" aria-hidden="true"></i>
+                  </button>
+                </td>
                 <td>
                   {{#if hasStudies}}
                     {{studyCount}} arms
@@ -167,7 +171,8 @@
     </div>
     {{/if}}
 
-    {{#if view.hasActiveProject}}
+    <!-- Save progress button removed — auto-saves to collection on every persist -->
+    <!-- {{#if view.hasActiveProject}}
     <div class="pm-save-back {{#if view.hasUnsavedChanges}}pm-save-back-unsaved{{/if}}">
       {{#if view.hasUnsavedChanges}}
       <p class="pm-unsaved-notice">
@@ -180,7 +185,7 @@
         <i class="fa fa-save" aria-hidden="true"></i> Save progress back to collection
       </button>
     </div>
-    {{/if}}
+    {{/if}} -->
 
     <hr>
     <button onClick="Actions.Project.resetApp()"

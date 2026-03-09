@@ -231,6 +231,41 @@ var PM = {
         Messages.alertify().error('Failed to upload project: ' + err);
       });
     },
+    // Snapshot current state.project into the active collection as a v3 project.
+    // Called after CSV upload (auto-recognized) and after Proceed (manual mapping).
+    // Mutates state in-memory only — caller is responsible for triggering
+    // saveState() or persistToLocalStorage() afterward to avoid double-render.
+    // Returns the new project id, or null if snapshotting failed.
+    addCurrentProjectToCollection: () => {
+      var mgr = PM.update.getManager();
+      if (!mgr.collection) return null;
+      var state = PM.model.getState();
+      if (!state || !state.project || !state.project.hasFile) return null;
+      // Export current legacy state to v3
+      var v3 = V3Bridge.legacyStateToV3(state);
+      if (!v3 || !v3.cinema || !v3.cinema.projects || v3.cinema.projects.length === 0) return null;
+      var v3project = v3.cinema.projects[0];
+      // Check if this project is already in the collection (by activeProjectId)
+      if (mgr.activeProjectId) {
+        var existingIdx = _.findIndex(mgr.collection.projects, (p) => { return p.id === mgr.activeProjectId; });
+        if (existingIdx !== -1) {
+          // Update existing project in-place
+          v3project.id = mgr.activeProjectId;
+          mgr.collection.projects[existingIdx] = v3project;
+          mgr.collection.updatedAt = timestamp();
+          mgr.lastSavedHash = md5(JSON.stringify(state.project));
+          return mgr.activeProjectId;
+        }
+      }
+      // New project — assign id, add to collection, set as active
+      var newId = generateId();
+      v3project.id = newId;
+      mgr.collection.projects.push(v3project);
+      mgr.collection.updatedAt = timestamp();
+      mgr.activeProjectId = newId;
+      mgr.lastSavedHash = md5(JSON.stringify(state.project));
+      return newId;
+    },
     uploadCSV: (inputEl) => {
       // Upload a CSV dataset — read file, create project in legacy state,
       // then navigate to the configuration page for column mapping.
@@ -281,9 +316,15 @@ var PM = {
           if (hasFormat && hasType) {
             var prj = PM.model.getState().project;
             prj.isRecognized = true;
-            ProjectActions.makeStudies(answer);
+            // makeStudies is async — wait for it before snapshotting
+            return ProjectActions.makeStudies(answer).then(() => {
+              // Step 5: snapshot the project into the active collection
+              PM.update.addCurrentProjectToCollection();
+              // Navigate to project page for review / Proceed
+              PM.model.Actions.Router.gotoRoute('project');
+            });
           }
-          // Navigate to the Configuration page for column mapping / review
+          // Non-auto-recognized: navigate to project page for manual mapping
           PM.model.Actions.Router.gotoRoute('project');
         })
         .catch((err) => {
@@ -374,6 +415,21 @@ var PM = {
           if (col) col.updatedAt = timestamp();
           PM.model.saveState();
           Messages.alertify().success('Project renamed');
+        },
+        () => {}
+      );
+    },
+    editOutcome: (projectId) => {
+      var proj = PM.view.getProject(projectId);
+      if (!proj) return;
+      Messages.alertify().prompt('Edit Outcome', 'Enter outcome description:', proj.outcome || '',
+        (evt, value) => {
+          proj.outcome = value.toString();
+          proj.updatedAt = timestamp();
+          var col = PM.view.getCollection();
+          if (col) col.updatedAt = timestamp();
+          PM.model.saveState();
+          Messages.alertify().success('Outcome updated');
         },
         () => {}
       );
@@ -512,7 +568,7 @@ var PM = {
       if (col && col.projects) {
         projectsView = _.map(col.projects, (p) => {
           var hasStudies = p.dataset && p.dataset.studies && p.dataset.studies.length > 0;
-          var hasAnalysis = !!(p.analysis && p.analysis.model);
+          var hasAnalysis = !!(p.analysis && (p.analysis.params || p.analysis.frequentist || p.analysis.bayesian));
           var hasEval = !!(p.hasEvaluation || (p.evaluation && p.evaluation.domains));
           return {
             id: p.id,

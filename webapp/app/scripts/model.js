@@ -76,6 +76,12 @@ var Model = {
     Model.saveState();
   },
   persistToLocalStorage: () => {
+    // Auto-save active project back to collection before persisting
+    if (typeof Model.Actions !== 'undefined' &&
+        typeof Model.Actions.ProjectManager !== 'undefined' &&
+        typeof Model.Actions.ProjectManager.addCurrentProjectToCollection === 'function') {
+      Model.Actions.ProjectManager.addCurrentProjectToCollection();
+    }
     localStorage.clear();
     try {
       localStorage.setItem('state', JSON.stringify(Model.getState()));
@@ -183,28 +189,41 @@ var Model = {
     }
     return out;
   },
-  checkCachedModel: (version) => {
-    let savedModel = Model.cachedModel();
-    if (savedModel === 'Nothing'){
-      Model.clearCachedModel();
-    }else{
-      if ((typeof savedModel.version !== 'undefined') && Model.versionsAreCompatible(version,savedModel.version)){
-        // comply with EU cookie law
-        if(Model.hasExpired(savedModel.timestamp)){
-          Model.clearCachedModel();
-        }else{
-          console.log('cachedStorage ok');
-        }
-      }else{
-        Model.clearCachedModel();
-      }
-    }
-  },
+  // checkCachedModel: (version) => {
+  //   let savedModel = Model.cachedModel();
+  //   if (savedModel === 'Nothing'){
+  //     Model.clearCachedModel();
+  //   }else{
+  //     if ((typeof savedModel.version !== 'undefined') && Model.versionsAreCompatible(version,savedModel.version)){
+  //       // comply with EU cookie law
+  //       if(Model.hasExpired(savedModel.timestamp)){
+  //         Model.clearCachedModel();
+  //       }else{
+  //         console.log('cachedStorage ok');
+  //       }
+  //     }else{
+  //       Model.clearCachedModel();
+  //     }
+  //   }
+  // },
   init: (version) => {
     Router.register(Model);
     View.init(Model);
-    Model.checkCachedModel(version);
-    Model.initializeModel(version);
+    // Auto-restore from localStorage if valid cached state exists
+    let savedModel = Model.cachedModel();
+    if (savedModel !== 'Nothing' &&
+        typeof savedModel.version !== 'undefined' &&
+        Model.versionsAreCompatible(version, savedModel.version) &&
+        !Model.hasExpired(savedModel.timestamp)) {
+      console.log('Restoring cached state from localStorage');
+      Model.setState(savedModel);
+    } else {
+      if (savedModel !== 'Nothing') {
+        // Incompatible or expired — clear stale cache
+        Model.clearCachedModel();
+      }
+      Model.initializeModel(version);
+    }
   },
   hasExpired: (date) => {
     let current = new Date();

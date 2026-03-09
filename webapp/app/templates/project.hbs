@@ -2,12 +2,13 @@
   <div class='projects-container col-xs-12 col-md-offset-2 col-md-8'>
 
     {{#unless view.hasFile}}
-    {{#if view.hasCached}}
+    <!-- Load cached button removed — app now auto-restores from localStorage on startup -->
+    <!-- {{#if view.hasCached}}
         <button onClick="Actions.Project.loadCached()" class="btn
           btn-default">
           Load cached Project
         </button>
-    {{/if}}
+    {{/if}} -->
     <h3>Dataset uploader</h3>
     <div class='well col-xs-12 project-uploader'>
           <span class="prtitle">
@@ -82,9 +83,10 @@
             <span class="badge">{{view.creationDate}}</span>
           </li>
         </ul>
-        <button id="projectClear" class="pull-right btn btn-default">
+        <!-- Clear Project button removed — use Remove from collection instead -->
+        <!-- <button id="projectClear" class="pull-right btn btn-default">
           Clear Project
-        </button>
+        </button> -->
         <span class="comments">
          look at the <a href="#doc" onClick="Actions.Router.gotoRoute('doc')">documentation
             page </a>for the definition of each field

@@ -31,14 +31,15 @@ var V3Bridge = require('./lib/v3bridge.js');
 var PR = {
   actions: {
     bindControls: () => {
-      $(document).on('click','#projectClear', {} ,
-        e=>{
-          Messages.alertify().confirm('Clear Project?','All changes will be lost',
-          () => {
-            Messages.alertify().message('Project cleared');
-            PR.update.clearProject();
-        },()=>{});
-      });
+      // Clear Project button removed — use Remove from collection instead
+      // $(document).on('click','#projectClear', {} ,
+      //   e=>{
+      //     Messages.alertify().confirm('Clear Project?','All changes will be lost',
+      //     () => {
+      //       Messages.alertify().message('Project cleared');
+      //       PR.update.clearProject();
+      //   },()=>{});
+      // });
       $(document).on('click','#proceed', {} ,
         e=>{ console.log('going to configuration');
       });
@@ -449,6 +450,8 @@ var PR = {
       })
     },
     proceed: () => {
+      // addCurrentProjectToCollection is now called automatically
+      // inside persistToLocalStorage — no need to call it explicitly
       Actions.Router.gotoRoute('general');
       PR.model.persistToLocalStorage();
     },

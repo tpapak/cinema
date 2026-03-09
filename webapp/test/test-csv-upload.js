@@ -549,6 +549,53 @@ async function runProjectManagerCSVFlow(page, csvContent, check, screenshot, ste
   check(configCheck.hasPlacebo, 'Placebo treatment listed');
   check(configCheck.hasDiuretic, 'Diuretic treatment listed');
   await screenshot(page, 'pm_csv_config_verified', step++);
+
+  // 11. Navigate back to Projects and verify the project is in the collection
+  console.log('\n--- Step 11: Verify project visible in Projects page ---');
+  await page.evaluate(() => window.Actions.Router.gotoRoute('collections'));
+  await page.waitForTimeout(DELAY * 2);
+
+  const collectionState = await page.evaluate(() => {
+    try {
+      const mgr = window.Model.getState().projectManager;
+      if (!mgr || !mgr.collection) return { error: 'No collection found' };
+      return {
+        collectionTitle: mgr.collection.title,
+        projectCount: mgr.collection.projects.length,
+        activeProjectId: mgr.activeProjectId,
+        projects: mgr.collection.projects.map(p => ({
+          id: p.id,
+          title: p.title,
+          hasDataset: !!(p.dataset && p.dataset.studies && p.dataset.studies.length > 0),
+          studyCount: (p.dataset && p.dataset.studies) ? p.dataset.studies.length : 0,
+        })),
+      };
+    } catch (e) {
+      return { error: e.message };
+    }
+  });
+
+  check(!collectionState.error, 'Collection state accessible');
+  check(collectionState.projectCount === 1, 'Collection has 1 project: got ' + collectionState.projectCount);
+  if (collectionState.projects && collectionState.projects.length > 0) {
+    const proj = collectionState.projects[0];
+    check(proj.title === 'Elliott_2007', 'Project title is "Elliott_2007": got "' + proj.title + '"');
+    check(proj.hasDataset === true, 'Project has dataset with studies');
+    check(proj.studyCount > 0, 'Project has ' + proj.studyCount + ' study arms');
+  }
+  check(collectionState.activeProjectId !== null, 'Project is marked as active');
+
+  // Verify the project row is visible in the DOM
+  const domCheck = await page.evaluate(() => {
+    const html = document.body.innerHTML;
+    return {
+      hasProjectRow: html.includes('Elliott_2007'),
+      hasActiveIndicator: html.includes('active') || html.includes('Active'),
+    };
+  });
+  check(domCheck.hasProjectRow, 'Project "Elliott_2007" visible in Projects table');
+  check(domCheck.hasActiveIndicator, 'Active project indicator shown');
+  await screenshot(page, 'pm_csv_back_to_projects', step++);
 }
 
 runTests().catch(err => {
