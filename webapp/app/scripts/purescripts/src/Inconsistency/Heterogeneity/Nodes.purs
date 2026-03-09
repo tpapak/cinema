@@ -1,17 +1,17 @@
 module Heterogeneity.Nodes where
 
 import Prelude
-import Effect 
+import Effect
 import Effect.Unsafe
 import Effect.Console (log, logShow)
 import Data.Array
-import Data.Argonaut 
+import Data.Argonaut
 import Data.Argonaut.Decode.Error (JsonDecodeError(..))
 import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
 import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)
 -- import Data.Argonaut.Index ((!)) -- REMOVED: Use getField from Data.Argonaut
 -- import Data.Argonaut.Generic -- REMOVED: Use DecodeJson instances
-import Data.Generic.Rep as Rep 
+import Data.Generic.Rep as Rep
 import Data.Show.Generic (genericShow)
 import Control.Monad.Except (runExcept)
 import Data.Maybe
@@ -32,26 +32,30 @@ import Model
 import Text.Model
 import SaveModel
 
-
-
-getState :: Json  -> Effect Unit
+getState :: Json -> Effect Unit
 getState mdl = do
   let (s :: Either String State) = readState mdl
   case s of
-     Left err -> log $ "error in state " <> err
-     Right st -> do
-       let selects = getSelected st
-           allnodes = (st  ^. _State <<< project <<< _Project 
-                <<< studies <<< _Studies)."nodes"
-           nds = filter (isSelectedNode selects) allnodes
-           lkj = map (stringToComparison ":") selects
-       {--log $ "all nodes are " <> show allnodes--}
-       log $ "THE  E E E E E E Eselected nodes are " <> show nds
+    Left err -> log $ "error in state " <> err
+    Right st -> do
+      let
+        selects = getSelected st
+        allnodes =
+          ( st ^. _State <<< project <<< _Project
+              <<< studies
+              <<< _Studies
+          )."nodes"
+        nds = filter (isSelectedNode selects) allnodes
+        lkj = map (stringToComparison ":") selects
+      {--log $ "all nodes are " <> show allnodes--}
+      log $ "THE  E E E E E E Eselected nodes are " <> show nds
 
 nodesToJson :: Array Node -> Json
-nodesToJson nds = encodeJson $ map 
-  (\n -> nodeId .~ (n ^. _Node)."label" 
-  $ (n ^. _Node)) nds
+nodesToJson nds = encodeJson $ map
+  ( \n -> nodeId .~ (n ^. _Node)."label"
+      $ (n ^. _Node)
+  )
+  nds
 
 setNodes :: Json -> Json
 setNodes mdl = do
@@ -59,12 +63,15 @@ setNodes mdl = do
   case s of
     Left err -> encodeJson ([] :: Array Node)
     Right st -> do
-      let selects = getSelected st
-          studiesNodes = (st  ^. _State <<< project <<< _Project 
-                       <<< studies <<< _Studies)."nodes"
-          nds = sort $ filter (isSelectedNode selects) studiesNodes
+      let
+        selects = getSelected st
+        studiesNodes =
+          ( st ^. _State <<< project <<< _Project
+              <<< studies
+              <<< _Studies
+          )."nodes"
+        nds = sort $ filter (isSelectedNode selects) studiesNodes
       nodesToJson nds
-
 
 getNodes :: Json -> Array Node
 getNodes mdl = do
@@ -72,98 +79,123 @@ getNodes mdl = do
   case s of
     Left err -> []
     Right st -> do
-      let nds = (st  ^. _State <<< project <<< _Project
-                       <<< heterogeneity <<< _Heterogeneity
-                       <<< referenceValues <<< _ReferenceValues)."treatments"
+      let
+        nds =
+          ( st ^. _State <<< project <<< _Project
+              <<< heterogeneity
+              <<< _Heterogeneity
+              <<< referenceValues
+              <<< _ReferenceValues
+          )."treatments"
       nds
-
 
 chooseInterventionType :: String -> Array InterventionType
 chooseInterventionType id = do
-  let defaults = over (ix 0) 
-          (\it -> InterventionType $ (it ^. _InterventionType) 
-            { isActive = false
-            , isSelected = false
-            } ) 
-          defaultInterventionTypes
-      chosen = findIndex (\it -> (it ^. _InterventionType)."id" == id)
-          defaults
-      out = case chosen of 
-             Nothing -> defaults
-             Just ci -> over (ix ci) 
-               (\it -> InterventionType $ (it ^. _InterventionType) 
-                 { isActive = true
-                 , isSelected = true
-                 } 
-               ) defaults 
+  let
+    defaults = over (ix 0)
+      ( \it -> InterventionType $ (it ^. _InterventionType)
+          { isActive = false
+          , isSelected = false
+          }
+      )
+      defaultInterventionTypes
+    chosen = findIndex (\it -> (it ^. _InterventionType)."id" == id)
+      defaults
+    out = case chosen of
+      Nothing -> defaults
+      Just ci -> over (ix ci)
+        ( \it -> InterventionType $ (it ^. _InterventionType)
+            { isActive = true
+            , isSelected = true
+            }
+        )
+        defaults
   out
-  
+
 deselectIntTypes :: Json -> Effect Unit
 deselectIntTypes mdl = do
   let nds = getNodes mdl
-  let out = map (\node -> _Node <<< interventionType .~
-                defaultInterventionTypes $ node) nds 
+  let
+    out = map
+      ( \node ->
+          _Node <<< interventionType .~
+            defaultInterventionTypes $ node
+      )
+      nds
   {--logShow $ "changing node" <> (show out) <> it--}
   {--saveState "heterogeneity.referenceValues.status" "not-set"--}
   saveState "heterogeneity.referenceValues.treatments" $
     nodesToJson out
-                  
 
 setAllNodesIntType :: Json -> Json -> Effect Unit
 setAllNodesIntType mdl intype = do
   let nds = getNodes mdl
-  let it = case decodeJson intype of
-            Left _ -> "undefined"
-            Right t -> t 
-  let out = map (\node -> _Node <<< interventionType .~
-                (chooseInterventionType it) $ node) nds 
+  let
+    it = case decodeJson intype of
+      Left _ -> "undefined"
+      Right t -> t
+  let
+    out = map
+      ( \node ->
+          _Node <<< interventionType .~
+            (chooseInterventionType it) $ node
+      )
+      nds
   {--logShow $ "changing node" <> (show out) <> it--}
   saveState "heterogeneity.referenceValues.status" "edited"
   saveState "heterogeneity.referenceValues.treatments" $
     nodesToJson out
-                  
 
 setNodeIntType :: Json -> Json -> Json -> Effect Unit
 setNodeIntType mdl nodeLabel intype = do
   let nds = getNodes mdl
-  let nl = case decodeJson nodeLabel of
-            Left _ -> "undefined"
-            Right l -> l 
-  let it = case decodeJson intype of
-            Left _ -> "undefined"
-            Right t -> t 
+  let
+    nl = case decodeJson nodeLabel of
+      Left _ -> "undefined"
+      Right l -> l
+  let
+    it = case decodeJson intype of
+      Left _ -> "undefined"
+      Right t -> t
   let nd = findIndex (\n -> (n ^. _Node)."label" == nl) nds
-  let out = case nd of
-            Nothing -> nds
-            Just n -> over (ix n) (\node -> 
-                            _Node <<< interventionType .~
-                            (chooseInterventionType it)
-                            $ node
-                           ) nds 
+  let
+    out = case nd of
+      Nothing -> nds
+      Just n -> over (ix n)
+        ( \node ->
+            _Node <<< interventionType .~
+              (chooseInterventionType it)
+              $ node
+        )
+        nds
   {--logShow $ "changing node" <> (show out) <> it--}
   saveState "heterogeneity.referenceValues.status" "edited"
   saveState "heterogeneity.referenceValues.treatments" $
     nodesToJson out
-                  
+
 hasSelectedAll :: Json -> Boolean
-hasSelectedAll mdl = do 
+hasSelectedAll mdl = do
   let nodes = getNodes mdl
-  all (\n ->  any (\it -> (it ^. _InterventionType)."isSelected" == true) 
-          (n ^. _Node <<< interventionType)) nodes
+  all
+    ( \n -> any (\it -> (it ^. _InterventionType)."isSelected" == true)
+        (n ^. _Node <<< interventionType)
+    )
+    nodes
 
 getInterventionType :: Json -> TreatmentId -> Maybe InterventionType
-getInterventionType mdl tid = do 
+getInterventionType mdl tid = do
   let nodes = getNodes mdl
-  let mnode = findIndex (\n -> (n ^. _Node)."id" == tid) nodes 
+  let mnode = findIndex (\n -> (n ^. _Node)."id" == tid) nodes
   case mnode of
-       Nothing -> Nothing
-       Just nodeIx -> do
-         let node = unsafePartial $ fromJust $ nodes !! nodeIx
-             minttype = findIndex (\it -> (it ^. _InterventionType)."isSelected" == true)
-                         $ (node  ^. _Node)."interventionType"
-         case minttype of
-           Nothing -> Nothing
-           Just inttype -> ((node ^. _Node)."interventionType") !! inttype
+    Nothing -> Nothing
+    Just nodeIx -> do
+      let
+        node = unsafePartial $ fromJust $ nodes !! nodeIx
+        minttype = findIndex (\it -> (it ^. _InterventionType)."isSelected" == true)
+          $ (node ^. _Node)."interventionType"
+      case minttype of
+        Nothing -> Nothing
+        Just inttype -> ((node ^. _Node)."interventionType") !! inttype
 
 isTheSameComparison :: Json -> Json -> Boolean
 isTheSameComparison fc1 fc2 = do
@@ -171,16 +203,17 @@ isTheSameComparison fc1 fc2 = do
   let ec1 = decodeJson fc1 :: Either JsonDecodeError String
   -- TODO: Fix decoder
   let ec2 = decodeJson fc2 :: Either JsonDecodeError String
-  if any isLeft [ec1, ec2] then
+  if any isLeft [ ec1, ec2 ] then
     false
-    else do
-      let c1 = case ec1 of
-             Left _ -> skeletonComparison
-             Right sc1 -> stringToComparison ":" sc1
-          c2 = case ec2 of
-             Left _ -> skeletonComparison
-             Right sc2 -> stringToComparison ":" sc2
-      c1 == c2 && (c1 /= skeletonComparison) && (c2 /= skeletonComparison)
+  else do
+    let
+      c1 = case ec1 of
+        Left _ -> skeletonComparison
+        Right sc1 -> stringToComparison ":" sc1
+      c2 = case ec2 of
+        Left _ -> skeletonComparison
+        Right sc2 -> stringToComparison ":" sc2
+    c1 == c2 && (c1 /= skeletonComparison) && (c2 /= skeletonComparison)
 
 getComparisonType :: Json -> Json -> String
 getComparisonType mdl fid = do
@@ -191,32 +224,42 @@ getComparisonType mdl fid = do
     Left err -> ""
     Right st -> do
       case eid of
-           Left err -> ""
-           Right sid -> do
-             let allnodes = getNodes mdl
-                 comp = (stringToComparison ":" sid) ^. _Comparison
-                 mtype1 = (getInterventionType mdl $ comp."t1")
-                 mtype2 = (getInterventionType mdl $ comp."t2")
-             case any isNothing [mtype1, mtype2] of
-               true -> ""
-               false -> do
-                 let type1 = (unsafePartial $ fromJust mtype1 ^.
-                             _InterventionType)."id"
-                     type2 = (unsafePartial $ fromJust mtype2 ^.
-                             _InterventionType)."id"
-                 if any (\t -> t == "Non-pharmacological") [type1, type2] then
-                   "Non-pharmacological vs any"
-                   else
-                   if any (\t -> t == "Placebo/Control") [type1, type2] then
-                     "Pharmacological vs Placebo/Control"
-                     else
-                      "Pharmacological vs Pharmacological"
+        Left err -> ""
+        Right sid -> do
+          let
+            allnodes = getNodes mdl
+            comp = (stringToComparison ":" sid) ^. _Comparison
+            mtype1 = (getInterventionType mdl $ comp."t1")
+            mtype2 = (getInterventionType mdl $ comp."t2")
+          case any isNothing [ mtype1, mtype2 ] of
+            true -> ""
+            false -> do
+              let
+                type1 =
+                  ( unsafePartial $ fromJust mtype1 ^.
+                      _InterventionType
+                  )."id"
+                type2 =
+                  ( unsafePartial $ fromJust mtype2 ^.
+                      _InterventionType
+                  )."id"
+              if any (\t -> t == "Non-pharmacological") [ type1, type2 ] then
+                "Non-pharmacological vs any"
+              else if any (\t -> t == "Placebo/Control") [ type1, type2 ] then
+                "Pharmacological vs Placebo/Control"
+              else
+                "Pharmacological vs Pharmacological"
 
 {--CIlow CIhigh PrIlow PrIhigh zonelower zonehigher nmaEffect null--}
-jointCrosses :: Json -> Json 
-  -> Json -> Json 
-  -> Json -> Json 
-  -> Json -> Json 
+jointCrosses
+  :: Json
+  -> Json
+  -> Json
+  -> Json
+  -> Json
+  -> Json
+  -> Json
+  -> Json
   -> Array Int
 jointCrosses fil fih fprl fprh fzl fzh feffect fnul = do
   let eil = decodeJson fil
@@ -227,68 +270,90 @@ jointCrosses fil fih fprl fprh fzl fzh feffect fnul = do
   let ezh = decodeJson fzh
   let eeffect = decodeJson feffect
   let enul = decodeJson fnul
-  let fromRight = (\e -> case e of
-                   Left _ -> -1.0
-                   Right v -> v)
-  case any isLeft [eil, eih, eprl, eprh, ezl, ezh, eeffect, enul] of
-    true  -> [-1, -1]
-    false -> 
-      let il = fromRight eil
-          ih = fromRight eih
-          prl = fromRight eprl
-          prh = fromRight eprh
-          zl' = fromRight ezl
-          zh' = fromRight ezh
-          effect = fromRight eeffect
-          nul = fromRight enul
-          {--Toshi's rule--}
-          effectInZone = il > zl' && ih < zh'
-          zl = if (effect < nul) then
-                 nul else zl'
-          zh = if (effect > nul) then
-                 nul else zh'
-          icrs  = if effectInZone then
-                    0 else
-                    numberOfCrosses il ih zl zh
-          prcrs = if effectInZone 
-                    then
-                      numberOfCrosses prl prh zl' zh'
-                    else 
-                      numberOfCrosses prl prh zl zh
-       in [icrs, prcrs]
+  let
+    fromRight =
+      ( \e -> case e of
+          Left _ -> -1.0
+          Right v -> v
+      )
+  case any isLeft [ eil, eih, eprl, eprh, ezl, ezh, eeffect, enul ] of
+    true -> [ -1, -1 ]
+    false ->
+      let
+        il = fromRight eil
+        ih = fromRight eih
+        prl = fromRight eprl
+        prh = fromRight eprh
+        zl' = fromRight ezl
+        zh' = fromRight ezh
+        effect = fromRight eeffect
+        nul = fromRight enul
+        {--Toshi's rule--}
+        effectInZone = il > zl' && ih < zh'
+        zl =
+          if (effect < nul) then
+            nul
+          else zl'
+        zh =
+          if (effect > nul) then
+            nul
+          else zh'
+        icrs =
+          if effectInZone then
+            0
+          else
+            numberOfCrosses il ih zl zh
+        prcrs =
+          if effectInZone then
+            numberOfCrosses prl prh zl' zh'
+          else
+            numberOfCrosses prl prh zl zh
+      in
+        [ icrs, prcrs ]
 
 numberOfCrosses :: Number -> Number -> Number -> Number -> Int
 numberOfCrosses ilow ihigh zlow zhigh =
-  let t1 = zlow - ihigh
-      t2 = zhigh - ilow
-      d1 = zlow - ilow
-      d2 = zhigh - ihigh
-      effectInZone = ilow > zlow && ihigh < zhigh
-   in if effectInZone
-        then 0
-        else
-          case t1 * t2 > 0.0 of
-            true  -> 0
-            false -> case d1 * d2 > 0.0 of
-                         true -> 1
-                         false -> case d2 > 0.0 of
-                                       true -> 0
-                                       false -> 2
+  let
+    t1 = zlow - ihigh
+    t2 = zhigh - ilow
+    d1 = zlow - ilow
+    d2 = zhigh - ihigh
+    effectInZone = ilow > zlow && ihigh < zhigh
+  in
+    if effectInZone then 0
+    else
+      case t1 * t2 > 0.0 of
+        true -> 0
+        false -> case d1 * d2 > 0.0 of
+          true -> 1
+          false -> case d2 > 0.0 of
+            true -> 0
+            false -> 2
 
 ruleLevel :: Json -> Json -> Int
 ruleLevel fcicrs fpricrs = do
   let ecicrs = decodeJson fcicrs
   let epricrs = decodeJson fpricrs
-  let fromRight = (\e -> case e of
-                   Left _ -> -1
-                   Right v -> v)
-  case any isLeft [ecicrs, epricrs] of
-       true -> -1
-       false -> 
-         let cicrs  = fromRight ecicrs
-             pricrs = fromRight epricrs
-             ruleTable = [[1,2,3]
-                         ,[0,1,2]
-                         ,[0,0,1]]
-          in unsafePartial $ fromJust ((unsafePartial $ fromJust 
-               (ruleTable !! cicrs )) !! pricrs)
+  let
+    fromRight =
+      ( \e -> case e of
+          Left _ -> -1
+          Right v -> v
+      )
+  case any isLeft [ ecicrs, epricrs ] of
+    true -> -1
+    false ->
+      let
+        cicrs = fromRight ecicrs
+        pricrs = fromRight epricrs
+        ruleTable =
+          [ [ 1, 2, 3 ]
+          , [ 0, 1, 2 ]
+          , [ 0, 0, 1 ]
+          ]
+      in
+        unsafePartial $ fromJust
+          ( ( unsafePartial $ fromJust
+                (ruleTable !! cicrs)
+            ) !! pricrs
+          )

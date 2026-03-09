@@ -24,7 +24,7 @@ import Report.View as V
 
 render :: Json -> String
 render m = do
-    let rs = readState m
-    case rs of
-     Left a -> V.errorTemplate a
-     Right b -> V.template b
+  let rs = readState m
+  case rs of
+    Left a -> V.errorTemplate a
+    Right b -> V.template b

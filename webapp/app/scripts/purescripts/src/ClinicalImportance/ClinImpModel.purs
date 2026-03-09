@@ -2,7 +2,8 @@ module ClinImp.Model where
 
 import Prelude
 import Effect
-import Data.Argonaut.Core (Json)
+import Data.Argonaut.Core (Json, toObject)
+import Data.Argonaut.Decode.Combinators (getField)
 import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
 import Data.Argonaut.Decode.Error (JsonDecodeError(..))
 import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)
@@ -22,9 +23,7 @@ import Data.Lens.Record (prop)
 import Data.Lens.Zoom (Traversal, Traversal', Lens, Lens', zoom)
 import Data.Tuple
 
-import EffectMeasure (isRatio, EffectMeasureType (..) )
-
-
+import EffectMeasure (isRatio, EffectMeasureType(..))
 
 -- ClinImp <
 newtype ClinImp = ClinImp
@@ -35,17 +34,29 @@ newtype ClinImp = ClinImp
   , lowerBound :: Number
   , emtype :: EffectMeasureType
   }
+
 derive instance genericClinImp :: Rep.Generic ClinImp _
 instance showClinImp :: Show ClinImp where
-    show = genericShow
+  show = genericShow
+
 instance decodeClinImp :: DecodeJson ClinImp where
-  decodeJson = genericDecodeJson
+  decodeJson json = case toObject json of
+    Nothing -> Left $ TypeMismatch "Object"
+    Just obj -> do
+      st <- getField obj "status"
+      q <- getField obj "question"
+      bv <- getField obj "baseValue"
+      ub <- getField obj "upperBound"
+      lb <- getField obj "lowerBound"
+      em <- getField obj "emtype"
+      pure $ ClinImp { status: st, question: q, baseValue: bv, upperBound: ub, lowerBound: lb, emtype: em }
 
 readClinImp :: Json -> Either JsonDecodeError ClinImp
-readClinImp = genericDecodeJson
+readClinImp = decodeJson
 
 _ClinImp :: Lens' ClinImp (Record _)
 _ClinImp = lens (\(ClinImp s) -> s) (\_ -> ClinImp)
+
 {----}
 {--baseValue :: forall a b r. Lens { baseValue :: a | r } { baseValue :: b | r } a b--}
 {--baseValue = prop (Proxy :: Proxy "baseValue")--}
@@ -69,27 +80,31 @@ newtype SanitizedClinImp = SanitizedClinImp
 
 sanitizeClinImp :: ClinImp -> SanitizedClinImp
 sanitizeClinImp ci =
-  let emt = show $ (ci ^. _ClinImp)."emtype"
-  in SanitizedClinImp ((ci ^. _ClinImp) { emtype = emt })
+  let
+    emt = show $ (ci ^. _ClinImp)."emtype"
+  in
+    SanitizedClinImp ((ci ^. _ClinImp) { emtype = emt })
 
 emptyClinImp :: ClinImp
 emptyClinImp = ClinImp
-  { status : "not_ready"
-  , question : "Define threshold of clinical importance"
-  , baseValue : -2.0
-  , upperBound : -4.0
-  , lowerBound : -4.0
-  , emtype : RR
+  { status: "not_ready"
+  , question: "Define threshold of clinical importance"
+  , baseValue: -2.0
+  , upperBound: -4.0
+  , lowerBound: -4.0
+  , emtype: RR
   }
 
 skeletonClinImp :: EffectMeasureType -> ClinImp
 skeletonClinImp m =
-  let default = getDefaultMeasure m
-  in ClinImp
-    { status : "not_set"
-    , question : "Define threshold of clinical importance"
-    , baseValue : default
-    , upperBound : default
-    , lowerBound : default
-    , emtype : m
-    }
+  let
+    default = getDefaultMeasure m
+  in
+    ClinImp
+      { status: "not_set"
+      , question: "Define threshold of clinical importance"
+      , baseValue: default
+      , upperBound: default
+      , lowerBound: default
+      , emtype: m
+      }

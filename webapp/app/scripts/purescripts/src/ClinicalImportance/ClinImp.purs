@@ -30,24 +30,26 @@ import SaveModel
 
 isValid :: Json -> Json -> Json
 isValid fci fbv = do
-  let eci = readClinImp fci
-      ebv = decodeJson fbv
+  let
+    eci = readClinImp fci
+    ebv = decodeJson fbv
   case eci of
-       Left _ -> encodeJson $ Tuple "Could read State" false
-       Right ci -> do
-         let ir = isRatio $ (ci ^. _ClinImp)."emtype"
-         case ebv of
-            Left er -> encodeJson $ Tuple "Couldn't read Value" false
-            Right bv
-              | isNaN bv -> encodeJson $ Tuple "not a number" false
-              | ir && bv < 0.0 -> encodeJson $ Tuple "< 0 for ratio measure" false
-              | otherwise -> encodeJson $ Tuple "Success" true
+    Left _ -> encodeJson $ Tuple "Could read State" false
+    Right ci -> do
+      let ir = isRatio $ (ci ^. _ClinImp)."emtype"
+      case ebv of
+        Left er -> encodeJson $ Tuple "Couldn't read Value" false
+        Right bv
+          | isNaN bv -> encodeJson $ Tuple "not a number" false
+          | ir && bv < 0.0 -> encodeJson $ Tuple "< 0 for ratio measure" false
+          | otherwise -> encodeJson $ Tuple "Success" true
 
 showValid :: Json -> Json -> Effect Unit
 showValid fci fbv = do
-  let eci = readClinImp fci
-      ebv = decodeJson fbv :: Either JsonDecodeError Number
+  let
+    eci = readClinImp fci
+    ebv = decodeJson fbv :: Either JsonDecodeError Number
   case eci of
-       Left er -> logShow $ "error reading clin imp" <> show er
-       Right ci -> logShow $ "read clin Imp correctly" <> show ci
+    Left er -> logShow $ "error reading clin imp" <> show er
+    Right ci -> logShow $ "read clin Imp correctly" <> show ci
 
