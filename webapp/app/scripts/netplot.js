@@ -136,14 +136,14 @@ var NP = {
       let vertices = NP.view.vertices;
         NP.view.cy.batch( () => {
         switch (filter){
-          case "noColor":
+          case 'noColor':
             _.map(vertices, n => {
               NP.view.cy.elements('node[id="'+n.id+'"]').style({
                 'pie-size': 0,
               });
             });
           break;
-          case "rob":
+          case 'rob':
             _.map(vertices, n => {
               NP.view.cy.elements('node[id="'+n.id+'"]').style({
                 'pie-size': '92%',
@@ -153,7 +153,7 @@ var NP = {
               });
             });
           break;
-          case "indirectness":
+          case 'indirectness':
             _.map(vertices, n => {
               NP.view.cy.elements('node[id="'+n.id+'"]').style({
                 'pie-size': '92%',
@@ -226,7 +226,7 @@ var NP = {
           'color': NP.view.getOptions().norobcolor,
           //'color': "#D7D787",
           //'text-outline-color': NP.view.getOptions().defaultVertexColor,
-          'text-outline-color': "#84A8C7",
+          'text-outline-color': '#84A8C7',
           'text-outline-width':'0.5px',
           'background-color': NP.view.getOptions().defaultVertexColor,
           'width': '60px',

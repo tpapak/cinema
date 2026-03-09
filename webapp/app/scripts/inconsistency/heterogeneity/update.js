@@ -42,8 +42,8 @@ var Update = (model) => {
       ]
     },
     {
-      id: "InterventionType",
-      label: "Intervention Type",
+      id: 'InterventionType',
+      label: 'Intervention Type',
       selections: []
     },
     {
@@ -130,18 +130,18 @@ var Update = (model) => {
     makeReferenceTable: () => {
       let params = _.filter(availableParameters,
         p => {
-          return p.id !== "InterventionType";
+          return p.id !== 'InterventionType';
         }
       );
       let par = _.reduce(params, (m,p) => {
         let ob = {};
         let sels = [];
-        if (p.id === "OutcomeType"){
+        if (p.id === 'OutcomeType'){
           sels = _.union(p.options.binaryOptions, p.options.continuousOptions);
         }else{
           sels = _.filter(_.map(p.selections, s => {return s.id}),
             f => {
-             return f !== "nothing";
+             return f !== 'nothing';
             });
         }
         ob[p.id] = sels;
@@ -177,16 +177,16 @@ var Update = (model) => {
             return _.map(studies, sid => {
               return new Promise((oresolve, oreject) => {
                 let comparisonType = Nodes.getComparisonType(mdl)(sid);
-                if (comparisonType === "") {
-                  oreject("Didn't get comparison type");
+                if (comparisonType === '') {
+                  oreject('Didn\'t get comparison type');
                 }else{
                   //console.log("CCOCCOCOCOCOMMMMarison type", sid, comparisonType);
                 }
                 params.InterventionComparisonType = comparisonType;
-                let prms = params.measurement + "." +params.OutcomeType +"."+ comparisonType;
+                let prms = params.measurement + '.' +params.OutcomeType +'.'+ comparisonType;
                 let rfv = deepSeek(referenceValues, prms);
                 if (typeof rfv == 'undefined'){
-                  oreject("Reference Values not found"+params);
+                  oreject('Reference Values not found'+params);
                 }
                 res.rfvs.push({
                   id: sid,
@@ -194,7 +194,7 @@ var Update = (model) => {
                   median: rfv.median.toFixed(3),
                   third: rfv.third.toFixed(3),
                 });
-                oresolve("success");
+                oresolve('success');
               })
             });
           };
@@ -204,7 +204,7 @@ var Update = (model) => {
             updaters.saveState();
             resolve(res);
           }).catch(reason => {
-            reject(reason+"lkj"+res);
+            reject(reason+'lkj'+res);
           });
       }).catch(reason => {
         Messages.alertify().error(reason);
@@ -279,28 +279,28 @@ var Update = (model) => {
       let makeBoxes = (studies) => {
         let res = _.map(studies, s => {
           let pairRow = _.find(pairWises, pw => {
-            return _.isEqual(uniqId(s[0].split(':')),uniqId(pw["_row"].split(' : ')));
+            return _.isEqual(uniqId(s[0].split(':')),uniqId(pw['_row'].split(' : ')));
           });
           let nmaRow = _.find(NMAs, nma => {
-            return _.isEqual(uniqId(nma["_row"].split(':')),uniqId(s[0].split(':')));
+            return _.isEqual(uniqId(nma['_row'].split(':')),uniqId(s[0].split(':')));
           });
           let sm = model.getState().project.CM.currentCM.params.sm;
           let useExps =  ((sm === 'OR') || (sm === 'RR'));
           let tauSquare = 'nothing';
           let CIf = useExps 
-            ? Math.exp(nmaRow["lower CI"]) : nmaRow["lower CI"];
+            ? Math.exp(nmaRow['lower CI']) : nmaRow['lower CI'];
           let nmaEffect = useExps 
-            ? Math.exp(nmaRow["NMA treatment effect"]) : nmaRow["NMA treatment effect"];
+            ? Math.exp(nmaRow['NMA treatment effect']) : nmaRow['NMA treatment effect'];
           let CIs = useExps 
-            ? Math.exp(nmaRow["upper CI"]) : nmaRow["upper CI"];
+            ? Math.exp(nmaRow['upper CI']) : nmaRow['upper CI'];
           let PrIf = useExps 
-            ? Math.exp(nmaRow["lower PrI"]) : nmaRow["lower PrI"];
+            ? Math.exp(nmaRow['lower PrI']) : nmaRow['lower PrI'];
           let PrIs = useExps 
-            ? Math.exp(nmaRow["upper PrI"]) : nmaRow["upper PrI"];
+            ? Math.exp(nmaRow['upper PrI']) : nmaRow['upper PrI'];
           let contents = {}
             // console.log("BOX id",s[0]);
             contents =  {
-                id: nmaRow["_row"],
+                id: nmaRow['_row'],
                 CIf: CIf.toFixed(3), 
                 nmaEffect: nmaEffect.toFixed(3),
                 CIs: CIs.toFixed(3),
@@ -316,7 +316,7 @@ var Update = (model) => {
             let ISquare = pairRow.I2;
             if((typeof tauSquare !== 'undefined') && (! isNaN(tauSquare))){
               tauSquare = tauSquare.toFixed(3);
-              ISquare = ((ISquare * 100).toFixed(1)).toString()+"%";
+              ISquare = ((ISquare * 100).toFixed(1)).toString()+'%';
             }
             _.extend(contents,{
                 isMixed: true,
@@ -373,16 +373,16 @@ var Update = (model) => {
     getMeasureType: () => {
       let mdl = model.getState();
       let mt = deepSeek(mdl,'project.type');
-      let result = "nothing";
+      let result = 'nothing';
       if (typeof mt === 'undefined'){
-        result = "nothing";
+        result = 'nothing';
       }else{
         switch(mt) {
-          case "binary":
-              result = "binary";
+          case 'binary':
+              result = 'binary';
               break;
-          case "continuous":
-              result = "continuous";
+          case 'continuous':
+              result = 'continuous';
               break;
         } 
       }
@@ -390,7 +390,7 @@ var Update = (model) => {
     },
     tauSquareNetwork: () => {
       let tauSquareNetwork = 0;
-      if (deepSeek(model,"getState().project.CM.currentCM.hatmatrix.NMAheterResult") !== undefined){
+      if (deepSeek(model,'getState().project.CM.currentCM.hatmatrix.NMAheterResult') !== undefined){
         tauSquareNetwork = model.getState().project.CM.currentCM.hatmatrix.NMAheterResults[0][0].toFixed(3);
       }
       return tauSquareNetwork;

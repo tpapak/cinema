@@ -3,7 +3,7 @@ export const resetJudgements = function () {
       if (typeof window.Model.state !== 'undefined'){
         if (typeof window.Model.state.project !== 'undefined'){
           window.Actions.alertify().confirm('Reset Judgemetns','All will be set to High', function () {
-          console.log("reset judgements");
+          console.log('reset judgements');
           var report = window.Model.getState().project.report;
           var directs =  report.directRows;
           var indirects =  report.indirectRows;
@@ -31,7 +31,7 @@ export const resetJudgements = function () {
           window.Model.saveState();
           window.Model.persistToLocalStorage();
           },function () {
-            console.log("canceled");
+            console.log('canceled');
           })
         }
       }

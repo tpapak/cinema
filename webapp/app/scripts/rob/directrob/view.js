@@ -19,7 +19,7 @@ var View = (model) => {
               rob => {
                 return rob.id === dc.directRob;
             });
-            let out = "";
+            let out = '';
             if(typeof level !== 'undefined'){
               out = level.color;
             }
@@ -48,10 +48,10 @@ var View = (model) => {
             return robsels;
           },
         });
-        dc.niceid = ComparisonModel.fixComparisonId(dc.id.replace(",",":"));
+        dc.niceid = ComparisonModel.fixComparisonId(dc.id.replace(',',':'));
       });
       let sids = _.map(directs, dir => {
-        return (dir.t1+":"+dir.t2);
+        return (dir.t1+':'+dir.t2);
       });
       return directs;
     },
@@ -122,7 +122,7 @@ var View = (model) => {
       ];
     },
     totalLevels: () => {
-      let sts = _.groupBy(model.getState().project.studies.long,"id");
+      let sts = _.groupBy(model.getState().project.studies.long,'id');
       let levels
       let grp = _.groupBy(sts, s => {return s[0].rob});
       let out = _.mapObject(grp,(l,id)=>{
@@ -135,7 +135,7 @@ var View = (model) => {
       return out;
     },
     totalStudies: () => {
-      let sts = _.groupBy(model.getState().project.studies.long,"id");
+      let sts = _.groupBy(model.getState().project.studies.long,'id');
       return _.size(sts);
     },
   }

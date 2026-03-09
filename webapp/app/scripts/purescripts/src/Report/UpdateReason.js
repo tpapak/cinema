@@ -1,5 +1,5 @@
 export const updateReason = function(repidjudgement){
-  var repidjdg = repidjudgement.value.split("σδεl");
+  var repidjdg = repidjudgement.value.split('σδεl');
   var rid =  repidjdg[0];
   var reasonid =  repidjdg[1];
   console.log('jdg',rid,'rid',reasonid);
@@ -12,7 +12,7 @@ export const updateReason = function(repidjudgement){
           var row = directs.find(function(x) {
               return x.id === rid;
             });
-          if (typeof row !== "undefined"){
+          if (typeof row !== 'undefined'){
           } else {
           var indirects =  report.indirectRows;
             row = indirects.find(function(x) {

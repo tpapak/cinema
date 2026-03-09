@@ -13,7 +13,7 @@ var Template = (model,children) => {
     );
     let tmplchildren = _.map(children, c => {return c.render(model);});
   let content = [h('div#directSelectionWrapper.col-xs-12',convertHTML(tmpl))].concat(_.flatten(tmplchildren));
-  return h("div.row.container-fluid",content);
+  return h('div.row.container-fluid',content);
 }
 
 module.exports = () => {

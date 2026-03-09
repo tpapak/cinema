@@ -1,8 +1,8 @@
 var Messages = require('../messages.js').Messages;
 
 var Settings = {
-  types: ["continuous","binary"],
-  formats: ["long","wide","iv"],
+  types: ['continuous','binary'],
+  formats: ['long','wide','iv'],
   required: {
     binaryLong: ['id','t','r','n','rob','indirectness'],
     continuousLong: ['id','t','y','sd','n','rob','indirectness'],
@@ -135,7 +135,7 @@ var fileChecker = {
             }
           }
         }
-        if("indirectness" in r){
+        if('indirectness' in r){
           if(r.indirectness!=='l'&&r.indirectness!=='m'&&r.indirectness!=='u'&&r.indirectness!=='h'&&r.indirectness!=='L'&&r.indirectness!=='M'&&r.indirectness!=='U'&&r.indirectness!=='H'&&r.indirectness!==1&&r.indirectness!==2&&r.indirectness!==3){
             reject('<strong>indirectness</strong> can be 1, 2, 3 or L, M, H')
           }else{

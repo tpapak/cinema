@@ -130,8 +130,8 @@ var View = (model) => {
     rfvsp: () => {
       let pv = viewers.getState().referenceValues[2];  
       let out = 0;
-      if (typeof pv === "undefined"){
-        out = "NA"
+      if (typeof pv === 'undefined'){
+        out = 'NA'
       }else {
         out = pv;
       }
@@ -150,7 +150,7 @@ var View = (model) => {
       return deepSeek(model,modelPosition);
     },
     clinImpReady: () => {
-      return model.getState().project.clinImp.status === "ready";
+      return model.getState().project.clinImp.status === 'ready';
     },
     clinImp: () => {
       return model.getState().project.clinImp.baseValue;
@@ -162,7 +162,7 @@ var View = (model) => {
       return model.getState().project.clinImp.upperBound.toFixed(3);
     },
     clinImpReady: () => {
-      return model.getState().project.clinImp.status === "ready";
+      return model.getState().project.clinImp.status === 'ready';
     },
     emType: () => {
       return model.getState().project.clinImp.emtype;
@@ -170,11 +170,11 @@ var View = (model) => {
     smtitle: () => {
       let sm = model.getState().project.CM.currentCM.params.sm;
       let outtext = {
-        OR: "Odds ratio",
-        RR: "Risk ratio",
-        RD: "Risk difference",
-        MD: "Mean difference",
-        SMD: "Standardised mean difference"
+        OR: 'Odds ratio',
+        RR: 'Risk ratio',
+        RD: 'Risk difference',
+        MD: 'Mean difference',
+        SMD: 'Standardised mean difference'
       };
       return outtext[sm];
     },
@@ -184,22 +184,22 @@ var View = (model) => {
     measureSuffix: () => {
       let sm = model.getState().project.CM.currentCM.params.sm;
       let outtext = {
-        OR: "odds ratio",
-        RR: "risk ratio",
-        RD: "risk difference",
-        MD: "mean difference",
-        SMD: "standardised mean difference"
+        OR: 'odds ratio',
+        RR: 'risk ratio',
+        RD: 'risk difference',
+        MD: 'mean difference',
+        SMD: 'standardised mean difference'
       };
       return outtext[sm];
     },
     boxSideTitle: () => {
       let sm = model.getState().project.CM.currentCM.params.sm;
       let outtext = {
-        OR: "Ratio of odds ratios",
-        RR: "Ratio of risk ratios",
-        RD: "Difference of risk differences",
-        MD: "Difference of mean differences",
-        SMD: "Difference of standardised mean differences"
+        OR: 'Ratio of odds ratios',
+        RR: 'Ratio of risk ratios',
+        RD: 'Difference of risk differences',
+        MD: 'Difference of mean differences',
+        SMD: 'Difference of standardised mean differences'
       };
       return outtext[sm];
     }

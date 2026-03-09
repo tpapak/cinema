@@ -1,4 +1,4 @@
-var Config = require("../config.js").config;
+var Config = require('../config.js').config;
 var RoB = require('../rob/directrob/directrob.js')();
 var Imprecision = require('../imprecision/imprecision.js')();
 var Indirectness = require('../indirectness/directIndr/directIndr.js')();
@@ -43,7 +43,7 @@ var Update = (model) => {
         project.CM.currentCM = updaters.emptyCM();
         updaters.setCurrentCM('params',params);
         updaters.saveState();
-      console.log("resetting CONTRIBUTION MATRIXXXXXXXXXXXXXX");
+      console.log('resetting CONTRIBUTION MATRIXXXXXXXXXXXXXX');
     },
     createMatrix: () => {
       // console.log('creating matrix');
@@ -108,7 +108,7 @@ var Update = (model) => {
     computeComparisonIds: () => {
       let directs = deepSeek(model.getState(),'.project.studies.directComparisons');
       let sorted = [];
-      if(typeof directs !== "undefined") {
+      if(typeof directs !== 'undefined') {
         let rows = _.union(_.pluck(directs,'id'),
           model.getState().project.studies.indirectComparisons);
         sorted = sortComparisonIds(
@@ -173,30 +173,30 @@ var Update = (model) => {
           rtype = 'long_continuous';
           break;
         }
-        if(project.format === "iv"){
+        if(project.format === 'iv'){
           rtype = 'iv';
         }
         if(_.isEmpty(cm.hatmatrix)){
           let formatData = (tp,studies,exclude) =>{
             let out = {};
-            if(tp === "iv"){
+            if(tp === 'iv'){
                 out = studies.wide;
             }else{
               out = studies.long;
             }
-            if(exclude === "H"){
+            if(exclude === 'H'){
               out = _.filter(out, 
                 //function(s){return(s.rob===1 | s.rob===2)})
                 function(s){return(s.rob===1 | s.rob===2)})
             }
-            if(exclude === "MH"){
+            if(exclude === 'MH'){
               out = _.filter(out, 
                 function(s){return(s.rob===1)})
             }
               return out;
           }
           let hmc = ocpu.call('getHatMatrix',
-            {indata: formatData(rtype, project.studies, "none"),
+            {indata: formatData(rtype, project.studies, 'none'),
               type: rtype,
               model: cm.params.MAModel,
               sm: cm.params.sm,
@@ -214,18 +214,18 @@ var Update = (model) => {
                   updaters.fetchRows(cm).then(res => {
                     resolve(res);
                   }).catch( err => {
-                     console.log("failed hatmatrix",err.responseText);
+                     console.log('failed hatmatrix',err.responseText);
                      reject('R returned an error: ' + err.responseText);
                   });
                 });
             })
           })
          }).catch( (err) => {
-           console.log("failed hatmatrix",err.responseText);
+           console.log('failed hatmatrix',err.responseText);
            reject('R returned an error: ' + err.responseText);
         });
         ocpu.call('getHatMatrix',
-          {indata: formatData(rtype, project.studies,"H"),
+          {indata: formatData(rtype, project.studies,'H'),
             type: rtype,
             model: cm.params.MAModel,
             sm: cm.params.sm,
@@ -243,13 +243,13 @@ var Update = (model) => {
           })
         })
        }).catch( (err) => {
-         let msg = "sensitity analysis not possible for Low and Medium risk within study bias studies";
+         let msg = 'sensitity analysis not possible for Low and Medium risk within study bias studies';
          msg = msg + 'R returned an error: ' + err.responseText;
          Messages.alertify().alert(msg);
          cm.leaguetableLM = {};
       });
       ocpu.call('getHatMatrix',
-        {indata: formatData(rtype, project.studies,"MH"),
+        {indata: formatData(rtype, project.studies,'MH'),
             type: rtype,
             model: cm.params.MAModel,
             sm: cm.params.sm,
@@ -267,13 +267,13 @@ var Update = (model) => {
           })
         })
        }).catch( (err) => {
-         let msg = "sensitity analysis not possible for Low risk within study bias studies";
+         let msg = 'sensitity analysis not possible for Low risk within study bias studies';
          msg = msg + 'R returned an error: ' + err.responseText;
          Messages.alertify().alert(msg);
          cm.leaguetableL = {};
       });
       }else{
-            console.log("found hatmatrix", cm.hatmatrix);
+            console.log('found hatmatrix', cm.hatmatrix);
             updaters.fetchRows(cm).then(res => {
               resolve(res);
             }).catch(err => {reject(err)});
@@ -585,7 +585,7 @@ var Update = (model) => {
         let csvTable = json2csv.parse(fstudies, {fields: fcols});
         let csvContent = 'data:text/csv;charset=utf-8,'+csvTable;
         var encodedUri = encodeURI(csvContent);
-        let cmfilename = (project.title+'_'+cm.params.MAModel+'_'+cm.params.sm+"_perComparisonContribution").replace(/\,/g,'_')+'.csv';
+        let cmfilename = (project.title+'_'+cm.params.MAModel+'_'+cm.params.sm+'_perComparisonContribution').replace(/\,/g,'_')+'.csv';
         resolve([encodedUri,cmfilename]);
       });
     },
@@ -621,7 +621,7 @@ var Update = (model) => {
         let studies = _.map(cm.sortedRowNames,
           r => {
             let row = scs[r];
-            let res = Array(cw).fill("--");
+            let res = Array(cw).fill('--');
             if (typeof row !== 'undefined'){
               res = _.values(row);
             }
@@ -637,7 +637,7 @@ var Update = (model) => {
         let csvTable = json2csv.parse(fstudies, {fields: fcols});
         let csvContent = 'data:text/csv;charset=utf-8,'+csvTable;
         var encodedUri = encodeURI(csvContent);
-        let cmfilename = (project.title+'_'+cm.params.MAModel+'_'+cm.params.sm+"_perStudyContribution").replace(/\,/g,'_')+'.csv';
+        let cmfilename = (project.title+'_'+cm.params.MAModel+'_'+cm.params.sm+'_perStudyContribution').replace(/\,/g,'_')+'.csv';
         resolve([encodedUri,cmfilename]);
       });
     },
@@ -648,7 +648,7 @@ var Update = (model) => {
         let csvTable = json2csv.parse(league, {header: false});
         let csvContent = 'data:text/csv;charset=utf-8,'+csvTable;
         var encodedUri = encodeURI(csvContent);
-        let cmfilename = (project.title+'_'+cm.params.MAModel+'_'+cm.params.sm+"_leaguetable").replace(/\,/g,'_')+'.csv';
+        let cmfilename = (project.title+'_'+cm.params.MAModel+'_'+cm.params.sm+'_leaguetable').replace(/\,/g,'_')+'.csv';
         resolve([encodedUri,cmfilename]);
       });
     },
@@ -677,7 +677,7 @@ var Update = (model) => {
           let csvTable = json2csv.parse(league, {header: false});
           let csvContent = 'data:text/csv;charset=utf-8,'+csvTable;
           var encodedUri = encodeURI(csvContent);
-          let filename = (project.title+'_'+cm.params.MAModel+'_'+cm.params.sm+"_leaguetableLowBias").replace(/\,/g,'_')+'.csv';
+          let filename = (project.title+'_'+cm.params.MAModel+'_'+cm.params.sm+'_leaguetableLowBias').replace(/\,/g,'_')+'.csv';
           download(encodedUri,filename);
       });
     },
@@ -688,12 +688,12 @@ var Update = (model) => {
           let csvTable = json2csv.parse(league, {header: false});
           let csvContent = 'data:text/csv;charset=utf-8,'+csvTable;
           var encodedUri = encodeURI(csvContent);
-          let filename = (project.title+'_'+cm.params.MAModel+'_'+cm.params.sm+"_leaguetableLowMediumBias").replace(/\,/g,'_')+'.csv';
+          let filename = (project.title+'_'+cm.params.MAModel+'_'+cm.params.sm+'_leaguetableLowMediumBias').replace(/\,/g,'_')+'.csv';
           download(encodedUri,filename);
       });
     },
     sumStudyContrs: (contrs) => {
-      let scs = _.groupBy(contrs, "study");
+      let scs = _.groupBy(contrs, 'study');
       let result = _.mapObject(scs, 
         (st,k) => {
           let contr = 

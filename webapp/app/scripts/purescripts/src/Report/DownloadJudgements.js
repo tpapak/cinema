@@ -7,16 +7,16 @@ export const downloadJudgements = function () {
         var project = window.Model.getState().project;
         var cm = window.Model.getState().project.CM.currentCM;
         var fields = 
-          ["Comparison"
-          , "Number of studies"
-          , "Within-study bias"
-          , "Reporting bias"
-          , "Indirectness"
-          , "Imprecision"
-          , "Heterogeneity"
-          , "Incoherence"
-          , "Confidence rating"
-          , "Reason(s) for downgrading"
+          ['Comparison'
+          , 'Number of studies'
+          , 'Within-study bias'
+          , 'Reporting bias'
+          , 'Indirectness'
+          , 'Imprecision'
+          , 'Heterogeneity'
+          , 'Incoherence'
+          , 'Confidence rating'
+          , 'Reason(s) for downgrading'
           ]
         var report = project.report;
         var directs =  report.directRows;
@@ -24,8 +24,8 @@ export const downloadJudgements = function () {
         var rownames = project.CM.currentCM.hatmatrix.rowNames;
         var parseRow = function (row) {
         var rid = rownames.find(function(n){
-          var t1 = n.split(":")[0].toString();
-          var t2 = n.split(":")[1].toString();
+          var t1 = n.split(':')[0].toString();
+          var t2 = n.split(':')[1].toString();
           var armA = row.armA.toString();
           var armB = row.armB.toString();
           return (armA===t1 && armB===t2) || (armA===t2 && armB===t1)
@@ -49,7 +49,7 @@ export const downloadJudgements = function () {
         var csvTable = json2csv.parse(report, {fields: fields});
         var csvContent = 'data:text/csv;charset=utf-8,'+csvTable;
         var encodedUri = encodeURI(csvContent);
-        var filename = (project.title+'_'+cm.params.MAModel+'_'+cm.params.sm+"_Report").replace(/\,/g,'_')+'.csv';
+        var filename = (project.title+'_'+cm.params.MAModel+'_'+cm.params.sm+'_Report').replace(/\,/g,'_')+'.csv';
         download(encodedUri,filename);
       }
     }

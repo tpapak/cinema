@@ -154,7 +154,7 @@ var View = (model) => {
     comparisonIds: () => {
       let directs = deepSeek(model.getState(),'project.studies.directComparisons');
       let sorted = [];
-      if(typeof directs !== "undefined") {
+      if(typeof directs !== 'undefined') {
         let rows = _.union(_.pluck(directs,'id'),
           model.getState().project.studies.indirectComparisons);
         sorted = sortComparisonIds(
@@ -185,7 +185,7 @@ var View = (model) => {
           break;
       }
       let result = _.map(res, r => {
-        return r.replace(":", " vs ");
+        return r.replace(':', ' vs ');
       });
       return result;
     },

@@ -97,17 +97,17 @@ var Update = (model) => {
             return _.isEqual(uniqId(s[0].split(':')),uniqId(pw[0].split(' : ')));
           });
           let nmaRow = _.find(NMAs, nma => {
-            return _.isEqual(uniqId(nma["_row"].split(':')),uniqId(s[0].split(':')));
+            return _.isEqual(uniqId(nma['_row'].split(':')),uniqId(s[0].split(':')));
           });
           let sm = model.getState().project.CM.currentCM.params.sm;
           let useExps =  ((sm === 'OR') || (sm === 'RR'));
-          let CIf = useExps ? Math.exp(nmaRow["lower CI"]) : nmaRow["lower CI"];
-          let nmaEffect = useExps ? Math.exp(nmaRow["NMA treatment effect"]) : nmaRow["NMA treatment effect"];
-          let CIs = useExps ? Math.exp(nmaRow["upper CI"]) : nmaRow["upper CI"];
+          let CIf = useExps ? Math.exp(nmaRow['lower CI']) : nmaRow['lower CI'];
+          let nmaEffect = useExps ? Math.exp(nmaRow['NMA treatment effect']) : nmaRow['NMA treatment effect'];
+          let CIs = useExps ? Math.exp(nmaRow['upper CI']) : nmaRow['upper CI'];
           let contents = {}
             // console.log("BOX id",s[0]);
             contents =  {
-                id: nmaRow["_row"],
+                id: nmaRow['_row'],
                 CIf: CIf.toFixed(3),
                 nmaEffect: nmaEffect.toFixed(3),
                 CIs: CIs.toFixed(3)
@@ -169,16 +169,16 @@ var Update = (model) => {
     getOutcomeType: () => {
       let mdl = model.getState();
       let mt = deepSeek(mdl,'project.type');
-      let result = "nothing";
+      let result = 'nothing';
       if (typeof mt === 'undefined'){
-        result = "nothing";
+        result = 'nothing';
       }else{
         switch(mt) {
-          case "binary":
-              result = "binary";
+          case 'binary':
+              result = 'binary';
               break;
-          case "continuous":
-              result = "continuous";
+          case 'continuous':
+              result = 'continuous';
               break;
         }
       }

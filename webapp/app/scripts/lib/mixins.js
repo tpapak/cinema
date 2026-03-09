@@ -84,10 +84,10 @@ let hatmatrixIdOfComparison = (id) => {
         var project = window.Model.getState().project;
         var rownames = project.CM.currentCM.hatmatrix.rowNames;
         var rid = rownames.find(function(n){
-          var t1 = n.split(":")[0].toString();
-          var t2 = n.split(":")[1].toString();
-          var armA = id.split(":")[0].toString();
-          var armB = id.split(":")[1].toString();
+          var t1 = n.split(':')[0].toString();
+          var t2 = n.split(':')[1].toString();
+          var armA = id.split(':')[0].toString();
+          var armB = id.split(':')[1].toString();
           return (armA===t1 && armB===t2) || (armA===t2 && armB===t1)
         });
         return rid;

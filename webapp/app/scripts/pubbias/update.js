@@ -63,38 +63,38 @@ var Update = (model) => {
            let titles = Object.keys(json[0]);
            let isTable2 = _.isEqual(requiredColumns,_.intersection(requiredColumns,titles))
            if(!isTable2){
-             let err = "Columns not correct. Need:".concat(requiredColumns);
+             let err = 'Columns not correct. Need:'.concat(requiredColumns);
              reject(err);
            }
            let boxes = updaters.getState().boxes;
            let selectedRows = _.filter(json, function(r){
-             let comp1 = r.treat1+":"+r.treat2;
-             let comp2 = r.treat2+":"+r.treat1;
+             let comp1 = r.treat1+':'+r.treat2;
+             let comp2 = r.treat2+':'+r.treat1;
              let fnd = _.find(boxes, (b)=>{return(b.id===comp1||b.id===comp2)});
              let isSelectedRow = !_.isUndefined(fnd);
              return isSelectedRow;
            });
            if(selectedRows.length !== boxes.length){
-             reject("comparisons are missing from file");
+             reject('comparisons are missing from file');
            }
            _.map(selectedRows, r => {
              if(!((r.final === 1 || r.final === 2 ) || r.final === 3)){
-               console.log("r.final",r.final);
-               reject("final judgement in file not 1 2 or 3, found: "+r.final);
+               console.log('r.final',r.final);
+               reject('final judgement in file not 1 2 or 3, found: '+r.final);
              }
            });
            resolve(selectedRows);
           });
        };
 
-      console.log("uploading table2 from Robmen");
+      console.log('uploading table2 from Robmen');
       var filename = htmlEntities($('#table2Uploader').val().replace(/C:\\fakepath\\/i, '')).slice(0, -4);
-        console.log("filename",filename);
+        console.log('filename',filename);
        FR.handleFileSelect(evt)
         .then(FR.convertCSVtoJSON)
         .then(checkFile)
         .then(table2 => {
-          console.log("Answer",table2);
+          console.log('Answer',table2);
           _.map(table2, r=>{updaters.selectIndividualInternal(r.comparison,r.final)})
           updaters.getState().hasUploaded = 'true';
           updaters.getState().status = 'ready';
@@ -135,15 +135,15 @@ var Update = (model) => {
       let makeBoxes = (studies) => {
         let res = _.map(studies, s => {
           let nmaRow = _.find(NMAs, nma => {
-            return _.isEqual(uniqId(nma["_row"].split(':')),uniqId(s[0].split(':')));
+            return _.isEqual(uniqId(nma['_row'].split(':')),uniqId(s[0].split(':')));
           });
           let contents = {}
             contents =  {
-                id: nmaRow["_row"],
+                id: nmaRow['_row'],
             }
-          if(_.isUndefined(nmaRow["Direct"])){
-            if(_.isUndefined(nmaRow["Indirect"])){
-              console.log("ERRROORRR indirect direct in Incohrence");
+          if(_.isUndefined(nmaRow['Direct'])){
+            if(_.isUndefined(nmaRow['Indirect'])){
+              console.log('ERRROORRR indirect direct in Incohrence');
             }else{
               _.extend(contents,{
                   isMixed: false,
@@ -152,7 +152,7 @@ var Update = (model) => {
               })
             }
           }else{
-            if(_.isUndefined(nmaRow["Indirect"])){
+            if(_.isUndefined(nmaRow['Indirect'])){
               _.extend(contents,{
                   isMixed: false,
                   isDirect: true,

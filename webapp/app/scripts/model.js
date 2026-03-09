@@ -10,7 +10,7 @@ var download = require('downloadjs');
 const json2csv = require('json2csv');
 
 var Model = {
-  Actions: 
+  Actions:
   { alertify: Messages.Messages.alertify
   , download: download
   , json2csv: json2csv
@@ -82,24 +82,19 @@ var Model = {
       console.log('saved to localstorage');
     } catch (e) {
         //data wasn't successfully saved due to quota exceed so throw an error
-        console.log('Quota exceeded!',e); 
+        console.log('Quota exceeded!',e);
     }
   },
   saveState: () => {
     let wt = document.documentElement.scrollTop || document.body.scrollTop;
     Model.state.wt = wt;
-    // console.log('saving state');
-    // console.log('rendering');
     View.render(Model).then(
       out =>{
         window.scrollTo(0,Model.state.wt);
-        // console.log('rendered success!!',out);
         }
     ).catch(err =>{
       $('#errormsg').text(err);
-      // console.log('error rendering view',err);
     });
-    // console.log('the state', Model.getState());
   },
   factorySettings: () => {
     let v = Model.getState().version;
@@ -158,7 +153,7 @@ var Model = {
     Model.setState(savedModel);
   },
   versionsAreCompatible: (v1,v2) => {
-    return v1.split(".").slice(0,2).toString() === v2.split(".").slice(0,2).toString();
+    return v1.split('.').slice(0,2).toString() === v2.split('.').slice(0,2).toString();
   },
   checkSavedProject: (state) => {
     return new Promise((resolve,reject) => {
@@ -166,7 +161,7 @@ var Model = {
       if(Model.versionsAreCompatible(state.version,cinv)){
         resolve(state);
       }else{
-        reject("Unfortunately cannot upload, the file's version ("+state.version+") is not compatible with CINeMA v:"+cinv);
+        reject('Unfortunately cannot upload, the file\'s version ('+state.version+') is not compatible with CINeMA v:'+cinv);
       }
     })
   },
@@ -180,9 +175,9 @@ var Model = {
     localStorage.clear();
   },
   cachedModel: () =>{
-    let out = "Maybe state";
+    let out = 'Maybe state';
     if (typeof localStorage.state === 'undefined'){
-      out = "Nothing"
+      out = 'Nothing'
     }else{
       out = JSON.parse(localStorage.state);
     }
@@ -198,7 +193,7 @@ var Model = {
         if(Model.hasExpired(savedModel.timestamp)){
           Model.clearCachedModel();
         }else{
-          console.log("cachedStorage ok");
+          console.log('cachedStorage ok');
         }
       }else{
         Model.clearCachedModel();

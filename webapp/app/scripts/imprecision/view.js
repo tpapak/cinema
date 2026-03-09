@@ -14,16 +14,16 @@ var View = (model) => {
     getMeasureType: () => {
       let mdl = model.getState();
       let mt = deepSeek(mdl,'project.type');
-      let result = "nothing";
+      let result = 'nothing';
       if (typeof mt === 'undefined'){
-        result = "nothing";
+        result = 'nothing';
       }else{
         switch(mt) {
-          case "binary":
-              result = "binary";
+          case 'binary':
+              result = 'binary';
               break;
-          case "continuous":
-              result = "continuous";
+          case 'continuous':
+              result = 'continuous';
               break;
         } 
       }
@@ -72,7 +72,7 @@ var View = (model) => {
       return model.getState().project.clinImp.upperBound.toFixed(3);
     },
     clinImpReady: () => {
-      return model.getState().project.clinImp.status === "ready";
+      return model.getState().project.clinImp.status === 'ready';
     },
     emType: () => {
       return model.getState().project.clinImp.emtype;
@@ -86,11 +86,11 @@ var View = (model) => {
     smtitle: () => {
       let sm = model.getState().project.CM.currentCM.params.sm;
       let outtext = {
-        OR: "Odds ratio",
-        RR: "Risk ratio",
-        RD: "Risk difference",
-        MD: "Mean difference",
-        SMD: "Standardised mean difference"
+        OR: 'Odds ratio',
+        RR: 'Risk ratio',
+        RD: 'Risk difference',
+        MD: 'Mean difference',
+        SMD: 'Standardised mean difference'
       };
       return outtext[sm];
     }

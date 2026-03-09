@@ -43,7 +43,7 @@ var Update = (model) => {
         };
         updaters.saveState();
       }else{
-        console.log("lathos!! indirectness")
+        console.log('lathos!! indirectness')
       }
     },
     selectindr: (rule) => {
@@ -65,7 +65,7 @@ var Update = (model) => {
         return box
       });
       out.directBoxes = dcs;
-      out.status = "ready";
+      out.status = 'ready';
       updaters.setState(out);
     },
     selectIndividual: (value) => {
@@ -111,7 +111,7 @@ var Update = (model) => {
       let levels = updaters.indrLevels();
       let directBoxes = clone(deepSeek(model,'getState().project.studies.directComparisons'));
       let studycontrs =  clone(deepSeek(model,'getState().project.CM.currentCM.studycontributions'));
-      _.map(directBoxes, box => {box.judgement = "nothing"; return box});
+      _.map(directBoxes, box => {box.judgement = 'nothing'; return box});
       let hd = (() => {
         let out = false;
         if (typeof deepSeek(directBoxes,'[0].majindr') !== 'undefined'){

@@ -15,27 +15,27 @@ var View = (model) => {
     getMeasureType: () => {
       let mdl = model.getState();
       let mt = deepSeek(mdl,'project.type');
-      let result = "nothing";
+      let result = 'nothing';
       if (typeof mt === 'undefined'){
-        result = "nothing";
+        result = 'nothing';
       }else{
         switch(mt) {
-          case "binary":
-              result = "binary";
+          case 'binary':
+              result = 'binary';
               break;
-          case "continuous":
-              result = "continuous";
+          case 'continuous':
+              result = 'continuous';
               break;
         } 
       }
       return result;
     },
     availableParameters: () => {
-      let ap = deepSeek(model.getState(), ".project.heterogeneity.referenceValues.availableParameters");
+      let ap = deepSeek(model.getState(), '.project.heterogeneity.referenceValues.availableParameters');
       let result = [];
-      if (typeof ap !== "undefined"){
+      if (typeof ap !== 'undefined'){
         result = clone(ap);
-        let ot = _.findWhere(result, {id :"OutcomeType"});
+        let ot = _.findWhere(result, {id :'OutcomeType'});
         ot.isAvailable = () => {
           return viewers.getState().referenceValues.params.measurement !== 'nothing';
         };
@@ -75,9 +75,9 @@ var View = (model) => {
           );
           return _.flatten(res);
         }
-        _.findWhere(result, {id:"measurement"}).isAvailable = () => {
+        _.findWhere(result, {id:'measurement'}).isAvailable = () => {
           let mt = viewers.getMeasureType();
-          return !((mt === "binary") || (mt === "continuous"));
+          return !((mt === 'binary') || (mt === 'continuous'));
         };
       }else{
         result = [];
@@ -87,10 +87,10 @@ var View = (model) => {
     rfvParams: () => {
       let dfp = viewers.availableParameters();
       let prs = _.without(dfp, _.findWhere(dfp, {
-          id: "InterventionType"
+          id: 'InterventionType'
       }));
       prs = _.without(prs, _.findWhere(prs, {
-          id: "InterventionComparisonType"
+          id: 'InterventionComparisonType'
       }));
       _.map(prs, p => {
         _.map(p.selections, s => {
@@ -140,13 +140,13 @@ var View = (model) => {
             }
             return false;
           });
-          box.quantiles = [{ label: "first quantile"
+          box.quantiles = [{ label: 'first quantile'
                                   ,value: quantiles.first
                                 },
-                                { label: "median"
+                                { label: 'median'
                                   ,value: quantiles.median
                                 },
-                                { label: "third quantile"
+                                { label: 'third quantile'
                                   ,value: quantiles.third
                                 }
                                ];
@@ -176,7 +176,7 @@ var View = (model) => {
       return model.getState().project.clinImp.upperBound.toFixed(3);
     },
     clinImpReady: () => {
-      return model.getState().project.clinImp.status === "ready";
+      return model.getState().project.clinImp.status === 'ready';
     },
     getRule: () => {
       return viewers.getState().heters.rule;
@@ -197,7 +197,7 @@ var View = (model) => {
       return model.getState().project.clinImp.emtype;
     },
     rfvsTauSquare: () => {
-      let res = model.getState().project.CM.currentCM.hatmatrix.NMAheterResults[0]["heterVarNtw"].toFixed(3);
+      let res = model.getState().project.CM.currentCM.hatmatrix.NMAheterResults[0]['heterVarNtw'].toFixed(3);
       return res;
     },
     rfvFilled: () => {
@@ -241,11 +241,11 @@ var View = (model) => {
     smtitle: () => {
       let sm = model.getState().project.CM.currentCM.params.sm;
       let outtext = {
-        OR: "Odds ratio",
-        RR: "Risk ratio",
-        RD: "Risk difference",
-        MD: "Mean difference",
-        SMD: "Standardised mean difference"
+        OR: 'Odds ratio',
+        RR: 'Risk ratio',
+        RD: 'Risk difference',
+        MD: 'Mean difference',
+        SMD: 'Standardised mean difference'
       };
       return outtext[sm];
     }

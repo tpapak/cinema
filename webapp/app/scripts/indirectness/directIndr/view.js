@@ -16,15 +16,15 @@ var View = (model) => {
       let project =  deepSeek(model,'getState().project');
       _.map(directs, dc => {
         dc = _.extend(dc,{
-          maxindrName: dc.maxindr !== -1? viewers.getlevel(dc.maxindr).label:"--",
-          meanindrName: dc.meanindr !== -1? viewers.getlevel(dc.meanindr).label:"--",
-          majindrName: dc.meanindr !== -1? viewers.getlevel(dc.meanindr).label:"--",
+          maxindrName: dc.maxindr !== -1? viewers.getlevel(dc.maxindr).label:'--',
+          meanindrName: dc.meanindr !== -1? viewers.getlevel(dc.meanindr).label:'--',
+          majindrName: dc.meanindr !== -1? viewers.getlevel(dc.meanindr).label:'--',
           color: () => {
             let level = _.find(viewers.getState().levels,
               indr => {
                 return indr.id.toString() === dc.judgement.toString();
             });
-            let out = "";
+            let out = '';
             if(typeof level !== 'undefined'){
               out = level.color;
             }
@@ -57,10 +57,10 @@ var View = (model) => {
             return indrsels;
           },
         });
-        dc.niceid = ComparisonModel.fixComparisonId(dc.id.replace(",",":"));
+        dc.niceid = ComparisonModel.fixComparisonId(dc.id.replace(',',':'));
       });
       let sids = _.map(directs, dir => {
-        return (dir.t1+":"+dir.t2);
+        return (dir.t1+':'+dir.t2);
       });
       return directs;
     },
@@ -134,7 +134,7 @@ var View = (model) => {
       ];
     },
     totalLevels: () => {
-      let sts = _.groupBy(model.getState().project.studies.long,"id");
+      let sts = _.groupBy(model.getState().project.studies.long,'id');
       let levels
       let grp = _.groupBy(sts, s => {return s[0].indirectness});
       let out = _.mapObject(grp,(l,id)=>{
@@ -147,7 +147,7 @@ var View = (model) => {
       return out;
     },
     totalStudies: () => {
-      let sts = _.groupBy(model.getState().project.studies.long,"id");
+      let sts = _.groupBy(model.getState().project.studies.long,'id');
       return _.size(sts);
     },
   }

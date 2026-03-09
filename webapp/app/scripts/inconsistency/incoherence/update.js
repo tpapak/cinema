@@ -58,7 +58,7 @@ var Update = (model) => {
       return model.getState().project.clinImp.upperBound.toFixed(3);
     },
     updateState: (model) => {
-      let cm = deepSeek(model,"getState().project.CM.currentCM");
+      let cm = deepSeek(model,'getState().project.CM.currentCM');
       if (updaters.cmReady() && updaters.clinImpReady()){
         if (updaters.getState().status === 'ready'){
         }else{
@@ -87,7 +87,7 @@ var Update = (model) => {
     isRatio: () => {
       let sm = model.getState().project.CM.currentCM.params.sm;
       let res = false;
-      if((sm === "OR")||(sm==="RR")){
+      if((sm === 'OR')||(sm==='RR')){
         res = true;
       }
       return res;
@@ -106,16 +106,16 @@ var Update = (model) => {
       let makeBoxes = (studies) => {
         let res = _.map(studies, s => {
           let nmaRow = _.find(NMAs, nma => {
-            return _.isEqual(uniqId(nma["_row"].split(':')),uniqId(s[0].split(':')));
+            return _.isEqual(uniqId(nma['_row'].split(':')),uniqId(s[0].split(':')));
           });
           let contents = {}
             contents =  {
-                id: nmaRow["_row"],
+                id: nmaRow['_row'],
                 levels
             }
-          if(_.isUndefined(nmaRow["Direct"])){
-            if(_.isUndefined(nmaRow["Indirect"])){
-              console.log("ERRROORRR indirect direct in Incohrence");
+          if(_.isUndefined(nmaRow['Direct'])){
+            if(_.isUndefined(nmaRow['Indirect'])){
+              console.log('ERRROORRR indirect direct in Incohrence');
             }else{
               _.extend(contents,{
                   isMixed: false,
@@ -127,7 +127,7 @@ var Update = (model) => {
               })
             }
           }else{
-            if(_.isUndefined(nmaRow["Indirect"])){
+            if(_.isUndefined(nmaRow['Indirect'])){
               _.extend(contents,{
                   isMixed: false,
                   isDirect: true,
@@ -147,9 +147,9 @@ var Update = (model) => {
                   Ztest: nmaRow.SideZ.toFixed(3),
                   pvalue: nmaRow.SidePvalue.toFixed(3),
                   directContribution: nmaRow.PropDir,
-                  nma: updaters.expIt(nmaRow["NMA treatment effect"]),
-                  nmaL: updaters.expIt(nmaRow["lower CI"]),
-                  nmaU: updaters.expIt(nmaRow["upper CI"]),
+                  nma: updaters.expIt(nmaRow['NMA treatment effect']),
+                  nmaL: updaters.expIt(nmaRow['lower CI']),
+                  nmaU: updaters.expIt(nmaRow['upper CI']),
                   direct: updaters.expIt(nmaRow.Direct),
                   directL: updaters.expIt(nmaRow.DirectL),
                   directU: updaters.expIt(nmaRow.DirectU),
@@ -311,7 +311,7 @@ var Update = (model) => {
     },
     emptyModel: () => {
       return {
-        status: "empty",
+        status: 'empty',
         boxes: [],
         referenceValues: []
       }
