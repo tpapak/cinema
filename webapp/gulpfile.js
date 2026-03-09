@@ -265,6 +265,7 @@ function startBrowserSync(done) {
   gulp.watch('app/templates/**/*.hbs', gulp.series('templates'));
   gulp.watch('app/scripts/**/*.hbs', gulp.series('hbsTojs'));
   gulp.watch('app/scripts/**/*.js', gulp.series('watchscripts'));
+  gulp.watch('app/scripts/purescripts/output/**/*.js', gulp.series('watchscripts'));
   gulp.watch('app/fonts/**/*', gulp.series('fonts'));
   gulp.watch('bower.json', gulp.series('wiredep', 'fonts'));
   done();

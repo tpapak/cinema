@@ -48,9 +48,9 @@ Then open http://localhost:9000 in your browser.
 
 For PureScript development with auto-rebuild:
 ```bash
-# Terminal 1: Watch PureScript files
+# Terminal 1: Watch PureScript files (using watchexec since spago dropped --watch support)
 cd app/scripts/purescripts
-spago build --watch
+watchexec -e purs -- spago build
 
 # Terminal 2: Watch JavaScript bundle
 npm run build:js:watch
@@ -58,6 +58,8 @@ npm run build:js:watch
 # Terminal 3: Serve the app
 npx http-server app -p 9000 -c-1
 ```
+
+> **Note:** Install watchexec via `brew install watchexec` (macOS), `cargo install watchexec-cli` (Rust), or see https://github.com/watchexec/watchexec for other platforms.
 
 ### Production Build
 
@@ -202,6 +204,83 @@ spago build
 Use nvm to ensure correct Node version:
 ```bash
 nvm use  # Uses version from .nvmrc
+```
+
+## Testing
+
+### Test Environment Setup
+
+The project includes Python test scripts for browser automation testing. A conda environment is provided for running these tests.
+
+#### Prerequisites
+- [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.anaconda.com/)
+
+#### Create the Test Environment
+
+```bash
+cd webapp/test
+conda env create -f environment.yml
+```
+
+This creates a `cinema-test` environment with:
+- Python 3.11
+- pytest
+- selenium
+- playwright (with Chromium browser)
+
+#### Activate the Environment
+
+```bash
+conda activate cinema-test
+```
+
+#### Install Playwright Browsers (first time only)
+
+```bash
+playwright install chromium
+```
+
+### Running Tests
+
+#### Python Test Scripts
+
+The test scripts in `webapp/test/` are utility scripts for managing browser tests:
+
+```bash
+conda activate cinema-test
+cd webapp/test
+
+# Create the upload/ROB test
+python create-upload-test.py
+
+# Update test to run headful (visible browser)
+python update-headless.py
+
+# Update test to use cached project loading
+python update-upload-test.py
+```
+
+#### Playwright Browser Tests
+
+```bash
+# Start dev server first
+gulp serve &
+
+# Run the upload test
+node test/upload-rob-test.js --external
+```
+
+Or test against production build:
+```bash
+gulp build
+node test/upload-rob-test.js --dist
+```
+
+#### Gulp Test Server
+
+```bash
+gulp serve:test
+# Opens http://localhost:9000 with test runner
 ```
 
 ## License

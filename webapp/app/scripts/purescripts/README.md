@@ -13,9 +13,11 @@ This directory contains the PureScript codebase for the Cinema web application, 
 # Build the project (dependencies are auto-installed)
 spago build
 
-# Watch mode for development
-spago build --watch
+# Watch mode for development (using watchexec since spago dropped --watch support)
+watchexec -e purs -- spago build
 ```
+
+> **Note:** Install watchexec via `brew install watchexec` (macOS), `cargo install watchexec-cli` (Rust), or see https://github.com/watchexec/watchexec for other platforms.
 
 ## Project Structure
 
@@ -57,8 +59,8 @@ spago install
 # Build the project
 spago build
 
-# Build with watch mode
-spago build --watch
+# Build with watch mode (using watchexec since spago dropped --watch support)
+watchexec -e purs -- spago build
 
 # Run tests
 spago test
