@@ -314,6 +314,71 @@ assert(evalProject.evaluation.clinicalImportance !== undefined, 'clinicalImporta
 assertEqual(evalProject.evaluation.clinicalImportance.baseValue, 0.05, 'clinImp baseValue preserved');
 
 // =========================================================
+// Stub evaluation domain fields (for PureScript State decoder)
+// =========================================================
+console.log('\n=== PureScript-compatible stub fields on import ===');
+
+// Use a fresh import to test stubs (legacyState was mutated by eval export tests above)
+var freshState = V3Bridge.v3ToLegacyState(v3json, null);
+
+assert(freshState.project.netRob !== undefined, 'netRob stub exists');
+assertEqual(freshState.project.netRob.status, 'empty', 'netRob status is empty');
+assert(freshState.project.netRob.studyLimitations !== undefined, 'netRob.studyLimitations exists');
+assertEqual(freshState.project.netRob.studyLimitations.status, 'empty', 'studyLimitations status is empty');
+assert(Array.isArray(freshState.project.netRob.studyLimitations.boxes), 'studyLimitations.boxes is array');
+
+assert(freshState.project.clinImp !== undefined, 'clinImp stub exists');
+assertEqual(freshState.project.clinImp.status, 'not_ready', 'fresh clinImp status is not_ready');
+assertEqual(freshState.project.clinImp.emtype, 'RD', 'clinImp emtype matches analysis sm (RD)');
+
+assert(freshState.project.heterogeneity !== undefined, 'heterogeneity stub exists');
+assert(freshState.project.heterogeneity.heters !== undefined, 'heterogeneity.heters exists');
+assertEqual(freshState.project.heterogeneity.heters.status, 'empty', 'heters status is empty');
+assert(freshState.project.heterogeneity.referenceValues !== undefined, 'heterogeneity.referenceValues exists');
+
+assert(freshState.project.incoherence !== undefined, 'incoherence stub exists');
+assertEqual(freshState.project.incoherence.status, 'empty', 'incoherence status is empty');
+
+assert(freshState.project.indirectness !== undefined, 'indirectness stub exists');
+assert(freshState.project.indirectness.netindr !== undefined, 'indirectness.netindr exists');
+assertEqual(freshState.project.indirectness.netindr.status, 'empty', 'netindr status is empty');
+
+assert(freshState.project.imprecision !== undefined, 'imprecision stub exists');
+assertEqual(freshState.project.imprecision.status, 'empty', 'imprecision status is empty');
+
+assert(freshState.project.pubbias !== undefined, 'pubbias stub exists');
+assertEqual(freshState.project.pubbias.status, 'empty', 'pubbias status is empty');
+
+assert(freshState.project.report !== undefined, 'report stub exists');
+assertEqual(freshState.project.report.status, 'notReady', 'report status is notReady');
+assert(Array.isArray(freshState.project.report.directRows), 'report.directRows is array');
+assert(Array.isArray(freshState.project.report.indirectRows), 'report.indirectRows is array');
+
+// =========================================================
+// Evaluation import from v3 (clinicalImportance round-trip)
+// =========================================================
+console.log('\n=== Evaluation import from v3 ===');
+
+// Build a v3 file with clinicalImportance evaluation data
+var v3WithEvalImport = JSON.parse(JSON.stringify(v3json));
+v3WithEvalImport.cinema.projects[0].evaluation = {
+  clinicalImportance: {
+    status: 'ready',
+    question: 'Is the effect clinically important?',
+    baseValue: 0.05,
+    upperBound: 0.05,
+    lowerBound: -0.05,
+    emtype: 'RD',
+  },
+};
+var importedWithEval = V3Bridge.v3ToLegacyState(v3WithEvalImport, null);
+assertEqual(importedWithEval.project.clinImp.status, 'ready', 'imported clinImp status is ready');
+assertEqual(importedWithEval.project.clinImp.baseValue, 0.05, 'imported clinImp baseValue is 0.05');
+assertEqual(importedWithEval.project.clinImp.upperBound, 0.05, 'imported clinImp upperBound is 0.05');
+assertEqual(importedWithEval.project.clinImp.lowerBound, -0.05, 'imported clinImp lowerBound is -0.05');
+assertEqual(importedWithEval.project.clinImp.emtype, 'RD', 'imported clinImp emtype is RD');
+
+// =========================================================
 // Summary
 // =========================================================
 console.log('\n' + '='.repeat(50));

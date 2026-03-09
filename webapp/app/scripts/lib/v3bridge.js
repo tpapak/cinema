@@ -491,7 +491,7 @@ var splitComparisons = (savedComparisons, directComparisonIds) => {
 var v3ProjectToLegacyState = (v3project, v3meta, currentState) => {
   var dataset = v3project.dataset;
   var analysis = v3project.analysis;
-  // var evaluation = v3project.evaluation; // reserved for future use
+  var evaluation = v3project.evaluation || {};
 
   // Build project.studies
   var studies = buildStudiesFromV3(dataset);
@@ -647,8 +647,58 @@ var v3ProjectToLegacyState = (v3project, v3meta, currentState) => {
         contributionMatrices: [currentCM],
         currentCM: currentCM,
       },
+      // Stub evaluation domain fields required by PureScript State decoder.
+      // These are overwritten by their respective JS module updateState() calls,
+      // but must exist so PureScript readState (ClinImpUpdate.updateState) can
+      // decode the entire State and reach hasConMat / getEffectMeasureType.
+      netRob: {
+        status: 'empty',
+        studyLimitations: {
+          customized: 0,
+          rule: 'noRule',
+          status: 'empty',
+          boxes: [],
+        },
+      },
+      clinImp: {
+        status: 'not_ready',
+        question: 'Define threshold of clinical importance',
+        baseValue: -2.0,
+        upperBound: -4.0,
+        lowerBound: -4.0,
+        emtype: (analysisParams.sm || 'OR'),
+      },
+      heterogeneity: {
+        heters: { status: 'empty', boxes: [] },
+        referenceValues: { status: 'empty', treatments: [] },
+      },
+      incoherence: { status: 'empty', boxes: [] },
+      indirectness: {
+        netindr: { status: 'empty', boxes: [] },
+      },
+      imprecision: { status: 'empty', boxes: [] },
+      pubbias: { status: 'empty', boxes: [] },
+      report: {
+        status: 'notReady',
+        hasChanged: false,
+        directRows: [],
+        indirectRows: [],
+      },
     },
   };
+
+  // Restore evaluation data from v3 if available
+  if (evaluation.clinicalImportance) {
+    var ci = evaluation.clinicalImportance;
+    state.project.clinImp = {
+      status: ci.status || 'not_ready',
+      question: ci.question || 'Define threshold of clinical importance',
+      baseValue: (typeof ci.baseValue === 'number') ? ci.baseValue : -2.0,
+      upperBound: (typeof ci.upperBound === 'number') ? ci.upperBound : -4.0,
+      lowerBound: (typeof ci.lowerBound === 'number') ? ci.lowerBound : -4.0,
+      emtype: ci.emtype || (analysisParams.sm || 'OR'),
+    };
+  }
 
   return state;
 };

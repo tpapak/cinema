@@ -32,8 +32,9 @@ updateState mdl = do
   {--logShow "updating CLINIMP"--}
   let (s :: Either String State) = readState mdl
   case s of
-    Left err -> do saveState "clinImp" $ sanitizeClinImp emptyClinImp
-    {--logShow $ "reading state in Report error: " <> err--}
+    Left err -> do
+      log $ "ClinImp readState error: " <> err
+      saveState "clinImp" $ sanitizeClinImp emptyClinImp
     Right st -> do
       if hasConMat st then do
         if isReady st then do

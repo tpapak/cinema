@@ -166,7 +166,8 @@ var Update = (model) => {
               })
             }
           }
-          contents.levels = deepSeek(model,'getState().project.pubbias.levels');
+          // contents.levels = deepSeek(model,'getState().project.pubbias.levels');
+          contents.levels = PubbiasLevels || [];
           contents.judgement = 1;
           return contents;
         });
