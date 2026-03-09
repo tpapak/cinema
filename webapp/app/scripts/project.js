@@ -25,6 +25,7 @@ var Netplot = require('./netplot.js')();
 var ConMat = require('./conmat/conmat.js')();
 var ComparisonModel = require('./purescripts/output/ComparisonModel');
 var download = require('downloadjs');
+var V2Bridge = require('./lib/v2bridge.js');
 
 var PR = {
   actions: {
@@ -38,7 +39,7 @@ var PR = {
         },()=>{});
       });
       $(document).on('click','#proceed', {} ,
-        e=>{ console.log("going to configuration");
+        e=>{ console.log('going to configuration');
       });
     }
   },
@@ -173,16 +174,16 @@ var PR = {
               mdl.long = project.model;
               mdl.wide = Reshaper.longToWide(project.model,project.type);
               }else{
-                if (project.format === "iv"){
-                  mdl.long = Reshaper.wideToLong(project.model,"iv");
+                if (project.format === 'iv'){
+                  mdl.long = Reshaper.wideToLong(project.model,'iv');
                   mdl.wide = project.model;
                 }else{
                   mdl.long = Reshaper.wideToLong(project.model,project.type);
                   mdl.wide = project.model;
                 }
               }
-              if (project.format === "iv"){
-                mdl.nodes = PR.model.makeNodes("iv", mdl.long);
+              if (project.format === 'iv'){
+                mdl.nodes = PR.model.makeNodes('iv', mdl.long);
               }else{
                 mdl.nodes = PR.model.makeNodes(project.type, mdl.long);
               }
@@ -190,11 +191,11 @@ var PR = {
               let sortedIds = ComparisonModel.orderIds(ids);
               let dcomps = PR.update.makeDirectComparisons(project.format, mdl.wide);
               mdl.directComparisons = 
-                _.unzip(sortStudies(_.map(dcomps, comp => {return comp.t1+":"+comp.t2}),dcomps))[1];
+                _.unzip(sortStudies(_.map(dcomps, comp => {return comp.t1+':'+comp.t2}),dcomps))[1];
               let indirects = PR.update.makeIndirectComparisons(mdl.nodes,mdl.directComparisons);
               mdl.indirectComparisons = indirects;
-              mdl.robs = _.mapObject(_.groupBy(mdl.long,"id"),s => {return s[0].rob});
-              mdl.indrs = _.mapObject(_.groupBy(mdl.long,"id"),s => {return s[0].indirectness});
+              mdl.robs = _.mapObject(_.groupBy(mdl.long,'id'),s => {return s[0].rob});
+              mdl.indrs = _.mapObject(_.groupBy(mdl.long,'id'),s => {return s[0].indirectness});
               prj.studies = mdl;
               prj.isSaved = true;
               PR.update.setProject(prj);
@@ -241,6 +242,14 @@ var PR = {
       return new Promise((resolve,reject) => {
         return FR.handleFileSelect(evt).then(statestring => {
            return(JSON.parse(statestring));
+        }).then((parsed) => {
+          // Detect v2 exchange format and transform to legacy state
+          if (V2Bridge.isV2Format(parsed)) {
+            console.log('Detected CINeMA v2 exchange format, transforming to legacy state');
+            let legacyState = V2Bridge.v2ToLegacyState(parsed, PR.model.getState());
+            return legacyState;
+          }
+          return parsed;
         }).then(
         PR.model.checkSavedProject)
         .then(PR.model.loadSavedProject)
@@ -298,7 +307,7 @@ var PR = {
                PR.model.saveState();
                Messages.alertify().success('Project name updated');
              }
-             , function() { console.log("canceled naming") });
+             , function() { console.log('canceled naming') });
     },
     selectType: (rtype) => {
       let pr = PR.view.getProject();
@@ -319,28 +328,28 @@ var PR = {
       let getrequired = (fr,tp) => {
         let out = '';
         switch (fr) {
-          case "long":
+          case 'long':
             switch (tp) {
-              case "continuous":
-                out = "continuousLong";
+              case 'continuous':
+                out = 'continuousLong';
                 break;
-              case "binary":
-                out = "binaryLong";
+              case 'binary':
+                out = 'binaryLong';
                 break;
             }
             break;
-          case "wide":
+          case 'wide':
             switch (tp) {
-              case "continuous":
-                out = "continuousWide";
+              case 'continuous':
+                out = 'continuousWide';
                 break;
-              case "binary":
-                out = "binaryWide";
+              case 'binary':
+                out = 'binaryWide';
                 break;
             }
             break;
-          case "iv":
-            out = "iv";
+          case 'iv':
+            out = 'iv';
             break;
           }
         return out;
@@ -355,13 +364,13 @@ var PR = {
       //console.log("requiredDescriptions", reqdecs);
       let required = _.map(requiredFields, req => {
               return { name: req
-                      , selected: _.contains(availables,req)?req:"--", isActive:false
+                      , selected: _.contains(availables,req)?req:'--', isActive:false
                       , description: reqdecs[req]
                      };
             });
       let optionalFields = pr.rawData.defaults.optional;
       let optional = _.map(optionalFields, req => {
-              return {name: req, selected:_.contains(availables,req)?req:"--", isActive:false};
+              return {name: req, selected:_.contains(availables,req)?req:'--', isActive:false};
             });
       pr.format = format;
       pr.type = type;
@@ -442,7 +451,7 @@ var PR = {
     saveProject: () => {
         let project = PR.model.getState().project;
         let creation = new Date(PR.view.getProject().creationDate);
-        let datestring = creation.getHours().toString() +"."+ creation.getMinutes().toString()+"_"+creation.toLocaleDateString();
+        let datestring = creation.getHours().toString() +'.'+ creation.getMinutes().toString()+'_'+creation.toLocaleDateString();
         let filename = (project.title+'_'+datestring).replace(/\,/g,'_')+'.cnm';
         let blob = localStorage.state;
         download(blob,filename);
@@ -466,7 +475,7 @@ var PR = {
     hasCached: () => {
       let cachedModel = PR.model.cachedModel();
       //console.log("has cached", cachedModel);
-      return cachedModel !== "Nothing";
+      return cachedModel !== 'Nothing';
     },
     canUpload: () => {
       return ! PR.view.getProject().hasFile;
@@ -494,7 +503,7 @@ var PR = {
   },
   creationDate: () => {
       let creation = new Date(PR.view.getProject().creationDate);
-      let datestring = creation.getHours().toString() +":"+ creation.getMinutes()+" "+creation.toLocaleDateString();
+      let datestring = creation.getHours().toString() +':'+ creation.getMinutes()+' '+creation.toLocaleDateString();
       return datestring;
     },
     numStudies: () => {
@@ -594,8 +603,8 @@ var PR = {
       let opts = {};
       let selects = {};
       let availables = {};
-      if(! _.isUndefined(deepSeek(PR.view.getProject(),"rawData.columns"))){
-        availables = ["--"].concat(PR.view.getProject().rawData.columns);
+      if(! _.isUndefined(deepSeek(PR.view.getProject(),'rawData.columns'))){
+        availables = ['--'].concat(PR.view.getProject().rawData.columns);
       }
       if (! _.isUndefined(deepSeek(pr,'settings.required'))){
         reqs = PR.view.getProject().settings.required;
@@ -616,7 +625,7 @@ var PR = {
         }
         if(! _.isUndefined(fields)){
           selects = _.filter(fields, f => {
-            return f.selected !== "--";
+            return f.selected !== '--';
           });
           selects = _.map(selects, f => {return f.selected});
         }
@@ -653,7 +662,7 @@ var PR = {
       let opts = PR.view.optionalFields();
       let fields = reqs.concat(opts);
       let out = _.filter(fields, f => {
-        return f.selected !== "--";
+        return f.selected !== '--';
       });
       return _.map(out, f => {return f.selected});
     },
@@ -662,7 +671,7 @@ var PR = {
       let selectedColumns = PR.view.selectedColumns();
       let allColumns = [];
       if (! _.isUndefined(deepSeek(pr,'rawData.columns'))){
-        allColumns = ["--"].concat(PR.view.getProject().rawData.columns);
+        allColumns = ['--'].concat(PR.view.getProject().rawData.columns);
       }
       return _.difference(allColumns, selectedColumns);
     },
@@ -673,8 +682,8 @@ var PR = {
         numreqs = reqs.length;
       }
       let numSelected = _.countBy(reqs, r => {
-        return r.selected !== "--";
-      })["true"];
+        return r.selected !== '--';
+      })['true'];
       let res = false;
       if (_.isUndefined(numSelected) || _.isUndefined(numreqs)){
         res = false;

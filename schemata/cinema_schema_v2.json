@@ -1,0 +1,460 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cinema.ispm.unibe.ch/schema/v2",
+  "title": "CINeMA Exchange Schema v2",
+  "description": "Schema for importing/exporting CINeMA (Confidence in Network Meta-Analysis) project data. Designed for interoperability with MetaInsight and other NMA software.",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "object",
+      "description": "The CINeMA project container.",
+      "properties": {
+
+        "format": {
+          "type": "string",
+          "enum": ["long", "wide", "iv"],
+          "description": "Data format: 'long' (arm-level), 'wide' (contrast-level), or 'iv' (inverse-variance pre-computed)."
+        },
+
+        "type": {
+          "type": "string",
+          "enum": ["binary", "continuous"],
+          "description": "Outcome type."
+        },
+
+        "studies": {
+          "type": "array",
+          "description": "Study arm-level data. Each element is one arm of one study.",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/definitions/studyArm"
+          }
+        },
+
+        "analyses": {
+          "type": "array",
+          "description": "Array of NMA analysis results. Each element is a complete, self-contained analysis (e.g. frequentist fixed-effect, Bayesian random-effects, data subset). Multiple analyses can coexist in one file.",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/analysis"
+          }
+        }
+
+      },
+      "required": ["format", "type", "studies", "analyses"]
+    }
+  },
+  "required": ["project"],
+
+  "definitions": {
+
+    "stringOrInteger": {
+      "description": "A value that can be either a string or an integer. Mirrors PureScript TreatmentId = StringId String | IntId Int. When serialised as JSON the value may appear as a string (\"ACE\", \"1\") or a bare integer (1). Consumers should normalise by converting integers to strings for comparison.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "integer" }
+      ]
+    },
+
+    "comparisonId": {
+      "description": "Treatment comparison identifier. When both sides are strings: 'TreatA:TreatB' (alphabetically sorted). When treatments are numeric IDs the colon-separated form still applies (e.g. '1:2'). The JSON value is always a string.",
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_]+:[a-zA-Z0-9_]+$"
+    },
+
+    "studyArm": {
+      "type": "object",
+      "description": "One arm of one study.",
+      "properties": {
+        "study": {
+          "$ref": "#/definitions/stringOrInteger",
+          "description": "Study label. Can be a string ('ALLHAT') or a numeric identifier (1). Mirrors PureScript TreatmentId."
+        },
+        "id": {
+          "$ref": "#/definitions/stringOrInteger",
+          "description": "Study identifier. Can be a string or integer. Must be consistent across arms of the same study."
+        },
+        "treatment": {
+          "$ref": "#/definitions/stringOrInteger",
+          "description": "Treatment name. Can be a string ('ACE') or a numeric identifier (1). Mirrors PureScript TreatmentId."
+        },
+        "events": {
+          "type": "integer",
+          "description": "Number of events (binary outcomes only).",
+          "minimum": 0
+        },
+        "n": {
+          "type": "integer",
+          "description": "Sample size.",
+          "minimum": 1
+        },
+        "mean": {
+          "type": "number",
+          "description": "Mean outcome (continuous outcomes only)."
+        },
+        "sd": {
+          "type": "number",
+          "description": "Standard deviation (continuous outcomes only).",
+          "exclusiveMinimum": 0
+        },
+        "rob": {
+          "type": "integer",
+          "description": "Risk of bias: 1=Low, 2=Some concerns/Unclear, 3=High.",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "indirectness": {
+          "type": "integer",
+          "description": "Indirectness: 1=Low, 2=Moderate, 3=High.",
+          "minimum": 1,
+          "maximum": 3
+        }
+      },
+      "required": ["study", "id", "treatment", "n", "rob", "indirectness"],
+      "oneOf": [
+        {
+          "description": "Binary outcome: events required, mean/sd forbidden.",
+          "required": ["events"],
+          "not": {
+            "anyOf": [
+              { "required": ["mean"] },
+              { "required": ["sd"] }
+            ]
+          }
+        },
+        {
+          "description": "Continuous outcome: mean and sd required, events forbidden.",
+          "required": ["mean", "sd"],
+          "not": { "required": ["events"] }
+        }
+      ]
+    },
+
+    "analysis": {
+      "type": "object",
+      "description": "A complete NMA analysis result. Contains all computed quantities needed for CINeMA domain assessments.",
+      "properties": {
+
+        "params": {
+          "$ref": "#/definitions/analysisParams"
+        },
+
+        "hatMatrix": {
+          "$ref": "#/definitions/hatMatrix"
+        },
+
+        "nmaResults": {
+          "type": "array",
+          "description": "Per-comparison NMA results. One entry per treatment comparison in the network.",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/comparisonResult"
+          }
+        },
+
+        "pairwise": {
+          "type": "array",
+          "description": "Per-direct-comparison pairwise meta-analysis heterogeneity statistics. Used by the Heterogeneity domain.",
+          "items": {
+            "$ref": "#/definitions/pairwiseResult"
+          }
+        },
+
+        "networkHeterogeneity": {
+          "$ref": "#/definitions/networkHeterogeneity"
+        },
+
+        "designByTreatment": {
+          "$ref": "#/definitions/designByTreatment"
+        },
+
+        "studyContributions": {
+          "$ref": "#/definitions/studyContributions"
+        },
+
+        "leagueTable": {
+          "$ref": "#/definitions/leagueTable"
+        },
+
+        "sensitivityLeagueTables": {
+          "type": "object",
+          "description": "Sensitivity analysis league tables computed with study subsets filtered by RoB.",
+          "properties": {
+            "lowRoB": {
+              "$ref": "#/definitions/leagueTable",
+              "description": "League table using only studies with rob=1 (Low)."
+            },
+            "lowModerateRoB": {
+              "$ref": "#/definitions/leagueTable",
+              "description": "League table using studies with rob=1 or rob=2 (Low or Some concerns)."
+            }
+          }
+        }
+
+      },
+      "required": ["params", "nmaResults", "studyContributions"]
+    },
+
+    "analysisParams": {
+      "type": "object",
+      "description": "Parameters identifying this analysis. The tuple (model, sm, framework, tau) serves as the cache key.",
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": ["fixed", "random"],
+          "description": "Meta-analysis model type."
+        },
+        "sm": {
+          "type": "string",
+          "enum": ["OR", "RR", "RD", "MD", "SMD"],
+          "description": "Summary measure (effect measure type)."
+        },
+        "framework": {
+          "type": "string",
+          "enum": ["frequentist", "bayesian"],
+          "description": "Statistical framework used.",
+          "default": "frequentist"
+        },
+        "tau": {
+          "type": "number",
+          "description": "Heterogeneity standard deviation. 0 for fixed-effect models, estimated or user-specified for random-effects.",
+          "minimum": 0
+        },
+        "label": {
+          "type": "string",
+          "description": "Human-readable label for this analysis (e.g. 'Frequentist Random-Effects OR, Full Dataset')."
+        }
+      },
+      "required": ["model", "sm"]
+    },
+
+    "hatMatrix": {
+      "type": "object",
+      "description": "The hat (projection) matrix H from NMA. H[i][j] gives the weight of direct comparison j in network estimate i.",
+      "properties": {
+        "H": {
+          "type": "array",
+          "description": "2D numeric matrix. Rows = all network comparisons, Columns = direct comparisons.",
+          "minItems": 1,
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "number" }
+          }
+        },
+        "rowNames": {
+          "type": "array",
+          "description": "Row labels for the H matrix (all network comparisons, format 'A:B').",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/definitions/comparisonId" }
+        },
+        "colNames": {
+          "type": "array",
+          "description": "Column labels for the H matrix (direct comparisons, format 'A:B').",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/definitions/comparisonId" }
+        }
+      },
+      "required": ["H", "rowNames", "colNames"]
+    },
+
+    "comparisonResult": {
+      "type": "object",
+      "description": "NMA results for a single treatment comparison. Contains the pooled network estimate, confidence/prediction intervals, and optionally the direct/indirect decomposition with SIDE incoherence test.",
+      "properties": {
+
+        "comparison": {
+          "$ref": "#/definitions/comparisonId",
+          "description": "Treatment comparison identifier (e.g. 'ACE:BBlocker')."
+        },
+
+        "effect": {
+          "type": "number",
+          "description": "Pooled NMA treatment effect (log-scale for ratio measures, original scale for difference measures)."
+        },
+        "se": {
+          "type": "number",
+          "description": "Standard error of the NMA treatment effect.",
+          "minimum": 0
+        },
+        "ciLower": {
+          "type": "number",
+          "description": "Lower bound of the 95% confidence interval."
+        },
+        "ciUpper": {
+          "type": "number",
+          "description": "Upper bound of the 95% confidence interval."
+        },
+        "priLower": {
+          "type": "number",
+          "description": "Lower bound of the 95% prediction interval."
+        },
+        "priUpper": {
+          "type": "number",
+          "description": "Upper bound of the 95% prediction interval."
+        },
+        "propDirect": {
+          "type": "number",
+          "description": "Proportion of direct evidence contribution to this NMA estimate (0 to 1).",
+          "minimum": 0,
+          "maximum": 1
+        },
+
+        "direct": {
+          "type": "object",
+          "description": "Direct evidence estimate and CI. Present only for comparisons with direct evidence.",
+          "properties": {
+            "effect": { "type": "number", "description": "Direct treatment effect." },
+            "ciLower": { "type": "number", "description": "Lower 95% CI of direct estimate." },
+            "ciUpper": { "type": "number", "description": "Upper 95% CI of direct estimate." }
+          },
+          "required": ["effect", "ciLower", "ciUpper"]
+        },
+
+        "indirect": {
+          "type": "object",
+          "description": "Indirect evidence estimate and CI. Present only for comparisons with indirect evidence.",
+          "properties": {
+            "effect": { "type": "number", "description": "Indirect treatment effect." },
+            "ciLower": { "type": "number", "description": "Lower 95% CI of indirect estimate." },
+            "ciUpper": { "type": "number", "description": "Upper 95% CI of indirect estimate." }
+          },
+          "required": ["effect", "ciLower", "ciUpper"]
+        },
+
+        "incoherence": {
+          "type": "object",
+          "description": "SIDE (Separating Indirect from Direct Evidence) incoherence test. Present only for comparisons with both direct and indirect evidence.",
+          "properties": {
+            "effect": { "type": "number", "description": "Incoherence factor (difference between direct and indirect estimates)." },
+            "ciLower": { "type": "number", "description": "Lower 95% CI of incoherence factor." },
+            "ciUpper": { "type": "number", "description": "Upper 95% CI of incoherence factor." },
+            "z": { "type": "number", "description": "Z test statistic for the incoherence test." },
+            "pvalue": { "type": "number", "description": "P-value for the incoherence test.", "minimum": 0, "maximum": 1 }
+          },
+          "required": ["effect", "ciLower", "ciUpper", "z", "pvalue"]
+        }
+
+      },
+      "required": ["comparison", "effect", "se", "ciLower", "ciUpper", "priLower", "priUpper", "propDirect"],
+      "dependencies": {
+        "incoherence": ["direct", "indirect"]
+      }
+    },
+
+    "pairwiseResult": {
+      "type": "object",
+      "description": "Pairwise meta-analysis heterogeneity for a direct comparison.",
+      "properties": {
+        "comparison": {
+          "$ref": "#/definitions/comparisonId",
+          "description": "Direct comparison identifier."
+        },
+        "tau2": {
+          "type": "number",
+          "description": "Between-study variance (tau-squared).",
+          "minimum": 0
+        },
+        "I2": {
+          "type": "number",
+          "description": "I-squared heterogeneity statistic (0 to 1).",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "I2Lower": {
+          "type": "number",
+          "description": "Lower 95% CI for I-squared."
+        },
+        "I2Upper": {
+          "type": "number",
+          "description": "Upper 95% CI for I-squared."
+        }
+      },
+      "required": ["comparison", "tau2", "I2"]
+    },
+
+    "networkHeterogeneity": {
+      "type": "object",
+      "description": "Network-level heterogeneity statistics.",
+      "properties": {
+        "tau2": {
+          "type": "number",
+          "description": "Network tau-squared (common between-study variance).",
+          "minimum": 0
+        },
+        "Qoverall": {
+          "type": "number",
+          "description": "Overall Q statistic for the network.",
+          "minimum": 0
+        },
+        "Qheterogeneity": {
+          "type": "number",
+          "description": "Q statistic for heterogeneity component.",
+          "minimum": 0
+        },
+        "Qinconsistency": {
+          "type": "number",
+          "description": "Q statistic for inconsistency component.",
+          "minimum": 0
+        }
+      },
+      "required": ["tau2"]
+    },
+
+    "designByTreatment": {
+      "type": "object",
+      "description": "Design-by-treatment interaction test for global network inconsistency. Used by the Incoherence domain for comparisons without direct evidence.",
+      "properties": {
+        "Q": {
+          "type": "number",
+          "description": "Q statistic for the design-by-treatment interaction test.",
+          "minimum": 0
+        },
+        "df": {
+          "type": "number",
+          "description": "Degrees of freedom.",
+          "minimum": 0
+        },
+        "pvalue": {
+          "type": "number",
+          "description": "P-value of the test.",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": ["Q", "df", "pvalue"]
+    },
+
+    "studyContributions": {
+      "type": "object",
+      "description": "Per-comparison, per-study percentage contributions. Keys are comparison IDs (e.g. 'A:B' or '1:2'). Values are objects mapping study identifiers to percentage contributions (0-100). Study keys can be names ('ALLHAT') or numeric string IDs ('1', '2') -- must match the studies[].study or studies[].id values when stringified.",
+      "patternProperties": {
+        "^[a-zA-Z0-9_]+:[a-zA-Z0-9_]+$": {
+          "type": "object",
+          "description": "Contributions for a single comparison. Keys are study identifiers (string or numeric-as-string), values are percentages summing to ~100.",
+          "patternProperties": {
+            "^.+$": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "leagueTable": {
+      "type": "array",
+      "description": "League table matrix. A square matrix where diagonal cells contain treatment names, and off-diagonal cells contain formatted effect estimates with 95% CIs (e.g. '1.234 (0.567, 2.345)'). Row i vs column j gives the effect of treatment i relative to treatment j.",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+
+  }
+}

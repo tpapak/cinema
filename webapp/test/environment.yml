@@ -1,0 +1,12 @@
+name: cinema-test
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  # For potential future test dependencies
+  - pip:
+    - pytest
+    - selenium
+    - playwright

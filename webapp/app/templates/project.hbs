@@ -23,7 +23,7 @@
         <div class='col-xs-12 col-md-offset-2 col-md-8'>
           A demo dataset* can be downloaded <a href="model/Elliott_2007.csv"
             download="diabetes.csv">here</a>. It is a network of six
-          antihypertensive drugs by Elliot et.al 
+          antihypertensive drugs by Elliot et.al
           <br>
             <small> *Indirectness data are
             fictional</small>
@@ -43,9 +43,10 @@
         </h4>
         <div class="form-group">
       <input onchange="Actions.Project.readProject(this)" type="file"
-      id="uploadProject" name="uploadProject" accept=".cnm,.CNM" />
+      id="uploadProject" name="uploadProject" accept=".cnm,.CNM,.json,.JSON" />
         <div class='col-xs-12 col-md-offset-2 col-md-8'>
-          You can upload here previously saved projects (<em>.cnm</em> files).
+          You can upload here previously saved project (<em>.cnm</em> files)
+          or exported analysis (<em>.json</em>) from <a href="https://crsu-metainsight.le.ac.uk/MetaInsight/"> MetaInsight </a>
         </div>
     </div>
     </div>
@@ -73,11 +74,11 @@
             </ul>
           </li>
           <li class="list-group-item">
-            Filename 
+            Filename
             <span class="badge">{{view.filename}}.csv</span>
           </li>
           <li class="list-group-item">
-            Created 
+            Created
             <span class="badge">{{view.creationDate}}</span>
           </li>
         </ul>
@@ -92,7 +93,7 @@
           <h3>File format and outcome type</h3>
           <ul>
             <li class="list-group-item">
-              Format 
+              Format
               <span class="badge">{{view.format}}</span>
             </li>
             <li class="list-group-item">
@@ -113,7 +114,7 @@
           <h3>File format and Outcome type</h3>
           {{#unless view.format}}
             <li>
-              Format 
+              Format
             <select onchange="Actions.Project.selectFormat(this)">
                 <option value="nothing" disabled="true" {{#unless
                         view.hasSelectedFormat}}selected{{/unless}}>--</option>
@@ -140,12 +141,12 @@
           {{/unless}}
           {{#unless view.type}}
             <li>
-              Outcome 
+              Outcome
             <select onchange="Actions.Project.selectType(this)">
                 <option value="nothing" disabled="true" {{#unless
                         view.hasSelectedType}}selected{{/unless}}>--</option>
               {{#each view.rawTypes}}
-                <option value={{this}} 
+                <option value={{this}}
                         {{#if_eq this (../view.selectedType) }}
                           selected
                         {{/if_eq}}>
@@ -177,7 +178,7 @@
                   <select
                   onchange="Actions.Project.selectColumn(this,'{{name}}')">
                     {{#each availableColumns}}
-                      <option value={{name}} 
+                      <option value={{name}}
                         {{#if isSelected}} selected {{/if}}
                         {{#if isDisabled}} disabled {{/if}}>
                           {{name}}
@@ -193,7 +194,7 @@
             {{/each}}
             <li>
         <span class="comments">
-         (* required) 
+         (* required)
         </span>
             </li>
             {{#each view.optionalFields}}
@@ -206,7 +207,7 @@
                   <select
                   onchange="Actions.Project.selectColumn(this,'{{name}}')">
                     {{#each availableColumns}}
-                      <option value={{name}} 
+                      <option value={{name}}
                         {{#if isSelected}} selected {{/if}}
                         {{#if isDisabled}} disabled {{/if}}>
                           {{name}}
