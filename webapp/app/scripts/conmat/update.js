@@ -530,21 +530,46 @@ var Update = (model) => {
           var contribColNames = adapted.contribColNames || [];
           var studyContribs = adapted.studyContributions || [];
 
+          // Build study name → ID lookup so studycontributions keys match
+          // project.studies.robs keys (which are study IDs like "1", "2", ...).
+          // The backend returns study *names* (e.g. "AASK") from R's netcontrib,
+          // but robs/indrs are keyed by study *ID* from the CSV id column.
+          var studyNameToIdMap = {};
+          var longData = project.studies && project.studies.long;
+          if (longData) {
+            longData.forEach(function(arm) {
+              var studyName = arm.study || arm.id;
+              var studyId = typeof arm.id === 'string' ? arm.id : String(arm.id);
+              if (studyName) {
+                studyNameToIdMap[studyName] = studyId;
+                // Also add R-normalized version (hyphens/dots/spaces → underscore)
+                var normalized = String(studyName).replace(/[-. ]/g, '_');
+                studyNameToIdMap[normalized] = studyId;
+              }
+            });
+          }
+
           // Build a lookup: comparison -> [{study, contribution}, ...]
+          // Translate study names to study IDs to match robs/indrs keys.
           var studyContribLookup = {};
           studyContribs.forEach(function(sc) {
             var comp = sc.comparison;
             if (!studyContribLookup[comp]) { studyContribLookup[comp] = []; }
+            // Map study name to ID; fall back to raw name if no mapping found
+            var studyKey = studyNameToIdMap[sc.study] || sc.study;
             studyContribLookup[comp].push({
-              study: sc.study,
+              study: studyKey,
               contribution: sc.contribution
             });
           });
 
-          // Set colNames from the contribution matrix column names
+          // Set colNames from the contribution matrix column names.
+          // Translate study names to IDs for consistency with robs/indrs.
           var cm = updaters.getCM();
           if (contribColNames.length > 0) {
-            cm.colNames = contribColNames;
+            cm.colNames = contribColNames.map(function(name) {
+              return studyNameToIdMap[name] || name;
+            });
           }
 
           // Build savedComparisons for each comparison row in the contribution matrix

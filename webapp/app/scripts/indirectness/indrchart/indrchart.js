@@ -34,7 +34,7 @@ var ConChart = {
       let nrows = chartData.labels.length;
       let ndirects = chartData.datasets.length;
       let chartHeight = 15 * nrows + 20;
-      $('#IndrChartContainer').append('<canvas style="display:none" id=\'IndrChartPrinterFriendly\' width=\'300\' height=\''+chartHeight+'\'></chart>');
+      $('#IndrChartContainer').append('<canvas style="display:none" id=\'IndrChartPrinterFriendly\' width=\'300\' height=\''+chartHeight+'\'></canvas>');
       let ctxp = document.getElementById('IndrChartPrinterFriendly');
       ConChart.barChart = new Chart(ctxp, {
         type: 'horizontalBar',
@@ -59,7 +59,7 @@ var ConChart = {
           },
         }
       })
-      $('#IndrChartContainer').append('<canvas style="display:visible" id=\'IndrChart\' width=\'400\' height=\''+chartHeight+'\'></chart>');
+      $('#IndrChartContainer').append('<canvas style="display:visible" id=\'IndrChart\' width=\'400\' height=\''+chartHeight+'\'></canvas>');
       let ctx = document.getElementById('IndrChart');
       ConChart.barChart = new Chart(ctx, {
         type: 'horizontalBar',

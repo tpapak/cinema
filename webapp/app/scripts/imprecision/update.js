@@ -63,10 +63,16 @@ var Update = (model) => {
     updateState: (model) => {
       let mdl = model.getState();
       if (updaters.cmReady() && updaters.clinImpReady()) {
-        if (updaters.imprecisionReady()){
-        }else{
-          updaters.setState(updaters.skeletonModel());
-        }
+        // Always (re)generate boxes when CM and ClinImp are ready.
+        // Previously the empty if-block here skipped regeneration when
+        // imprecision was already "ready", so changing CIV never updated
+        // the boxes. Now we always call skeletonModel() which recalculates
+        // crossing rules based on the current CIV bounds.
+        // if (updaters.imprecisionReady()){
+        // }else{
+        //   updaters.setState(updaters.skeletonModel());
+        // }
+        updaters.setState(updaters.skeletonModel());
       }else{
         model.getState().project.imprecision = {};
         updaters.setState(updaters.emptyModel());
@@ -123,7 +129,10 @@ var Update = (model) => {
                 isMixed: true,
             })
           }
-          contents.levels = deepSeek(model,'getState().project.imprecision.levels');
+          // Use the local ImprecisionLevels constant directly instead of reading
+          // from state, because createEstimators() runs inside skeletonModel()
+          // BEFORE setState() writes the levels to project.imprecision.
+          contents.levels = ImprecisionLevels;
           let clinImp = deepSeek(model,'getState().project.clinImp');
           let zlb = clinImp.lowerBound;
           let zub = clinImp.upperBound;

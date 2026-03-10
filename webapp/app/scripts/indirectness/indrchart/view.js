@@ -49,9 +49,13 @@ var View = (model) => {
           let dt = {};
               dt.label = st;
               dt.data = _.map(rowNames, r => {
-                return studycontrs[r][st].toFixed(2);
+                // Guard against missing keys — return 0 if study/comparison not found
+                var row = studycontrs[r];
+                var val = row ? row[st] : 0;
+                return (typeof val === 'number' ? val : 0).toFixed(2);
               })
-              switch(indrs[st]){
+              // parseInt to handle string values ("1","2","3") from some data paths
+              switch(parseInt(indrs[st])){
                 case 1:
                   dt.backgroundColor = m.robLevels[0].color;
                 break;
@@ -60,6 +64,9 @@ var View = (model) => {
                 break;
                 case 3:
                   dt.backgroundColor = m.robLevels[2].color;
+                break;
+                default:
+                  dt.backgroundColor = m.robLevels[0].color;
                 break;
               }
               dt.borderColor = _.reduce(dt.data, (memo, d)=> {
