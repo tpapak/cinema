@@ -1,0 +1,13 @@
+export const updateClinImpChildren = function () {
+  if (typeof Actions !== 'undefined'){
+    if (typeof Actions.Heterogeneity !== 'undefined'){
+      Actions.Heterogeneity.updateState();
+      if (typeof Actions.Imprecision !== 'undefined'){
+        Actions.Imprecision.updateState();
+        if (typeof Actions.Incoherence !== 'undefined'){
+          Actions.Incoherence.updateState();
+        }
+      }
+    }
+  }
+};
