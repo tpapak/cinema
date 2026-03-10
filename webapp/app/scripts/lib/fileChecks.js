@@ -4,35 +4,30 @@ var Settings = {
   types: ['continuous','binary'],
   formats: ['long','wide','iv'],
   required: {
-    binaryLong: ['id','t','r','n','rob','indirectness'],
-    continuousLong: ['id','t','y','sd','n','rob','indirectness'],
-    binaryWide: ['id','t1','r1','n1','t2','r2','n2','rob','indirectness'],
-    continuousWide: ['id','t1','y1','sd1','n1','t2','y2','sd2','n2','rob','indirectness'],
-    iv: ['id','t1','t2','effect','se','rob','indirectness'],
+    binaryLong: ['id','t','r','n'],
+    continuousLong: ['id','t','y','sd','n'],
+    binaryWide: ['id','t1','r1','n1','t2','r2','n2'],
+    continuousWide: ['id','t1','y1','sd1','n1','t2','y2','sd2','n2'],
+    iv: ['id','t1','t2','effect','se'],
   },
+  optional: ['rob','indirectness'],
   requiredDescriptions: {
     binaryLong: [{short:'study id',long:'specifies the study - unique for each study'}
                 ,{short:'treatment id',long:''}
                 ,{short:'number of events',long:''}
-                ,{short:'sample size',long:''}
-                ,{short:'Risk of Bias',long:'specifies risk of bias. It can take either 1, 2 and 3 or L, M, H values for low, unclear and high risk of bias'}
-                ,{short:'Indirectness',long:'specifies Indirectness. It can take either 1, 2 and 3 or L, M, H values for low, unclear and high indirectness'}],
+                ,{short:'sample size',long:''}],
     continuousLong: [{short:'study id',long:'specifies the study - unique for each study'}
                     ,{short:'treatment id',long:''}
                     ,{short:'mean',long:''}
                     ,{short:'standand deviation',long:''}
-                    ,{short:'sample size',long:''}
-                    ,{short:'Risk of Bias',long:'specifies risk of bias. It can take either 1, 2 and 3 or L, M, H values for low, unclear and high risk of bias'}
-                    ,{short:'Indirectness',long:'specifies Indirectness. It can take either 1, 2 and 3 or L, M, H values for low, unclear and high indirectness'}],
+                    ,{short:'sample size',long:''}],
     binaryWide: [{short:'study id',long:'specifies the study - unique for each study'}
                 ,{short:'first treatment',long:'id of first treatment'}
                 ,{short:'number of events',long:'number of events in first treatment'}
                 ,{short:'sample size',long:'sample size of first treatment'}
                 ,{short:'second treatment',long:'id of second treatment'}
                 ,{short:'number of events',long:'number of events in second treatment'}
-                ,{short:'sample size',long:'sample size of second treatment'}
-                ,{short:'Risk of Bias',long:'specifies risk of bias. It can take either 1, 2 and 3 or L, M, H values for low, unclear and high risk of bias'}
-                ,{short:'Indirectness',long:'specifies Indirectness. It can take either 1, 2 and 3 or L, M, H values for low, unclear and high indirectness'}],
+                ,{short:'sample size',long:'sample size of second treatment'}],
     continuousWide: [{short:'study id',long:'specifies the study - unique for each study'}
                     ,{short:'treatment id',long:''}
                     ,{short:'mean',long:''}
@@ -41,22 +36,17 @@ var Settings = {
                     ,{short:'treatment id',long:''}
                     ,{short:'mean',long:''}
                     ,{short:'standand deviation',long:''}
-                    ,{short:'sample size',long:''}
-                    ,{short:'Risk of Bias',long:'specifies risk of bias. It can take either 1, 2 and 3 or L, M, H values for low, unclear and high risk of bias'}
-                    ,{short:'Indirectness',long:'specifies Indirectness. It can take either 1, 2 and 3 or L, M, H values for low, unclear and high indirectness'}],
+                    ,{short:'sample size',long:''}],
     iv: [{short:'study id',long:'specifies the study - unique for each study'}
         ,{short:'first treatment',long:'id of first treatment'}
         ,{short:'second treatment',long:'id of second treatment'}
         ,{short:'effect',long:'The effect estimate of t1 versus t2. It can be log odds ratio, log risk ratio, log hazard ratio, mean difference or standardized mean difference. In case that this format is used, you will be asked whether your data measure a binary, continuous or time to event outcome. '}
-        ,{short:'standand error',long:'the standard error of the effect estimate'}
-        ,{short:'Risk of Bias',long:'specifies risk of bias. It can take either 1, 2 and 3 or L, M, H values for low, unclear and high risk of bias'}
-        ,{short:'Indirectness',long:'specifies Indirectness. It can take either 1, 2 and 3 or L, M, H values for low, unclear and high indirectness'}],
+        ,{short:'standand error',long:'the standard error of the effect estimate'}],
   },
-  //optionalDescriptions: [
-  //{short:'indirectness',long:'per study judgement of indirectness'}
-  //],
-  ////optional: ['sn','tfn','tn','tfn1','tn1','tfn2','tn2','indirectness'],
-  //optional: ['indirectness']
+  optionalDescriptions: {
+    rob: {short:'Risk of Bias',long:'specifies risk of bias. It can take either 1, 2 and 3 or L, M, H values for low, unclear and high risk of bias'},
+    indirectness: {short:'Indirectness',long:'specifies Indirectness. It can take either 1, 2 and 3 or L, M, H values for low, unclear and high indirectness'}
+  }
 };
 
 var fileChecker = {

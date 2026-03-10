@@ -1076,7 +1076,7 @@ var legacyEvaluationToV3 = (project) => {
 // =====================================================
 var legacyStateToV3 = (state) => {
   var project = state.project;
-  if (!project || !project.hasFile) {
+  if (!project || !project.hasFile || !project.studies || !project.studies.long) {
     return null;
   }
 
