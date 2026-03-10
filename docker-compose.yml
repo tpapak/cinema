@@ -1,0 +1,30 @@
+# CINeMA Production Stack
+# Usage:
+#   docker compose build
+#   docker compose up -d
+#
+# Frontend: nginx on port 80 (map to 443 via external reverse proxy)
+# Backend:  Flask+R on port 8004 (internal, proxied by nginx)
+
+services:
+  cinema-web:
+    build:
+      context: webapp
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - cinema-api
+    restart: unless-stopped
+
+  cinema-api:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    # Port 8004 is only exposed to other containers (not the host)
+    # via the Docker network. The nginx container proxies /api/ to it.
+    expose:
+      - "8004"
+    environment:
+      - FLASK_DEBUG=0
+    restart: unless-stopped
