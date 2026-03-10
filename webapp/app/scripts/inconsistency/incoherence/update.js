@@ -321,8 +321,9 @@ var Update = (model) => {
         let clinImp = Number(document.getElementById('clinImpInput').value);
         ClinImp.showValid(model.getState().project.clinImp)(clinImp)();
         let isValid = ClinImp.isValid(model.getState().project.clinImp)(clinImp);
-        if(! isValid.value1){
-          Messages.alertify().error('Error in setting Clinically Important value: '+isValid.value0);
+        // PS 0.15 Argonaut encodes Tuple as JSON array [value0, value1]
+        if(! isValid[1]){
+          Messages.alertify().error('Error in setting Clinically Important value: '+isValid[0]);
         }else{
           ClinImp.update.set(model.getState().project.clinImp)(Number(clinImp))();
           updaters.updateState(model);

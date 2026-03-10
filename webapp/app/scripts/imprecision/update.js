@@ -50,8 +50,9 @@ var Update = (model) => {
         let clinImp = Number(document.getElementById('clinImpInput').value);
         ClinImp.showValid(model.getState().project.clinImp)(clinImp)();
         let isValid = ClinImp.isValid(model.getState().project.clinImp)(clinImp);
-        if(! isValid.value1){
-          Messages.alertify().error('Error in setting Clinically Important value: '+isValid.value0);
+        // PS 0.15 Argonaut encodes Tuple as JSON array [value0, value1]
+        if(! isValid[1]){
+          Messages.alertify().error('Error in setting Clinically Important value: '+isValid[0]);
         }else{
           ClinImp.update.set(model.getState().project.clinImp)(Number(clinImp))();
         }
@@ -94,7 +95,8 @@ var Update = (model) => {
       let makeBoxes = (studies) => {
         let res = _.map(studies, s => {
           let pairRow = _.find(pairWises, pw => {
-            return _.isEqual(uniqId(s[0].split(':')),uniqId(pw[0].split(' : ')));
+            // Old OpenCPU used ' : ' separator; new backend uses ':'
+            return _.isEqual(uniqId(s[0].split(':')),uniqId(pw[0].split(/\s*:\s*/)));
           });
           let nmaRow = _.find(NMAs, nma => {
             return _.isEqual(uniqId(nma['_row'].split(':')),uniqId(s[0].split(':')));
