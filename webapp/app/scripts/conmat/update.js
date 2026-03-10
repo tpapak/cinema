@@ -15,6 +15,191 @@ var Pubbias = require('../pubbias/pubbias.js')();
 var ClinicalImportance = require('../purescripts/output/ClinImp');
 ClinicalImportance.update = require('../purescripts/output/ClinImp.Update');
 
+// ── Backend API helpers ─────────────────────────────────────────────────────
+// The backend base URL comes from config (e.g. "localhost:8004").
+// Ensure it has a protocol prefix.
+var _apiBase = (function() {
+  var url = Config.rserverurl || 'localhost:8004';
+  if (url.indexOf('://') === -1) { url = 'http://' + url; }
+  // Strip any trailing OpenCPU path leftover from old config
+  url = url.replace(/\/ocpu\/.*$/, '');
+  return url.replace(/\/+$/, '');
+})();
+
+// Active AbortController + backend job ID for cancellation
+var _abortController = null;
+var _activeJobId = null;
+
+// POST JSON to the backend, returns parsed JSON.
+// Accepts an AbortSignal for cancellation.
+var _postAPI = (endpoint, body, signal) => {
+  return fetch(_apiBase + endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: signal
+  }).then(resp => {
+    // Capture job ID from response header (for cancellation)
+    var jobId = resp.headers.get('X-Job-Id');
+    if (jobId) { _activeJobId = jobId; }
+    if (!resp.ok) {
+      return resp.json().then(err => {
+        throw new Error(err.error || ('HTTP ' + resp.status));
+      });
+    }
+    return resp.json();
+  });
+};
+
+// Normalize a comparison ID to alphabetical order (A:B where A < B).
+// R functions (netsplit, lower.tri, netcontrib) use inconsistent ordering;
+// this ensures a single canonical format everywhere.
+var _normalizeCompId = (cid) => {
+  var parts = cid.split(':');
+  if (parts.length !== 2) { return cid; }
+  parts.sort();
+  return parts[0] + ':' + parts[1];
+};
+
+// Generate lower-triangle comparison IDs from treatment names
+// (same ordering as R's lower.tri: column-major, but normalized to A:B)
+// var _lowerTriIds = (treatnames) => {
+//   var ids = [];
+//   for (var j = 0; j < treatnames.length; j++) {
+//     for (var i = j + 1; i < treatnames.length; i++) {
+//       ids.push(treatnames[i] + ':' + treatnames[j]);
+//     }
+//   }
+//   return ids;
+// };
+
+// Adapt the new backend response to the legacy hatmatrix shape
+// that downstream evaluation domains expect.
+var _adaptResponse = (resp) => {
+  var treatnames = resp.treatnames;
+  if (typeof treatnames === 'string') { treatnames = [treatnames]; }
+
+  // ── NMAresults: array of row objects with legacy field names ──
+  var nmaResults = resp.NMAresults || [];
+  // NMAresults from new backend is [{TE, seTE, lowerCI, upperCI, lowerPrI, upperPrI, PropDir, _row}, ...]
+  // side is [{comparison, Direct, DirectL, DirectU, Indirect, IndirectL, IndirectU, SideIF, SideIFlower, SideIFupper, SideZ, SidePvalue, PropDir}, ...]
+  var sideRows = resp.side || [];
+  // Normalize side comparison keys for lookup (netsplit uses reversed B:A)
+  var sideLookup = {};
+  sideRows.forEach(function(sr) { sideLookup[_normalizeCompId(sr.comparison)] = sr; });
+
+  var legacyNMA = nmaResults.map(function(r, idx) {
+    // Use the backend's _row field (already alphabetical A:B from cinema_nma.R)
+    var compId = r._row ? _normalizeCompId(r._row) : '';
+    var sr = sideLookup[compId] || {};
+    return {
+      '_row': compId,
+      'NMA treatment effect': r.TE,
+      'se treat effect': r.seTE,
+      'lower CI': r.lowerCI,
+      'upper CI': r.upperCI,
+      'lower PrI': r.lowerPrI,
+      'upper PrI': r.upperPrI,
+      'PropDirNetmeta': r.PropDir,
+      'Direct': sr.Direct,
+      'DirectL': sr.DirectL,
+      'DirectU': sr.DirectU,
+      'Indirect': sr.Indirect,
+      'IndirectL': sr.IndirectL,
+      'IndirectU': sr.IndirectU,
+      'SideIF': sr.SideIF,
+      'SideIFlower': sr.SideIFlower,
+      'SideIFupper': sr.SideIFupper,
+      'SideZ': sr.SideZ,
+      'SidePvalue': sr.SidePvalue,
+      'PropDir': sr.PropDir
+    };
+  });
+
+  // ── Pairwise: array of row objects with _row field ──
+  var pairwise = (resp.Pairwise || []).map(function(pw) {
+    return {
+      '_row': _normalizeCompId(pw.comparison),
+      'tau2': pw.tau2,
+      'I2': pw.I2,
+      'I2lower': pw.I2lower,
+      'I2upper': pw.I2upper
+    };
+  });
+
+  // ── NMAheterResults: legacy format is [[heterVarNtw, tau2, Qoverall, Qheter, Qincons]] ──
+  var nh = resp.NMAheter || {};
+  var nmaHeter = [[{
+    'heterVarNtw': typeof nh.tau2 === 'number' ? Math.sqrt(nh.tau2) : 0,
+    'tau2': nh.tau2 || 0,
+    'Q overall': nh.Qoverall || 0,
+    'Q heterogeneity': nh.Qheterogeneity || 0,
+    'Q inconsistency': nh.Qinconsistency || 0
+  }]];
+
+  // ── dbt: legacy format is [[Q_dbt, df, pv_dbt]] ──
+  var dbtRaw = resp.dbt || [];
+  var legacyDbt;
+  if (Array.isArray(dbtRaw) && dbtRaw.length > 0) {
+    // dbtRaw is [{Q, df, pval}] from the new backend
+    var d0 = dbtRaw[0];
+    legacyDbt = [[d0.Q || 0, d0.df || 0, d0.pval || 1]];
+  } else if (typeof dbtRaw === 'object' && !Array.isArray(dbtRaw)) {
+    legacyDbt = [[dbtRaw.Q || 0, dbtRaw.df || 0, dbtRaw.pval || 1]];
+  } else {
+    legacyDbt = [[0, 0, 1]];
+  }
+
+  // ── Hat matrix H ──
+  var hData = resp.H || {};
+  var H = hData.data || hData || [];
+
+  // ── contribMatrix: the per-comparison contribution matrix ──
+  // New backend returns it as a matrix {data, rowNames, colNames}
+  var contribMat = resp.contribMatrix || {};
+  var contribData = contribMat.data || [];
+  var contribRowNames = contribMat.rowNames || resp.rowNames || [];
+  var contribColNames = contribMat.colNames || resp.colNames || [];
+
+  // ── studyContributions: per-study contributions ──
+  // New backend returns [{comparison, study, contribution, ...}, ...]
+  // (columns from the netcontrib study data frame)
+  var studyContribs = resp.studyContributions || [];
+
+  // ── forleaguetable ──
+  var flt = resp.forleaguetable || {};
+
+  // Build the legacy hatmatrix object
+  return {
+    hatmatrix: {
+      H: H,
+      rowNames: resp.rowNames || contribRowNames,
+      colNames: resp.colNames || contribColNames,
+      NMAresults: legacyNMA,
+      rowNamesNMAresults: _.pluck(legacyNMA, '_row'),
+      colNamesNMAresults: ['NMA treatment effect', 'se treat effect',
+        'lower CI', 'upper CI', 'lower PrI', 'upper PrI', 'PropDirNetmeta',
+        'Direct', 'DirectL', 'DirectU', 'Indirect', 'IndirectL', 'IndirectU',
+        'SideIF', 'SideIFlower', 'SideIFupper', 'SideZ', 'SidePvalue', 'PropDir'],
+      Pairwise: pairwise,
+      rowNamesPairwise: _.pluck(pairwise, '_row'),
+      NMAheterResults: nmaHeter,
+      dbt: legacyDbt,
+      forleaguetable: flt,
+      // forstudycontribution not needed — we have studyContributions directly
+      model: resp.model,
+      sm: resp.sm,
+      tau: resp.tau
+    },
+    // Extracted contribution data for building savedComparisons
+    contribMatrix: contribData,
+    contribRowNames: contribRowNames,
+    contribColNames: contribColNames,
+    studyContributions: studyContribs,
+    treatnames: treatnames
+  };
+};
+
 var Update = (model) => {
   let project = deepSeek(model,'getState().project');
   let cm = deepSeek(model,'getState().project.CM');
@@ -35,6 +220,17 @@ var Update = (model) => {
     cancelMatrix: () => {
       console.log('canceling matrix');
       updaters.setCurrentCM('status','canceling');
+      // Abort the in-flight fetch request
+      if (_abortController) {
+        _abortController.abort();
+        _abortController = null;
+      }
+      // Cancel the backend job if we have a job ID
+      if (_activeJobId) {
+        fetch(_apiBase + '/api/cancel/' + _activeJobId, { method: 'POST' })
+          .catch(function() {});
+        _activeJobId = null;
+      }
       updaters.saveState();
     },
     resetAnalysis: () => {
@@ -66,18 +262,22 @@ var Update = (model) => {
             hatmatrix:[],
             savedComparisons: [],
             params: {
-              MAModel: {},
-              sm: {},
+              MAModel: 'random',
+              sm: 'OR',
               intvs: [],
-              rule: {},
+              rule: 'every',
               tau: 0
             },
             allComparisonIds: updaters.computeComparisonIds(),
             status: 'empty', //empty, loading, canceling, ready
             progress: 0,
-            currentRow: 'Contribution Matrix'
+            currentRow: 'Contribution Matrix',
+            colNames: [],
+            directRowNames: [],
+            indirectRowNames: [],
+            selectedComparisons: [],
           };
-      updaters.saveState();
+      // updaters.saveState();
     },
     selectParams: (params) => {
       updaters.setCurrentCM('params',params);
@@ -144,12 +344,12 @@ var Update = (model) => {
       ClinicalImportance.update.updateState(mdl)(mdl);
     },
     fetchContributionMatrix: (ncm) => {
-      let rserver = Config.rserverurl;
+      // let rserver = Config.rserverurl;
       return new Promise((resolve, reject) => {
-        ocpu.seturl(rserver);
+        // ocpu.seturl(rserver);
         let cms = model.getState().project.CM.contributionMatrices;
-        var result = {};
-        let ncmparams = params;
+        // var result = {};
+        // let ncmparams = params;
         let cm = ncm;
         console.log('CCCCCCCCTRRRRRRREEEEAAAAATTTIIIIIINNGGGGGGGG MMMMMAAATTTTTRIXXXXX');
         //check if the matrix is in the model;
@@ -195,86 +395,92 @@ var Update = (model) => {
             }
               return out;
           }
-          let hmc = ocpu.call('getHatMatrix',
-            {indata: formatData(rtype, project.studies, 'none'),
-              type: rtype,
-              model: cm.params.MAModel,
-              sm: cm.params.sm,
-            }, (sessionh) => {
-            sessionh.getObject( (hatmatrix) => {
-              cm.hatmatrix = hatmatrix;
-              let lt = ocpu.call('leaguetable',
-                { fromhatmatrix: hatmatrix.forleaguetable
-                , model: hatmatrix.model
-                , sm: hatmatrix.sm
-                }, sessionhh => {
-                  sessionhh.getObject( (leaguetable) => {
-                  cm.leaguetable = leaguetable;
-                  updaters.saveState();
-                  updaters.fetchRows(cm).then(res => {
-                    resolve(res);
-                  }).catch( err => {
-                     console.log('failed hatmatrix',err.responseText);
-                     reject('R returned an error: ' + err.responseText);
-                  });
-                });
-            })
-          })
-         }).catch( (err) => {
-           console.log('failed hatmatrix',err.responseText);
-           reject('R returned an error: ' + err.responseText);
-        });
-        ocpu.call('getHatMatrix',
-          {indata: formatData(rtype, project.studies,'H'),
+          // Set up cancellation
+          _abortController = new AbortController();
+          var signal = _abortController.signal;
+
+          // ── Primary NMA call (all studies) ──
+          _postAPI('/api/runNMA', {
+            indata: formatData(rtype, project.studies, 'none'),
             type: rtype,
             model: cm.params.MAModel,
-            sm: cm.params.sm,
-          }, (sessionh) => {
-          sessionh.getObject( (hatmatrix) => {
-            let lt = ocpu.call('leaguetable',
-              { fromhatmatrix: hatmatrix.forleaguetable
-              , model: hatmatrix.model
-              , sm: hatmatrix.sm
-              }, sessionhh => {
-                sessionhh.getObject( (leaguetable) => {
-                cm.leaguetableLM = leaguetable;
-                updaters.saveState();
-              });
-          })
-        })
-       }).catch( (err) => {
-         let msg = 'sensitity analysis not possible for Low and Medium risk within study bias studies';
-         msg = msg + 'R returned an error: ' + err.responseText;
-         Messages.alertify().alert(msg);
-         cm.leaguetableLM = {};
-      });
-      ocpu.call('getHatMatrix',
-        {indata: formatData(rtype, project.studies,'MH'),
+            sm: cm.params.sm
+          }, signal).then(function(resp) {
+            var adapted = _adaptResponse(resp);
+            cm.hatmatrix = adapted.hatmatrix;
+            // Fetch the league table
+            return _postAPI('/api/leaguetable', {
+              forleaguetable: adapted.hatmatrix.forleaguetable,
+              model: adapted.hatmatrix.model,
+              sm: adapted.hatmatrix.sm
+            }, signal).then(function(leaguetable) {
+              cm.leaguetable = leaguetable;
+              updaters.saveState();
+              // Extract contribution rows from the adapted response
+              return updaters.fetchRows(cm, adapted);
+            });
+          }).then(function(res) {
+            resolve(res);
+          }).catch(function(err) {
+            if (err && err.name === 'AbortError') {
+              reject('Computation canceled');
+            } else {
+              var errMsg = (err && err.message) ? err.message : String(err);
+              console.log('failed hatmatrix', errMsg);
+              reject('R returned an error: ' + errMsg);
+            }
+          });
+
+          // ── Sensitivity analysis: exclude High RoB ──
+          _postAPI('/api/runNMA', {
+            indata: formatData(rtype, project.studies, 'H'),
             type: rtype,
             model: cm.params.MAModel,
-            sm: cm.params.sm,
-          }, (sessionh) => {
-          sessionh.getObject( (hatmatrix) => {
-            let lt = ocpu.call('leaguetable',
-              { fromhatmatrix: hatmatrix.forleaguetable
-              , model: hatmatrix.model
-              , sm: hatmatrix.sm
-              }, sessionhh => {
-                sessionhh.getObject( (leaguetable) => {
-                cm.leaguetableL = leaguetable;
-                updaters.saveState();
-              });
-          })
-        })
-       }).catch( (err) => {
-         let msg = 'sensitity analysis not possible for Low risk within study bias studies';
-         msg = msg + 'R returned an error: ' + err.responseText;
-         Messages.alertify().alert(msg);
-         cm.leaguetableL = {};
-      });
-      }else{
+            sm: cm.params.sm
+          }).then(function(resp) {
+            var adapted = _adaptResponse(resp);
+            return _postAPI('/api/leaguetable', {
+              forleaguetable: adapted.hatmatrix.forleaguetable,
+              model: adapted.hatmatrix.model,
+              sm: adapted.hatmatrix.sm
+            });
+          }).then(function(leaguetable) {
+            cm.leaguetableLM = leaguetable;
+            updaters.saveState();
+          }).catch(function(err) {
+            var errMsg = (err && err.message) ? err.message : String(err);
+            var msg = 'sensitivity analysis not possible for Low and Medium risk within study bias studies. ';
+            msg = msg + 'R returned an error: ' + errMsg;
+            Messages.alertify().alert(msg);
+            cm.leaguetableLM = {};
+          });
+
+          // ── Sensitivity analysis: exclude Medium+High RoB ──
+          _postAPI('/api/runNMA', {
+            indata: formatData(rtype, project.studies, 'MH'),
+            type: rtype,
+            model: cm.params.MAModel,
+            sm: cm.params.sm
+          }).then(function(resp) {
+            var adapted = _adaptResponse(resp);
+            return _postAPI('/api/leaguetable', {
+              forleaguetable: adapted.hatmatrix.forleaguetable,
+              model: adapted.hatmatrix.model,
+              sm: adapted.hatmatrix.sm
+            });
+          }).then(function(leaguetable) {
+            cm.leaguetableL = leaguetable;
+            updaters.saveState();
+          }).catch(function(err) {
+            var errMsg = (err && err.message) ? err.message : String(err);
+            var msg = 'sensitivity analysis not possible for Low risk within study bias studies. ';
+            msg = msg + 'R returned an error: ' + errMsg;
+            Messages.alertify().alert(msg);
+            cm.leaguetableL = {};
+          });
+        }else{
             console.log('found hatmatrix', cm.hatmatrix);
-            updaters.fetchRows(cm).then(res => {
+            updaters.fetchRows(cm, null).then(res => {
               resolve(res);
             }).catch(err => {reject(err)});
        }
@@ -298,83 +504,80 @@ var Update = (model) => {
       }
       return res;
     },
-    fetchRows : (cmc) => {
+    // Old fetchRows used sequential ocpu.call('getStudyContribution', ...) per comparison.
+    // New version extracts all contributions from the adapted backend response in one shot.
+    fetchRows : (cmc, adapted) => {
       let hatmatrix = cmc.hatmatrix;
       let params = cmc.params;
-        return new Promise((rslv, rjc) => {
-        let comparisons = updaters.filterRows(hatmatrix.rowNames, params.intvs,params.rule);
+      return new Promise((rslv, rjc) => {
+        if (updaters.getCM().status === 'canceling') {
+          rjc('Computation canceled');
+          return;
+        }
+        let comparisons = updaters.filterRows(hatmatrix.rowNames, params.intvs, params.rule);
         updaters.getCM().selectedComparisons = comparisons;
         updaters.saveState();
 
-        let sequencePromises = (rows, savedComparisons) => {
-          return new Promise ((reslve, rjct) => {
-            if (updaters.getCM().status !== 'canceling') {
-              if (rows.length !== 0){
-                let row = _.first(rows);
-                let rest = _.rest(rows);
-                let done = Math.round(100 * (1 - (rest.length / comparisons.length)));
-                updaters.setCurrentCM('progress',done);
-                let foundComp = _.find(savedComparisons, sc => {
-                  return (sc.rowname === row);
-                });
-                if(typeof foundComp !== 'undefined'){
-                   //console.log("found row ",foundComp," in saved");
-                  let savedRow = {names: hatmatrix.colNames, row:foundComp.rowname, contribution:foundComp.contributions};
-                  sequencePromises(rest,savedComparisons).then( nextrow => {
-                    reslve(_.flatten([_.flatten(nextrow)].concat([savedRow])));
-                  }).catch(err=>{rjct(err)});
-                }else{
-                  let gmr = ocpu.call('getStudyContribution',{
-                    hatmatrix: hatmatrix,
-                    comparison: row
-                  }, (sessionr) => {
-                    sessionr.getObject( (rowback) => {
-                      //console.log("currentCM",updaters.getCM(),"row ",row," came back ",rowback);
-                      let studycontributions = updaters.sumStudyContrs(rowback.studyRow);
-                      updaters.getCM().savedComparisons.push({
-                        rowname:row,
-                        perstudy:studycontributions,
-                        comparisons:rowback.comparisonRow.contribution
-                      });
-                      updaters.getCM().currentRow = row;
-                      updaters.saveState();
-                      // console.log("savedRows",updaters.getCM().savedComparisons);
-                      rowback.row = row;
-                      sequencePromises(rest,savedComparisons).then( nextrow => {
-                        reslve(_.flatten([_.flatten(nextrow)].concat(rowback)));
-                      }).catch(err => {rjct(err)});
-                    });
-                  }).catch( (err) => {
-                    rjct('R returned an error: ' + err.responseText);
-                  });
-                }
-              }else{
-                reslve([]);
-              }
-            }else{
-              rjct('Computation canceled');
-            }
-          })
-        };
-       return sequencePromises(comparisons, updaters.getCM().savedComparisons).then(output => {
-          //console.log("Server output",output);
-         //updaters.getCM().colNames = output[0].comparisonRow.names;
-          let rows = _.reduceRight(output, (mem ,row) => {
-            return mem.concat(
-              { rowname: row.row, 
-                contributions: row.contribution
+        // If adapted is null, we came from cache (hatmatrix already populated).
+        // In that case, savedComparisons should already exist.
+        if (adapted) {
+          // Build savedComparisons from the adapted contribution data.
+          // contribMatrix is the per-comparison contribution matrix (2D array).
+          // contribRowNames are the comparison IDs (rows).
+          // contribColNames are the study/design column names.
+          var contribData = adapted.contribMatrix || [];
+          var contribRowNames = adapted.contribRowNames || [];
+          var contribColNames = adapted.contribColNames || [];
+          var studyContribs = adapted.studyContributions || [];
+
+          // Build a lookup: comparison -> [{study, contribution}, ...]
+          var studyContribLookup = {};
+          studyContribs.forEach(function(sc) {
+            var comp = sc.comparison;
+            if (!studyContribLookup[comp]) { studyContribLookup[comp] = []; }
+            studyContribLookup[comp].push({
+              study: sc.study,
+              contribution: sc.contribution
+            });
+          });
+
+          // Set colNames from the contribution matrix column names
+          var cm = updaters.getCM();
+          if (contribColNames.length > 0) {
+            cm.colNames = contribColNames;
+          }
+
+          // Build savedComparisons for each comparison row in the contribution matrix
+          contribRowNames.forEach(function(rowName, idx) {
+            // Check if already saved
+            var alreadySaved = _.find(cm.savedComparisons, function(sc) {
+              return sc.rowname === rowName;
+            });
+            if (!alreadySaved) {
+              // Per-comparison contributions (the row of the contribution matrix)
+              var compContributions = contribData[idx] || [];
+              // Per-study contributions for this comparison
+              var studyRows = studyContribLookup[rowName] || [];
+              var perStudy = updaters.sumStudyContrs(studyRows);
+              cm.savedComparisons.push({
+                rowname: rowName,
+                perstudy: perStudy,
+                comparisons: compContributions
               });
-          },[]);
-          // console.log('the ocpu result',connma,'pushing to project');
-          let cm = updaters.getCM();
-         if(typeof cm.colNames === 'undefined'){
-           cm.colNames = output[0].comparisonRow.names;
-         }
-          let result = updaters.formatMatrix(cm);
-           //console.log('RESULTS FROM SERVER',result);
+            }
+          });
+          updaters.setCurrentCM('progress', 100);
+          updaters.saveState();
+        }
+
+        try {
+          var result = updaters.formatMatrix(updaters.getCM());
           rslv(result);
-       }).catch(err => {console.log('caugth error',err);rjc(err);});
-     })
+        } catch(err) {
+          console.log('caught error in formatMatrix', err);
+          rjc(err);
+        }
+      });
     },
     updateContributionCache: () => {
       let cms = model.getState().project.CM.contributionMatrices;
@@ -691,6 +894,460 @@ var Update = (model) => {
           let filename = (project.title+'_'+cm.params.MAModel+'_'+cm.params.sm+'_leaguetableLowMediumBias').replace(/\,/g,'_')+'.csv';
           download(encodedUri,filename);
       });
+    },
+    // Generate a self-contained R script that runs the NMA offline
+    // and produces a .cnm file the user can upload back into CINeMA.
+    generateOfflineScript: () => {
+      var cm = updaters.getCM();
+      var p = model.getState().project;
+      var studies = p.studies.long;
+      var title = p.title || 'project';
+      var rtype = '';
+      switch(p.type){
+        case 'binary': rtype = 'long_binary'; break;
+        case 'continuous': rtype = 'long_continuous'; break;
+      }
+      if(p.format === 'iv'){ rtype = 'iv'; }
+      var maModel = cm.params.MAModel || 'random';
+      var sm = cm.params.sm || 'OR';
+
+      // Serialise the study data as an R data.frame constructor
+      var rData = '';
+      if (rtype === 'long_binary') {
+        var cols = { study:[], id:[], t:[], r:[], n:[], rob:[], indirectness:[] };
+        studies.forEach(function(s) {
+          cols.study.push('"' + (s.study || s.t || '') + '"');
+          cols.id.push(s.id);
+          cols.t.push('"' + (s.t || s.treatment || '') + '"');
+          cols.r.push(s.r != null ? s.r : (s.events != null ? s.events : 0));
+          cols.n.push(s.n);
+          cols.rob.push(s.rob != null ? s.rob : 1);
+          cols.indirectness.push(s.indirectness != null ? s.indirectness : 1);
+        });
+        rData = 'D <- data.frame(\n' +
+          '  study = c(' + cols.study.join(', ') + '),\n' +
+          '  id    = c(' + cols.id.join(', ') + '),\n' +
+          '  t     = c(' + cols.t.join(', ') + '),\n' +
+          '  r     = c(' + cols.r.join(', ') + '),\n' +
+          '  n     = c(' + cols.n.join(', ') + '),\n' +
+          '  rob   = c(' + cols.rob.join(', ') + '),\n' +
+          '  indirectness = c(' + cols.indirectness.join(', ') + '),\n' +
+          '  stringsAsFactors = FALSE\n)\n';
+      } else if (rtype === 'long_continuous') {
+        var cols = { study:[], id:[], t:[], y:[], sd:[], n:[], rob:[], indirectness:[] };
+        studies.forEach(function(s) {
+          cols.study.push('"' + (s.study || '') + '"');
+          cols.id.push(s.id);
+          cols.t.push('"' + (s.t || s.treatment || '') + '"');
+          cols.y.push(s.y != null ? s.y : (s.mean != null ? s.mean : 0));
+          cols.sd.push(s.sd != null ? s.sd : 0);
+          cols.n.push(s.n);
+          cols.rob.push(s.rob != null ? s.rob : 1);
+          cols.indirectness.push(s.indirectness != null ? s.indirectness : 1);
+        });
+        rData = 'D <- data.frame(\n' +
+          '  study = c(' + cols.study.join(', ') + '),\n' +
+          '  id    = c(' + cols.id.join(', ') + '),\n' +
+          '  t     = c(' + cols.t.join(', ') + '),\n' +
+          '  y     = c(' + cols.y.join(', ') + '),\n' +
+          '  sd    = c(' + cols.sd.join(', ') + '),\n' +
+          '  n     = c(' + cols.n.join(', ') + '),\n' +
+          '  rob   = c(' + cols.rob.join(', ') + '),\n' +
+          '  indirectness = c(' + cols.indirectness.join(', ') + '),\n' +
+          '  stringsAsFactors = FALSE\n)\n';
+      } else {
+        // iv format
+        var cols = { id:[], t1:[], t2:[], effect:[], se:[], rob:[], indirectness:[] };
+        var wideData = p.studies.wide || studies;
+        wideData.forEach(function(s) {
+          cols.id.push(s.id);
+          cols.t1.push('"' + (s.t1 || '') + '"');
+          cols.t2.push('"' + (s.t2 || '') + '"');
+          cols.effect.push(s.effect != null ? s.effect : 0);
+          cols.se.push(s.se != null ? s.se : 0);
+          cols.rob.push(s.rob != null ? s.rob : 1);
+          cols.indirectness.push(s.indirectness != null ? s.indirectness : 1);
+        });
+        rData = 'D <- data.frame(\n' +
+          '  id     = c(' + cols.id.join(', ') + '),\n' +
+          '  t1     = c(' + cols.t1.join(', ') + '),\n' +
+          '  t2     = c(' + cols.t2.join(', ') + '),\n' +
+          '  effect = c(' + cols.effect.join(', ') + '),\n' +
+          '  se     = c(' + cols.se.join(', ') + '),\n' +
+          '  rob    = c(' + cols.rob.join(', ') + '),\n' +
+          '  indirectness = c(' + cols.indirectness.join(', ') + '),\n' +
+          '  stringsAsFactors = FALSE\n)\n';
+      }
+
+      // Build the R script
+      var script = [
+        '#!/usr/bin/env Rscript',
+        '# CINeMA Offline NMA Script',
+        '# Generated by CINeMA ' + new Date().toISOString(),
+        '#',
+        '# This script runs the network meta-analysis locally and produces',
+        '# a .cnm file you can upload back into CINeMA.',
+        '#',
+        '# Requirements: R with packages netmeta (>= 3.3), meta, jsonlite',
+        '#   install.packages(c("netmeta", "meta", "jsonlite"))',
+        '#',
+        '# Usage: Rscript ' + title.replace(/[^a-zA-Z0-9_-]/g, '_') + '_cinema_nma.R',
+        '',
+        'library(netmeta)',
+        'library(meta)',
+        'library(jsonlite)',
+        '',
+        'cat("Running CINeMA NMA analysis...\\n")',
+        'cat("  Model: ' + maModel + '\\n")',
+        'cat("  Effect measure: ' + sm + '\\n")',
+        '',
+        '# ── Study data ─────────────────────────────────────────────────────',
+        '',
+        rData,
+        'type  <- "' + rtype + '"',
+        'model <- "' + maModel + '"',
+        'sm    <- "' + sm + '"',
+        '',
+        '# ── Run NMA ──────────────────────────────────────────────────────',
+        '',
+        'cat("Running pairwise + netmeta...\\n")',
+        '',
+        'if (type == "long_binary") {',
+        '  Dpairs <- pairwise(treat = t, event = r, n = n,',
+        '                     data = D, studlab = id, sm = sm,',
+        '                     allstudies = TRUE)',
+        '  nma <- netmeta(TE, seTE, treat1, treat2, studlab,',
+        '                 data = Dpairs, sm = sm,',
+        '                 common = TRUE, random = TRUE)',
+        '}',
+        '',
+        'if (type == "long_continuous") {',
+        '  Dpairs <- pairwise(treat = t, mean = y, sd = sd, n = n,',
+        '                     data = D, studlab = id, sm = sm)',
+        '  nma <- netmeta(TE, seTE, treat1, treat2, studlab,',
+        '                 data = Dpairs, sm = sm,',
+        '                 common = TRUE, random = TRUE,',
+        '                 tol.multiarm = 0.05)',
+        '}',
+        '',
+        'if (type == "iv") {',
+        '  nma <- netmeta(effect, se, t1, t2, id,',
+        '                 data = D, sm = sm,',
+        '                 common = TRUE, random = TRUE,',
+        '                 tol.multiarm = 0.05)',
+        '}',
+        '',
+        '# ── Hat matrix ─────────────────────────────────────────────────────',
+        '',
+        'cat("Computing hat matrix...\\n")',
+        'hm <- hatmatrix(nma, method = "Davies", type = "long")',
+        'H <- if (model == "fixed") hm$common else hm$random',
+        '',
+        '# ── Contribution matrix + study contributions ──────────────────────',
+        '',
+        'cat("Computing contribution matrix (this may take a while for large networks)...\\n")',
+        'nc <- netcontrib(nma, method = "shortestpath", study = TRUE)',
+        'contribMatrix <- if (model == "fixed") nc$common else nc$random',
+        'studyContribs <- if (model == "fixed") nc$study.common else nc$study.random',
+        '',
+        '# ── Design-by-treatment test ───────────────────────────────────────',
+        '',
+        'cat("Computing design-by-treatment test...\\n")',
+        'dd <- decomp.design(nma)',
+        'if (!is.null(dd$Q.decomp)) {',
+        '  dbt <- as.data.frame(dd$Q.decomp)',
+        '} else if (!is.null(dd$Q.inc.random)) {',
+        '  dbt <- as.data.frame(dd$Q.inc.random)',
+        '} else {',
+        '  dbt <- data.frame(Q = 0, df = 0, pval = 1)',
+        '}',
+        '',
+        '# ── Netsplit (SIDE) ────────────────────────────────────────────────',
+        '',
+        'cat("Computing netsplit (SIDE test)...\\n")',
+        'ss <- netsplit(nma)',
+        '',
+        'pick <- function(field, subfield) {',
+        '  path_new <- paste0(field, ".common")',
+        '  path_old <- paste0(field, ".fixed")',
+        '  obj <- if (model == "fixed") {',
+        '    if (!is.null(ss[[path_new]])) ss[[path_new]] else ss[[path_old]]',
+        '  } else {',
+        '    ss[[paste0(field, ".random")]]',
+        '  }',
+        '  if (is.null(obj)) return(rep(NA, length(ss$comparison)))',
+        '  obj[[subfield]]',
+        '}',
+        '',
+        'pickProp <- function() {',
+        '  if (model == "fixed") {',
+        '    if (!is.null(ss$prop.common)) ss$prop.common else ss$prop.fixed',
+        '  } else {',
+        '    ss$prop.random',
+        '  }',
+        '}',
+        '',
+        'side <- data.frame(',
+        '  comparison  = ss$comparison,',
+        '  Direct      = c(pick("direct",  "TE")),',
+        '  DirectL     = c(pick("direct",  "lower")),',
+        '  DirectU     = c(pick("direct",  "upper")),',
+        '  Indirect    = c(pick("indirect","TE")),',
+        '  IndirectL   = c(pick("indirect","lower")),',
+        '  IndirectU   = c(pick("indirect","upper")),',
+        '  SideIF      = c(pick("compare", "TE")),',
+        '  SideIFlower = c(pick("compare", "lower")),',
+        '  SideIFupper = c(pick("compare", "upper")),',
+        '  SideZ       = c(pick("compare", "z")),',
+        '  SidePvalue  = c(pick("compare", "p")),',
+        '  PropDir     = c(pickProp()),',
+        '  stringsAsFactors = FALSE',
+        ')',
+        '',
+        '# ── NMA treatment effects ──────────────────────────────────────────',
+        '',
+        'TE_mat <- if (model == "fixed") {',
+        '  if (!is.null(nma$TE.common)) nma$TE.common else nma$TE.fixed',
+        '} else { nma$TE.random }',
+        '',
+        'seTE_mat <- if (model == "fixed") {',
+        '  if (!is.null(nma$seTE.common)) nma$seTE.common else nma$seTE.fixed',
+        '} else { nma$seTE.random }',
+        '',
+        'lower_mat <- if (model == "fixed") {',
+        '  if (!is.null(nma$lower.common)) nma$lower.common else nma$lower.fixed',
+        '} else { nma$lower.random }',
+        '',
+        'upper_mat <- if (model == "fixed") {',
+        '  if (!is.null(nma$upper.common)) nma$upper.common else nma$upper.fixed',
+        '} else { nma$upper.random }',
+        '',
+        'propD <- if (model == "fixed") {',
+        '  if (!is.null(nma$prop.direct.common)) nma$prop.direct.common',
+        '  else nma$prop.direct.fixed',
+        '} else { nma$prop.direct.random }',
+        '',
+        'treatnames <- rownames(TE_mat)',
+        'if (is.null(treatnames)) treatnames <- nma$trts',
+        'n_treats <- length(treatnames)',
+        '',
+        'TE.nma   <- -TE_mat[lower.tri(TE_mat)]',
+        'seTE.nma <- seTE_mat[lower.tri(seTE_mat)]',
+        'LCI.nma  <- -upper_mat[lower.tri(upper_mat)]',
+        'UCI.nma  <- -lower_mat[lower.tri(lower_mat)]',
+        'PrL.nma  <- -nma$upper.predict[lower.tri(nma$upper.predict)]',
+        'PrU.nma  <- -nma$lower.predict[lower.tri(nma$lower.predict)]',
+        '',
+        '# Build comparison IDs (lower-triangle, column-major)',
+        'comp_ids <- character(0)',
+        'for (j in seq_len(n_treats)) {',
+        '  for (i in seq_len(n_treats)) {',
+        '    if (i > j) comp_ids <- c(comp_ids, paste0(treatnames[j], ":", treatnames[i]))',
+        '  }',
+        '}',
+        '',
+        '# ── Pairwise heterogeneity ─────────────────────────────────────────',
+        '',
+        'cat("Computing pairwise heterogeneity...\\n")',
+        'if (type == "iv") {',
+        '  comp <- paste(D$t1, D$t2, sep = ":")',
+        '  pw <- metagen(D$effect, D$se, sm = sm,',
+        '                common = (model == "fixed"),',
+        '                random = (model == "random"),',
+        '                subgroup = comp)',
+        '} else {',
+        '  comp <- paste(Dpairs$treat1, Dpairs$treat2, sep = ":")',
+        '  pw <- metagen(Dpairs$TE, Dpairs$seTE, sm = sm,',
+        '                common = (model == "fixed"),',
+        '                random = (model == "random"),',
+        '                subgroup = comp)',
+        '}',
+        '',
+        '# ── League table ───────────────────────────────────────────────────',
+        '',
+        'cat("Formatting league table...\\n")',
+        '',
+        'formatCI_safe <- function(lower, upper) {',
+        '  tryCatch(',
+        '    meta:::formatCI(lower, upper),',
+        '    error = function(e) paste0("(", format(lower), ", ", format(upper), ")")',
+        '  )',
+        '}',
+        'tryCatch(meta:::cilayout(bracket = "(", separator = ", "),',
+        '         error = function(e) NULL)',
+        '',
+        'TE_common    <- if (!is.null(nma$TE.common))    nma$TE.common    else nma$TE.fixed',
+        'lower_common <- if (!is.null(nma$lower.common)) nma$lower.common else nma$lower.fixed',
+        'upper_common <- if (!is.null(nma$upper.common)) nma$upper.common else nma$upper.fixed',
+        '',
+        'if (model == "fixed") {',
+        '  TE_lt  <- TE_common; low_lt <- lower_common; up_lt <- upper_common',
+        '} else {',
+        '  TE_lt  <- nma$TE.random; low_lt <- nma$lower.random; up_lt <- nma$upper.random',
+        '}',
+        '',
+        'if (sm %in% c("OR", "RR", "HR")) {',
+        '  TE_x <- exp(TE_lt); lower_x <- exp(low_lt); upper_x <- exp(up_lt)',
+        '} else {',
+        '  TE_x <- TE_lt; lower_x <- low_lt; upper_x <- up_lt',
+        '}',
+        '',
+        'TE_x    <- format(round(TE_x, 3))',
+        'lower_x <- round(lower_x, 3)',
+        'upper_x <- round(upper_x, 3)',
+        'nl <- paste(TE_x, formatCI_safe(lower_x, upper_x))',
+        'nl <- matrix(nl, nrow = n_treats, ncol = n_treats)',
+        'diag(nl) <- treatnames',
+        '',
+        '# ── Build .cnm JSON ────────────────────────────────────────────────',
+        '',
+        'cat("Building .cnm project file...\\n")',
+        '',
+        '# Convert contribution matrix to list-of-lists',
+        'mat_to_lol <- function(m) {',
+        '  lapply(seq_len(nrow(m)), function(i) as.numeric(m[i,]))',
+        '}',
+        '',
+        '# Normalize comparison ID to alphabetical order (A:B where A < B)',
+        'normalize_comp <- function(cid) {',
+        '  parts <- strsplit(cid, ":")[[1]]',
+        '  paste(sort(parts), collapse = ":")',
+        '}',
+        '',
+        '# Build study contribution lookup: comparison -> {study: proportion}',
+        '# Normalize comparison keys to alphabetical order (A:B where A < B)',
+        'sc_list <- list()',
+        'for (comp in unique(studyContribs$comparison)) {',
+        '  rows <- studyContribs[studyContribs$comparison == comp, ]',
+        '  sc_entry <- list()',
+        '  for (r in seq_len(nrow(rows))) {',
+        '    sc_entry[[as.character(rows$study[r])]] <- rows$contribution[r]',
+        '  }',
+        '  norm_comp <- normalize_comp(comp)',
+        '  sc_list[[norm_comp]] <- sc_entry',
+        '}',
+        '',
+        '# Normalize side comparisons to match comp_ids',
+        'side$comp_norm <- sapply(side$comparison, normalize_comp)',
+        '',
+        '# Build NMA results for v3',
+        'nma_results <- lapply(seq_along(comp_ids), function(idx) {',
+        '  cid <- comp_ids[idx]',
+        '  sr <- side[side$comp_norm == cid, ]',
+        '  res <- list(',
+        '    comparison = cid,',
+        '    effect     = TE.nma[idx],',
+        '    se         = seTE.nma[idx],',
+        '    ciLower    = LCI.nma[idx],',
+        '    ciUpper    = UCI.nma[idx],',
+        '    priLower   = PrL.nma[idx],',
+        '    priUpper   = PrU.nma[idx],',
+        '    propDirect = if (nrow(sr) > 0) sr$PropDir[1] else 0',
+        '  )',
+        '  if (nrow(sr) > 0 && !is.na(sr$Direct[1])) {',
+        '    res$direct <- list(effect=sr$Direct[1], ciLower=sr$DirectL[1], ciUpper=sr$DirectU[1])',
+        '  }',
+        '  if (nrow(sr) > 0 && !is.na(sr$Indirect[1])) {',
+        '    res$indirect <- list(effect=sr$Indirect[1], ciLower=sr$IndirectL[1], ciUpper=sr$IndirectU[1])',
+        '  }',
+        '  if (nrow(sr) > 0 && !is.na(sr$SideIF[1]) && !is.null(res$direct) && !is.null(res$indirect)) {',
+        '    res$incoherence <- list(',
+        '      effect=sr$SideIF[1], ciLower=sr$SideIFlower[1], ciUpper=sr$SideIFupper[1],',
+        '      z=sr$SideZ[1], pvalue=sr$SidePvalue[1]',
+        '    )',
+        '  }',
+        '  res',
+        '})',
+        '',
+        '# Build v3 dataset from D',
+        'v3_studies <- lapply(seq_len(nrow(D)), function(i) {',
+        '  row <- as.list(D[i, ])',
+        '  if (type == "long_binary") {',
+        '    list(study=row$study, id=row$id, treatment=row$t,',
+        '         n=row$n, events=row$r, rob=row$rob, indirectness=row$indirectness)',
+        '  } else if (type == "long_continuous") {',
+        '    list(study=row$study, id=row$id, treatment=row$t,',
+        '         n=row$n, mean=row$y, sd=row$sd, rob=row$rob, indirectness=row$indirectness)',
+        '  } else {',
+        '    list(id=row$id, t1=row$t1, t2=row$t2,',
+        '         effect=row$effect, se=row$se, rob=row$rob, indirectness=row$indirectness)',
+        '  }',
+        '})',
+        '',
+        '# Build pairwise results for v3',
+        'pw_results <- lapply(seq_along(pw$subgroup.levels), function(i) {',
+        '  list(',
+        '    comparison = normalize_comp(pw$subgroup.levels[i]),',
+        '    tau2 = pw$tau.w[i]^2,',
+        '    I2 = pw$I2.w[i],',
+        '    I2Lower = pw$lower.I2.w[i],',
+        '    I2Upper = pw$upper.I2.w[i]',
+        '  )',
+        '})',
+        '',
+        '# League table as list of lists',
+        'lt_lol <- lapply(seq_len(nrow(nl)), function(i) as.list(nl[i,]))',
+        '',
+        '# Assemble the .cnm',
+        'timestamp <- format(Sys.time(), "%Y-%m-%dT%H:%M:%S.000Z")',
+        '',
+        'cnm <- list(cinema = list(',
+        '  version = "3.0.0",',
+        '  title = "' + title.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '",',
+        '  createdAt = timestamp,',
+        '  updatedAt = timestamp,',
+        '  projects = list(list(',
+        '    id = paste0("cinema_offline_", as.integer(Sys.time())),',
+        '    title = "' + title.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '",',
+        '    outcome = "",',
+        '    createdAt = timestamp,',
+        '    updatedAt = timestamp,',
+        '    hasEvaluation = FALSE,',
+        '    dataset = list(',
+        '      format = "' + (p.format || 'long') + '",',
+        '      type = "' + (p.type || 'binary') + '",',
+        '      studies = v3_studies',
+        '    ),',
+        '    analysis = list(',
+        '      params = list(model = model, sm = sm, framework = "frequentist"),',
+        '      contributionMatrix = list(',
+        '        hatMatrix = list(',
+        '          H = mat_to_lol(contribMatrix),',
+        '          rowNames = rownames(contribMatrix),',
+        '          colNames = colnames(contribMatrix)',
+        '        ),',
+        '        studyContributions = sc_list',
+        '      ),',
+        '      frequentist = list(',
+        '        nmaResults = nma_results,',
+        '        pairwise = pw_results,',
+        '        networkHeterogeneity = list(',
+        '          tau2 = nma$tau^2,',
+        '          Qoverall = nma$Q,',
+        '          Qheterogeneity = nma$Q.heterogeneity,',
+        '          Qinconsistency = nma$Q.inconsistency',
+        '        ),',
+        '        designByTreatment = list(',
+        '          Q = dbt$Q[1], df = dbt$df[1], pvalue = dbt$pval[1]',
+        '        ),',
+        '        leagueTable = lt_lol',
+        '      ),',
+        '      bayesian = NULL',
+        '    ),',
+        '    evaluation = NULL',
+        '  ))',
+        '))',
+        '',
+        'outfile <- "' + title.replace(/[^a-zA-Z0-9_-]/g, '_') + '.cnm"',
+        'cat("Writing", outfile, "...\\n")',
+        'writeLines(toJSON(cnm, auto_unbox = TRUE, null = "null", na = "null",',
+        '                  force = TRUE, pretty = TRUE), outfile)',
+        'cat("Done! Upload", outfile, "into CINeMA.\\n")',
+      ].join('\n');
+
+      var filename = title.replace(/[^a-zA-Z0-9_-]/g, '_') + '_cinema_nma.R';
+      var blob = new Blob([script], { type: 'text/plain' });
+      download(blob, filename, 'text/plain');
     },
     sumStudyContrs: (contrs) => {
       let scs = _.groupBy(contrs, 'study');

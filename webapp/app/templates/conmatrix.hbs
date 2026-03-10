@@ -11,7 +11,7 @@
                 {{#each selections}}
                   {{#if isAvailable}}
                     <label  class='mr-sm-2' for="{{value}}">{{label}}
-                      <input class='' {{#unless ../../../../isEmpty}} disabled {{/unless}} type="radio" data-param="{{tag}}"
+                      <input class='' {{#unless @root.isEmpty}} disabled {{/unless}} type="radio" data-param="{{tag}}"
                             data-value="{{value}}" name="{{name}}" value="{{value}}"
                     {{#if isSelected}} checked="checked"{{/if}}/></label>
                   {{/if}}
@@ -22,7 +22,7 @@
               <select action="{{action}}" class='controls-container form-control' required>
                   {{#each selections}}
                     {{#if isAvailable}}
-                      <option  {{#unless ../../../../isEmpty}} disabled {{/unless}} data-param="{{tag}}" data-value="{{value}}" filter="{{value}}" {{#if isSelected}} selected {{/if}}>
+                      <option  {{#unless @root.isEmpty}} disabled {{/unless}} data-param="{{tag}}" data-value="{{value}}" filter="{{value}}" {{#if isSelected}} selected {{/if}}>
                         {{label}}
                       </option>
                     {{/if}}
@@ -49,16 +49,16 @@
                   <label class="checkbox-inline" for="{{value}}">
                     <input type="checkbox" data-param="{{tag}}" data-value="{{value}}" value="{{value}}"
                     {{#if isSelected}} checked ="checked"{{/if}}
-                    {{#unless ../../../isEmpty}} disabled {{/unless}}
+                    {{#unless @root.isEmpty}} disabled {{/unless}}
                     />
                     {{label}}
                   </label>
                 {{/each}}
                 <br>
                 <a id="checkAllIntvs"  class="intvs btn btn-default  {{#unless
-                  ../../isEmpty }} disabled {{/unless}} ">Check All</a>
+                  @root.isEmpty }} disabled {{/unless}} ">Check All</a>
                 <a id="uncheckAllIntvs" class="intvs btn btn-default  {{#unless
-                  ../../isEmpty}} disabled {{/unless}} ">Uncheck All</a>
+                  @root.isEmpty}} disabled {{/unless}} ">Uncheck All</a>
             {{/if_eq}}
             {{#if_eq type "interventionRules"}}
               <label class=''>{{title}}</label>
@@ -66,7 +66,7 @@
                 {{#each selections}}
                   {{#if isAvailable}}
                     <label  class='' for="{{value}}">{{label}}
-                      <input class='' {{#unless ../../../../isEmpty}} disabled {{/unless}} type="radio" data-param="{{tag}}"
+                      <input class='' {{#unless @root.isEmpty}} disabled {{/unless}} type="radio" data-param="{{tag}}"
                             data-value="{{value}}" name="{{name}}" value="{{value}}"
                     {{#if isSelected}} checked="checked"{{/if}}/></label>
                     <br>
@@ -132,6 +132,11 @@
     <a id="createMatrixButton"  onClick="Actions.ConMat.createMatrix()"
                                 class="btn btn-default " data-content="All fields should be filled" rel="popover" data-placement="bottom" data-trigger="hover">
         Set up your evaluation</a>
+    <a id="offlineScriptButton"  onClick="Actions.ConMat.generateOfflineScript()"
+                                class="btn btn-default "
+                                data-content="Download an R script for large networks" rel="popover" data-placement="bottom" data-trigger="hover">
+        <span class="glyphicon glyphicon-download-alt"></span>
+        Get R script for offline analysis</a>
   {{/if}}
     {{#if isLoading}}
       <a id="cancelCM" onClick="Actions.ConMat.cancelMatrix()" class="btn btn-default">Cancel!</a>

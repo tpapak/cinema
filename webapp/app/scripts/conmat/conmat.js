@@ -87,6 +87,9 @@ var CM = {
     downloadLeaguetableH: () => {
        Update(CM.model).downloadLeaguetableH();
     },
+    generateOfflineScript: () => {
+       Update(CM.model).generateOfflineScript();
+    },
     showContributionMatrix: () => {
       $('.table-manipulator').toggleClass('hidden');
        Update(CM.model).showTable();
@@ -130,16 +133,20 @@ var CM = {
             hatmatrix:[],
             savedComparisons: [],
             params: {
-              MAModel: {},
-              sm: {},
+              MAModel: 'random',
+              sm: 'OR',
               intvs: [],
-              rule: {},
+              rule: 'every',
               tau: 0
             },
             allComparisonIds: Update(model).computeComparisonIds(),
             status: 'empty', //empty, loading, canceling, ready
             progress: 0,
-            currentRow: 'Contribution Matrix'
+            currentRow: 'Contribution Matrix',
+            colNames: [],
+            directRowNames: [],
+            indirectRowNames: [],
+            selectedComparisons: [],
           },
         });
       }else{

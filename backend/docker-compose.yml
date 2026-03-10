@@ -1,0 +1,9 @@
+services:
+  cinema-api:
+    build: .
+    ports:
+      - "8004:8004"
+    environment:
+      - PORT=8004
+      - FLASK_DEBUG=0
+    restart: unless-stopped

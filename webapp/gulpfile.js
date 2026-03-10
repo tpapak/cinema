@@ -46,7 +46,8 @@ if(fs.existsSync("config.json")){
 }else{
   config = {
     ganalID: "UA-XXXXXXXXX-X",
-    rserverurl: "http://localhost:8004/ocpu/library/contribution/R"
+    // rserverurl: "http://localhost:8004/ocpu/library/contribution/R"
+    rserverurl: "localhost:8004"
   }
 }
 conf = { config: {

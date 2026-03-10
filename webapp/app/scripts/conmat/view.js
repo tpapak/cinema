@@ -24,27 +24,27 @@ var View = (model) => {
         return false;
       }
     },
-    isEmpty: () => {
-      if(cmc().status==='epmty'){
-        return true;
-      }else{
-        return false;
-      }
-    },
-    isLoading: () => {
-      if(cmc().status==='loading'){
-        return true;
-      }else{
-        return false;
-      }
-    },
-    isCanceling: () => {
-      if(cmc().status==='canceling'){
-        return true;
-      }else{
-        return false;
-      }
-    },
+    // isEmpty: () => {
+    //   if(cmc().status==='epmty'){  // NOTE: typo 'epmty' was a bug; correct isEmpty is below
+    //     return true;
+    //   }else{
+    //     return false;
+    //   }
+    // },
+    // isLoading: () => {
+    //   if(cmc().status==='loading'){
+    //     return true;
+    //   }else{
+    //     return false;
+    //   }
+    // },
+    // isCanceling: () => {
+    //   if(cmc().status==='canceling'){
+    //     return true;
+    //   }else{
+    //     return false;
+    //   }
+    // },
     hasleaguetableLM: () => {
       let ltlm = cmc().leaguetableLM;
       if(_.isEmpty(ltlm)){
@@ -112,6 +112,9 @@ var View = (model) => {
     },
     isLoading: () => {
       return cmc().status === 'loading';
+    },
+    isCanceling: () => {
+      return cmc().status === 'canceling';
     },
     controls: () => {
       let project = model.getState().project;

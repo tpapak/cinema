@@ -558,6 +558,60 @@ var v3ProjectToLegacyState = (v3project, v3meta, currentState) => {
     }
   }
 
+  // Reconstruct league table from NMA results if not stored in v3
+  var nmaResultsForLT = hatmatrix.NMAresults || [];
+  if ((!leaguetable || leaguetable.length === 0) && nmaResultsForLT.length > 0) {
+    var ltTreatments = _.pluck(studies.nodes, 'id');
+    var sm = (analysis && analysis.params && analysis.params.sm) || 'OR';
+    var isRatio = (sm === 'OR' || sm === 'RR' || sm === 'HR');
+    // Build lookup: "A:B" -> NMA row
+    var nmaLookup = {};
+    nmaResultsForLT.forEach(function(r) { nmaLookup[r._row] = r; });
+    // Build n x n string matrix
+    var n = ltTreatments.length;
+    leaguetable = [];
+    for (var i = 0; i < n; i++) {
+      var row = [];
+      for (var j = 0; j < n; j++) {
+        if (i === j) {
+          row.push(ltTreatments[i]);
+        } else {
+          // Try both orderings
+          var key1 = ltTreatments[i] + ':' + ltTreatments[j];
+          var key2 = ltTreatments[j] + ':' + ltTreatments[i];
+          var nmaRow = nmaLookup[key1] || nmaLookup[key2];
+          if (nmaRow) {
+            var te = nmaRow['NMA treatment effect'];
+            var lo = nmaRow['lower CI'];
+            var up = nmaRow['upper CI'];
+            // If we found key2 (reversed), flip the sign (or invert for ratio)
+            if (!nmaLookup[key1] && nmaLookup[key2]) {
+              if (isRatio) {
+                // On log scale, flip sign then exp
+                te = -te; lo = -nmaRow['upper CI']; up = -nmaRow['lower CI'];
+              } else {
+                te = -te; lo = -nmaRow['upper CI']; up = -nmaRow['lower CI'];
+              }
+            }
+            // Apply exp for ratio measures
+            if (isRatio) {
+              te = Math.exp(te);
+              lo = Math.exp(lo);
+              up = Math.exp(up);
+            }
+            var teStr = te.toFixed(3);
+            var loStr = lo.toFixed(3);
+            var upStr = up.toFixed(3);
+            row.push(teStr + ' (' + loStr + ', ' + upStr + ')');
+          } else {
+            row.push('');
+          }
+        }
+      }
+      leaguetable.push(row);
+    }
+  }
+
   // Build currentCM
   var treatments = _.pluck(studies.nodes, 'id');
   var analysisParams = (analysis && analysis.params) || {};

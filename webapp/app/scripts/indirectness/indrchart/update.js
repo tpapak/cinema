@@ -1,5 +1,6 @@
 var deepSeek = require('safe-access');
 var clone = require('../../lib/mixins.js').clone;
+var download = require('downloadjs');
 
 var children = [
   ];
@@ -40,7 +41,8 @@ var Update = (model) => {
     save: () => {
       //$('#IndrChartPrinterFriendly').get(0).toBlob(function(blob) {
       $('#IndrChart').get(0).toBlob(function(blob) {
-        saveAs(blob, model.getState().project.filename+'_indirectness_chart.png');
+        // saveAs(blob, model.getState().project.filename+'_indirectness_chart.png');
+        download(blob, model.getState().project.filename+'_indirectness_chart.png', 'image/png');
       });
     }
   }
