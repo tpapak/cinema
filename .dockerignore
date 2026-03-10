@@ -1,0 +1,24 @@
+# Frontend build context ignore (context is repo root)
+webapp/node_modules/
+webapp/bower_components/
+webapp/dist/
+webapp/.tmp/
+webapp/test/screenshots/
+webapp/app/scripts/purescripts/.spago/
+webapp/app/scripts/purescripts/output/
+webapp/app/scripts/purescripts/node_modules/
+webapp/app/scripts/bundle.js
+webapp/app/scripts/bundle.js.map
+webapp/.psc-ide-port
+webapp/.purs-repl
+
+# Backend (not needed in web build)
+# backend/ is its own context so has no effect here
+
+# General
+.git/
+*.md
+cinemafeatures.md
+pbcopy
+project-manager/
+schemata/

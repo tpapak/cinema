@@ -6,15 +6,10 @@ node_modules/
 .Rproj.user
 *.swp
 DISCLAIMER.txt
-<<<<<<< HEAD
 *.swo
-=======
-*.swp
->>>>>>> master
 notes/
 monitor/
 papers/
-docker/cinema-web/
 webapp/config.json
 package-lock.json
 secrets/
