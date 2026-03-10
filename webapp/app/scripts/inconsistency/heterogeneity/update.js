@@ -280,12 +280,15 @@ var Update = (model) => {
       let makeBoxes = (studies) => {
         let res = _.map(studies, s => {
           let pairRow = _.find(pairWises, pw => {
-            // Old OpenCPU used ' : ' separator; new backend uses ':'
-            return _.isEqual(uniqId(s[0].split(':')),uniqId(pw['_row'].split(/\s*:\s*/)));
+            return Nodes.isTheSameComparison(s[0])(pw['_row']);
           });
           let nmaRow = _.find(NMAs, nma => {
-            return _.isEqual(uniqId(nma['_row'].split(':')),uniqId(s[0].split(':')));
+            return Nodes.isTheSameComparison(nma['_row'])(s[0]);
           });
+          if (!nmaRow) {
+            console.warn('Heterogeneity: no NMA row found for comparison', s[0]);
+            return null;
+          }
           let sm = model.getState().project.CM.currentCM.params.sm;
           let useExps =  ((sm === 'OR') || (sm === 'RR'));
           let tauSquare = 'nothing';
@@ -316,7 +319,7 @@ var Update = (model) => {
           }else{
             tauSquare = pairRow.tau2;
             let ISquare = pairRow.I2;
-            if((typeof tauSquare !== 'undefined') && (! isNaN(tauSquare))){
+            if(tauSquare != null && (typeof tauSquare !== 'undefined') && (! isNaN(tauSquare))){
               tauSquare = tauSquare.toFixed(3);
               ISquare = ((ISquare * 100).toFixed(1)).toString()+'%';
             }
@@ -353,9 +356,9 @@ var Update = (model) => {
       // let mixed = InconsistencyModel.sortByComparison(
       //   makeBoxes(_.zip(cm.directRowNames,cm.directStudies)));
       // console.log('directRownames,studies',cm.directRowNames,cm.directStudies);
-      let mixed = makeBoxes(
-        sortStudies(cm.directRowNames,cm.directStudies));
-      let indirect = makeBoxes(sortStudies(cm.indirectRowNames,cm.indirectStudies));
+      let mixed = _.compact(makeBoxes(
+        sortStudies(cm.directRowNames,cm.directStudies)));
+      let indirect = _.compact(makeBoxes(sortStudies(cm.indirectRowNames,cm.indirectStudies)));
       // console.log("BOXES Names naoume",mixed,indirect);
       return _.union(mixed,indirect);
     },
@@ -392,8 +395,9 @@ var Update = (model) => {
     },
     tauSquareNetwork: () => {
       let tauSquareNetwork = 0;
-      if (deepSeek(model,'getState().project.CM.currentCM.hatmatrix.NMAheterResult') !== undefined){
-        tauSquareNetwork = model.getState().project.CM.currentCM.hatmatrix.NMAheterResults[0][0].toFixed(3);
+      if (deepSeek(model,'getState().project.CM.currentCM.hatmatrix.NMAheterResults') !== undefined){
+        let heter = model.getState().project.CM.currentCM.hatmatrix.NMAheterResults[0];
+        tauSquareNetwork = (heter && heter.tau2 != null) ? heter.tau2.toFixed(3) : '0.000';
       }
       return tauSquareNetwork;
     },

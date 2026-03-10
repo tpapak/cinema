@@ -93,6 +93,7 @@ var Update = (model) => {
       return res;
     },
     expIt: (value) => {
+      if (value == null) return 'N/A';
       let out = value;
       if(updaters.isRatio()){
         out = Math.exp(value);
@@ -108,13 +109,17 @@ var Update = (model) => {
           let nmaRow = _.find(NMAs, nma => {
             return _.isEqual(uniqId(nma['_row'].split(':')),uniqId(s[0].split(':')));
           });
+          if (!nmaRow) {
+            console.warn('Incoherence: no NMA row found for comparison', s[0]);
+            return null;
+          }
           let contents = {}
             contents =  {
                 id: nmaRow['_row'],
                 levels
             }
-          if(_.isUndefined(nmaRow['Direct'])){
-            if(_.isUndefined(nmaRow['Indirect'])){
+          if(_.isUndefined(nmaRow['Direct']) || nmaRow['Direct'] == null){
+            if(_.isUndefined(nmaRow['Indirect']) || nmaRow['Indirect'] == null){
               console.log('ERRROORRR indirect direct in Incohrence');
             }else{
               _.extend(contents,{
@@ -127,7 +132,7 @@ var Update = (model) => {
               })
             }
           }else{
-            if(_.isUndefined(nmaRow['Indirect'])){
+            if(_.isUndefined(nmaRow['Indirect']) || nmaRow['Indirect'] == null){
               _.extend(contents,{
                   isMixed: false,
                   isDirect: true,
@@ -144,8 +149,8 @@ var Update = (model) => {
                   sideIF: updaters.expIt(nmaRow.SideIF),
                   sideIFLower: updaters.expIt(nmaRow.SideIFlower),
                   sideIFUpper: updaters.expIt(nmaRow.SideIFupper),
-                  Ztest: nmaRow.SideZ.toFixed(3),
-                  pvalue: nmaRow.SidePvalue.toFixed(3),
+                  Ztest: nmaRow.SideZ != null ? nmaRow.SideZ.toFixed(3) : 'N/A',
+                  pvalue: nmaRow.SidePvalue != null ? nmaRow.SidePvalue.toFixed(3) : 'N/A',
                   directContribution: nmaRow.PropDir,
                   nma: updaters.expIt(nmaRow['NMA treatment effect']),
                   nmaL: updaters.expIt(nmaRow['lower CI']),
@@ -167,8 +172,8 @@ var Update = (model) => {
         });
         return res;
       };
-      let mixed = makeBoxes(sortStudies(cm.directRowNames,cm.directStudies));
-      let indirect = makeBoxes(sortStudies(cm.indirectRowNames,cm.indirectStudies));
+      let mixed = _.compact(makeBoxes(sortStudies(cm.directRowNames,cm.directStudies)));
+      let indirect = _.compact(makeBoxes(sortStudies(cm.indirectRowNames,cm.indirectStudies)));
       return _.union(mixed, indirect);
     },
     selectIndividual: (value) => {

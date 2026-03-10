@@ -16,10 +16,13 @@ var ClinicalImportance = require('../purescripts/output/ClinImp');
 ClinicalImportance.update = require('../purescripts/output/ClinImp.Update');
 
 // ── Backend API helpers ─────────────────────────────────────────────────────
-// The backend base URL comes from config (e.g. "localhost:8004").
-// Ensure it has a protocol prefix.
+// The backend base URL comes from config.
+// In dev: "localhost:8004" → "http://localhost:8004" (direct to Flask)
+// In production: "" or "/" → same-origin (nginx proxies /api/ to Flask)
 var _apiBase = (function() {
-  var url = Config.rserverurl || 'localhost:8004';
+  var url = Config.rserverurl || '';
+  // Empty or "/" means same-origin (production behind nginx)
+  if (!url || url === '/') { return ''; }
   if (url.indexOf('://') === -1) { url = 'http://' + url; }
   // Strip any trailing OpenCPU path leftover from old config
   url = url.replace(/\/ocpu\/.*$/, '');
@@ -129,13 +132,13 @@ var _adaptResponse = (resp) => {
 
   // ── NMAheterResults: legacy format is [[heterVarNtw, tau2, Qoverall, Qheter, Qincons]] ──
   var nh = resp.NMAheter || {};
-  var nmaHeter = [[{
+  var nmaHeter = [{
     'heterVarNtw': typeof nh.tau2 === 'number' ? Math.sqrt(nh.tau2) : 0,
     'tau2': nh.tau2 || 0,
     'Q overall': nh.Qoverall || 0,
     'Q heterogeneity': nh.Qheterogeneity || 0,
     'Q inconsistency': nh.Qinconsistency || 0
-  }]];
+  }];
 
   // ── dbt: legacy format is [[Q_dbt, df, pv_dbt]] ──
   var dbtRaw = resp.dbt || [];
@@ -156,25 +159,40 @@ var _adaptResponse = (resp) => {
 
   // ── contribMatrix: the per-comparison contribution matrix ──
   // New backend returns it as a matrix {data, rowNames, colNames}
+  // R netcontrib() returns proportions (0–1); legacy code expects percentages (0–100).
   var contribMat = resp.contribMatrix || {};
-  var contribData = contribMat.data || [];
-  var contribRowNames = contribMat.rowNames || resp.rowNames || [];
+  var contribData = (contribMat.data || []).map(function(row) {
+    return _.mapObject(row, function(v) { return (typeof v === 'number') ? v * 100 : v; });
+  });
+  // Normalize comparison IDs in contribRowNames to alphabetical A:B,
+  // matching hatmatrix.rowNames (also normalized below).
+  var contribRowNames = (contribMat.rowNames || resp.rowNames || []).map(_normalizeCompId);
   var contribColNames = contribMat.colNames || resp.colNames || [];
 
   // ── studyContributions: per-study contributions ──
   // New backend returns [{comparison, study, contribution, ...}, ...]
   // (columns from the netcontrib study data frame)
-  var studyContribs = resp.studyContributions || [];
+  // R netcontrib() returns proportions (0–1); scale to percentages (0–100).
+  var studyContribs = (resp.studyContributions || []).map(function(sc) {
+    return _.extend({}, sc, {
+      contribution: (typeof sc.contribution === 'number') ? sc.contribution * 100 : sc.contribution
+    });
+  });
 
   // ── forleaguetable ──
   var flt = resp.forleaguetable || {};
+
+  // Normalize hat matrix row/col names to alphabetical A:B so they
+  // match contribRowNames, NMAresults._row, and directComparison IDs.
+  var hatRowNames = (resp.rowNames || contribRowNames).map(_normalizeCompId);
+  var hatColNames = (resp.colNames || contribColNames);
 
   // Build the legacy hatmatrix object
   return {
     hatmatrix: {
       H: H,
-      rowNames: resp.rowNames || contribRowNames,
-      colNames: resp.colNames || contribColNames,
+      rowNames: hatRowNames,
+      colNames: hatColNames,
       NMAresults: legacyNMA,
       rowNamesNMAresults: _.pluck(legacyNMA, '_row'),
       colNamesNMAresults: ['NMA treatment effect', 'se treat effect',
@@ -218,7 +236,7 @@ var Update = (model) => {
       return model.getState().project.CM.currentCM;
     },
     cancelMatrix: () => {
-      console.log('canceling matrix');
+      // console.log('canceling matrix');
       updaters.setCurrentCM('status','canceling');
       // Abort the in-flight fetch request
       if (_abortController) {
@@ -239,7 +257,7 @@ var Update = (model) => {
         project.CM.currentCM = updaters.emptyCM();
         updaters.setCurrentCM('params',params);
         updaters.saveState();
-      console.log('resetting CONTRIBUTION MATRIXXXXXXXXXXXXXX');
+      // console.log('resetting CONTRIBUTION MATRIXXXXXXXXXXXXXX');
     },
     createMatrix: () => {
       // console.log('creating matrix');
@@ -351,7 +369,7 @@ var Update = (model) => {
         // var result = {};
         // let ncmparams = params;
         let cm = ncm;
-        console.log('CCCCCCCCTRRRRRRREEEEAAAAATTTIIIIIINNGGGGGGGG MMMMMAAATTTTTRIXXXXX');
+        // console.log('CCCCCCCCTRRRRRRREEEEAAAAATTTIIIIIINNGGGGGGGG MMMMMAAATTTTTRIXXXXX');
         //check if the matrix is in the model;
         let foundCM = updaters.findConMatInCache(cm);
         if(_.isEmpty(foundCM) === false){
@@ -551,9 +569,10 @@ var Update = (model) => {
 
           // Build a lookup: comparison -> [{study, contribution}, ...]
           // Translate study names to study IDs to match robs/indrs keys.
+          // Normalize comparison IDs to alphabetical A:B to match contribRowNames.
           var studyContribLookup = {};
           studyContribs.forEach(function(sc) {
-            var comp = sc.comparison;
+            var comp = _normalizeCompId(sc.comparison);
             if (!studyContribLookup[comp]) { studyContribLookup[comp] = []; }
             // Map study name to ID; fall back to raw name if no mapping found
             var studyKey = studyNameToIdMap[sc.study] || sc.study;
@@ -599,7 +618,7 @@ var Update = (model) => {
           var result = updaters.formatMatrix(updaters.getCM());
           rslv(result);
         } catch(err) {
-          console.log('caught error in formatMatrix', err);
+          console.warn('caught error in formatMatrix', err);
           rjc(err);
         }
       });
@@ -627,24 +646,21 @@ var Update = (model) => {
       let rows = _.filter(cm.savedComparisons, sr => {
         return _.contains(cm.selectedComparisons, sr.rowname)
       });
+      // Normalize directComparison IDs to sorted comma-separated for matching
+      let directIds = _.map(directs, d => { return uniqId(d.id.replace(/:/g,',').split(',')).toString(); });
       let directRows = _.sortBy(
         _.filter(rows, r=>{
-          return _.find(directs, d=>{
-            return uniqId(r.rowname.replace(':',',').split(',')).toString()===d.id;
-          });
+          let rConverted = uniqId(r.rowname.replace(/:/g,',').split(',')).toString();
+          return _.contains(directIds, rConverted);
         }),
         'rowname'
       );
+      // Normalize indirect IDs the same way for matching
+      let indirectIds = _.map(indirects, d => { return uniqId(d.replace(/:/g,',').split(',')).toString(); });
       let indirectRows = _.sortBy (
         _.filter(rows, r=>{
-          return _.find(indirects, d=>{
-            let aresame = (
-              ( (r.rowname.split(':')[0]===d.split(',')[0]) &&
-              (r.rowname.split(':')[1]===d.split(',')[1])) || 
-              ( (r.rowname.split(':')[1]===d.split(',')[0]) &&
-              (r.rowname.split(':')[0]===d.split(',')[1]))
-            );
-            return aresame});
+          let rConverted = uniqId(r.rowname.replace(/:/g,',').split(',')).toString();
+          return _.contains(indirectIds, rConverted);
         }),
         'rowname'
       );
@@ -656,7 +672,21 @@ var Update = (model) => {
         (m,row) => { 
           m[row.rowname] = row.perstudy; 
           return m},{});
+      // console.log('[formatMatrix] selectedComparisons:', cm.selectedComparisons.length, 'directRows:', directRows.length, 'indirectRows:', indirectRows.length);
       if(cm.selectedComparisons.length !== (directRows.length+indirectRows.length)){
+        // console.log('formatMatrix mismatch debug:');
+        // console.log('  selectedComparisons:', cm.selectedComparisons);
+        // console.log('  savedComparisons rownames:', _.pluck(cm.savedComparisons, 'rowname'));
+        // console.log('  directComparison IDs:', directIds);
+        // console.log('  indirectComparison IDs:', indirectIds);
+        // console.log('  matched rows:', _.pluck(rows, 'rowname'));
+        // console.log('  directRows:', _.pluck(directRows, 'rowname'));
+        // console.log('  indirectRows:', _.pluck(indirectRows, 'rowname'));
+        // let unmatched = _.filter(rows, r => {
+        //   let rConverted = uniqId(r.rowname.replace(/:/g,',').split(',')).toString();
+        //   return !_.contains(directIds, rConverted) && !_.contains(indirectIds, rConverted);
+        // });
+        // console.log('  UNMATCHED rows:', _.pluck(unmatched, 'rowname'));
         throw 'unable to match comparison names';
       }
      return cm;

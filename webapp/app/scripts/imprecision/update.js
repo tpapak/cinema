@@ -62,6 +62,7 @@ var Update = (model) => {
     },
     updateState: (model) => {
       let mdl = model.getState();
+      // console.log('[imprecision updateState] cmReady:', updaters.cmReady(), 'clinImpReady:', updaters.clinImpReady());
       if (updaters.cmReady() && updaters.clinImpReady()) {
         // Always (re)generate boxes when CM and ClinImp are ready.
         // Previously the empty if-block here skipped regeneration when
@@ -96,17 +97,26 @@ var Update = (model) => {
       let pairWiseNames = model.getState().project.CM.currentCM.hatmatrix.rowNamesPairwise;
       let pairWises = _.zip(pairWiseNames,pairWiseValues);
       let NMAs = model.getState().project.CM.currentCM.hatmatrix.NMAresults;
+      // console.log('[imprecision createEstimators] cm.directRowNames:', cm.directRowNames);
+      // console.log('[imprecision createEstimators] cm.indirectRowNames:', cm.indirectRowNames);
+      // console.log('[imprecision createEstimators] NMAs._row:', _.pluck(NMAs, '_row'));
+      // console.log('[imprecision createEstimators] pairWiseNames:', pairWiseNames);
+      // console.log('[imprecision createEstimators] clinImp:', JSON.stringify(model.getState().project.clinImp));
       //let NMANames =  model.getState().project.CM.currentCM.hatmatrix.rowNamesNMAresults;
       //let NMAs = _.zip(NMANames,NMAValues);
       let makeBoxes = (studies) => {
         let res = _.map(studies, s => {
           let pairRow = _.find(pairWises, pw => {
-            // Old OpenCPU used ' : ' separator; new backend uses ':'
-            return _.isEqual(uniqId(s[0].split(':')),uniqId(pw[0].split(/\s*:\s*/)));
+            // Use PureScript's isTheSameComparison for proper Comparison normalization
+            return Rules.isTheSameComparison(s[0])(pw[0]);
           });
           let nmaRow = _.find(NMAs, nma => {
-            return _.isEqual(uniqId(nma['_row'].split(':')),uniqId(s[0].split(':')));
+            return Rules.isTheSameComparison(nma['_row'])(s[0]);
           });
+          if (!nmaRow) {
+            console.warn('Imprecision: no NMA row found for comparison', s[0]);
+            return null;
+          }
           let sm = model.getState().project.CM.currentCM.params.sm;
           let useExps =  ((sm === 'OR') || (sm === 'RR'));
           let CIf = useExps ? Math.exp(nmaRow['lower CI']) : nmaRow['lower CI'];
@@ -158,9 +168,9 @@ var Update = (model) => {
         });
         return res;
       };
-      let mixed = makeBoxes(
-        sortStudies(cm.directRowNames,cm.directStudies));
-      let indirect = makeBoxes(sortStudies(cm.indirectRowNames,cm.indirectStudies));
+      let mixed = _.compact(makeBoxes(
+        sortStudies(cm.directRowNames,cm.directStudies)));
+      let indirect = _.compact(makeBoxes(sortStudies(cm.indirectRowNames,cm.indirectStudies)));
        //console.log("BOXES Names naoume",mixed,indirect);
       return _.union(mixed,indirect);
     },

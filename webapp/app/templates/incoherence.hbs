@@ -102,23 +102,23 @@
           <li  style="clear:both" >
             <strong>
               Evidence:
-              {{#if isMixed}}{{../../text.mixedtitle}}{{/if}}
-              {{#if isDirect}}{{../../text.directtitle}}{{/if}}
-              {{#if isIndirect}}{{../../text.indirecttitle}}{{/if}}
+              {{#if isMixed}}{{../text.mixedtitle}}{{/if}}
+              {{#if isDirect}}{{../text.directtitle}}{{/if}}
+              {{#if isIndirect}}{{../text.indirecttitle}}{{/if}}
             </strong>
             <hr>
           </li>
           {{#if isMixed}}
             <li  style="clear:both" >
-              {{../../text.nma}} {{../../measureSuffix}}: <strong
+              {{../text.nma}} {{../measureSuffix}}: <strong
                  class='pull-right'>{{nma}}({{nmaL}},{{nmaU}})</strong>
             </li>
             <li  style="clear:both" >
-              {{../../text.direct}} {{../../measureSuffix}}: <strong
+              {{../text.direct}} {{../measureSuffix}}: <strong
                  class='pull-right'>{{direct}}({{directL}},{{directU}})</strong>
             </li>
             <li  style="clear:both" >
-              {{../../text.indirect}} {{../../measureSuffix}}: <strong
+              {{../text.indirect}} {{../measureSuffix}}: <strong
                  class='pull-right'>{{indirect}}({{indirectL}},{{indirectU}})</strong>
             </li>
             {{!-- <li> --}}
@@ -130,14 +130,14 @@
               <ul>
               <li>
                 <strong>
-                {{../../text.IFLabel}}
+                {{../text.IFLabel}}
                 </strong>
               </li>
               <li>
-                {{../../boxSideTitle}}: <strong class='pull-right'>{{sideIF}}({{sideIFLower}},{{sideIFUpper}})</strong>
+                {{../boxSideTitle}}: <strong class='pull-right'>{{sideIF}}({{sideIFLower}},{{sideIFUpper}})</strong>
               </li>
               <li  style="clear:both" >
-                {{../../text.pvalueLabel}}: <strong class='pull-right'>{{pvalue}}</strong>
+                {{../text.pvalueLabel}}: <strong class='pull-right'>{{pvalue}}</strong>
               </li>
               </ul>
               <hr>
@@ -147,11 +147,11 @@
             <li>
               <ul>
               <li  style="clear:both" >
-                {{../../text.direct}} {{../../measureSuffix}}: <strong
+                {{../text.direct}} {{../measureSuffix}}: <strong
                    class='pull-right'>{{direct}}({{directL}},{{directU}})</strong>
               </li>
               <li>
-               <strong> {{../../text.IFLabel}}: </strong>
+               <strong> {{../text.IFLabel}}: </strong>
                Not applicable
               <hr>
               </li>
@@ -162,11 +162,11 @@
             <li>
               <ul>
               <li  style="clear:both" >
-                {{../../text.indirect}} {{../../measureSuffix}}: <strong
+                {{../text.indirect}} {{../measureSuffix}}: <strong
                    class='pull-right'>{{indirect}}({{indirectL}},{{indirectU}})</strong>
               </li>
               <li>
-               <strong> {{../../text.IFLabel}}: </strong>
+               <strong> {{../text.IFLabel}}: </strong>
                Not applicable
               <hr>
               </li>

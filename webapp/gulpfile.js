@@ -241,17 +241,40 @@ gulp.task('wiredep', () => {
 gulp.task('clean', del.bind(null, ['.tmp', 'dist']));
 
 // Serve task - Gulp 4 compatible
+// Proxy middleware for /api/ requests to Flask backend in dev
+var httpProxyMiddleware;
+try {
+  httpProxyMiddleware = require('http-proxy-middleware');
+} catch(e) {
+  // http-proxy-middleware is optional; only needed for dev proxy
+  httpProxyMiddleware = null;
+}
+
 function startBrowserSync(done) {
+  var serverConfig = {
+    baseDir: ['.tmp', 'app'],
+    routes: {
+      '/bower_components': 'bower_components'
+    }
+  };
+
+  // In dev, proxy /api/ requests to Flask backend on port 8004
+  var middleware = [];
+  if (httpProxyMiddleware) {
+    var createProxy = httpProxyMiddleware.createProxyMiddleware;
+    middleware.push(createProxy({
+      pathFilter: '/api',
+      target: 'http://localhost:8004',
+      changeOrigin: true
+    }));
+  }
+
   browserSync({
     notify: false,
     port: 9000,
     browser: "chromium-browser",
-    server: {
-      baseDir: ['.tmp', 'app'],
-      routes: {
-        '/bower_components': 'bower_components'
-      }
-    }
+    server: serverConfig,
+    middleware: middleware
   });
 
   gulp.watch([
