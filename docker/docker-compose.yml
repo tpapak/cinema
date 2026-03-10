@@ -3,8 +3,10 @@
 #   docker compose build
 #   docker compose up -d
 #
-# Frontend: nginx on port 80
-# Backend:  Flask+R on port 8004 (internal, proxied by nginx)
+# Frontend: nginx on port 8080 (host nginx proxies here)
+# Backend:  Flask+R on port 8004 (internal, proxied by container nginx)
+#
+# External nginx (TLS) on host → localhost:8080 → cinema-web → cinema-api
 
 services:
   cinema-web:
@@ -12,7 +14,7 @@ services:
       context: ..
       dockerfile: docker/cinema-web/Dockerfile
     ports:
-      - "80:80"
+      - "127.0.0.1:8080:80"
     depends_on:
       - cinema-api
     restart: unless-stopped

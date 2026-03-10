@@ -5,7 +5,7 @@ webapp/dist/
 webapp/.tmp/
 webapp/test/screenshots/
 webapp/app/scripts/purescripts/.spago/
-webapp/app/scripts/purescripts/output/
+# NOTE: output/ is NOT ignored — it contains pre-compiled PureScript JS
 webapp/app/scripts/purescripts/node_modules/
 webapp/app/scripts/bundle.js
 webapp/app/scripts/bundle.js.map
