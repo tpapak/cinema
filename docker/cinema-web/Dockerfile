@@ -22,9 +22,9 @@ RUN npm install --legacy-peer-deps && bower install --allow-root
 # Copy the webapp source (including pre-compiled PureScript output/)
 COPY webapp/ .
 
-# Build production bundle: config → handlebars → browserify → useref → minify
-# Set rserverurl to empty string for same-origin /api/ proxy in production
-RUN node -e "var c=require('./config.json'); c.rserverurl=''; require('fs').writeFileSync('config.json', JSON.stringify(c,null,2));"
+# Create production config (config.json is gitignored, so we generate it here)
+# rserverurl="" means same-origin /api/ proxy in production
+RUN echo '{"version":"3.0.0","ganalID":"UA-XXXXXXXXX-X","rserverurl":""}' > config.json
 RUN gulp build
 
 # ── Stage 2: Nginx ──────────────────────────────────────────────────
