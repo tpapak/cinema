@@ -97,6 +97,7 @@
     "gulp-template": "^5.0.0",
     "gulp-transform": "^1.1.0",
     "html-to-vdom": "^0.7.0",
+    "hyperscript-helpers": "^3.0.3",
     "json2csv": "^4.4.1",
     "randomstring": "^1.1.5",
     "safe-access": "^0.1.0",

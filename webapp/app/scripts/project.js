@@ -28,6 +28,7 @@ var download = require('downloadjs');
 var V2Bridge = require('./lib/v2bridge.js');
 var V3Bridge = require('./lib/v3bridge.js');
 var OldCnmBridge = require('./lib/oldCnmBridge.js');
+var projectView = require('./views/projectView.js');
 
 var PR = {
   actions: {
@@ -746,8 +747,10 @@ var PR = {
   },
   render: (model) => {
     if (PR.view.isReady()){
-      var tmpl = GRADE.templates.project({model:model.state,view:PR.view});
-      return h('div#contentProject.row',convertHTML(tmpl));
+      // Handlebars template replaced by hyperscript-helpers view function
+      // var tmpl = GRADE.templates.project({model:model.state,view:PR.view});
+      // return h('div#contentProject.row',convertHTML(tmpl));
+      return h('div#contentProject.row', [projectView(model.state, PR.view)]);
     }
   },
   children: [
