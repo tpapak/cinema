@@ -224,8 +224,11 @@ var PR = {
       .then(FR.convertCSVtoJSON);
     },
     createProject: (filename) =>{
-      let pr = PR.view.getProject();
-      let npr = clone(pr);
+      // let pr = PR.view.getProject();
+      // let npr = clone(pr);
+      // FIXED: Don't clone the old project — old studies/type/format/CM leak through.
+      // Start from a clean slate to prevent stale data from previous projects.
+      let npr = {};
       var date = Number(new Date());
       var id = md5(date+Math.random());
       let robLvls = PR.update.robLevels();

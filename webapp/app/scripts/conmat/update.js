@@ -971,9 +971,9 @@ var Update = (model) => {
       if (rtype === 'long_binary') {
         var cols = { study:[], id:[], t:[], r:[], n:[], rob:[], indirectness:[] };
         studies.forEach(function(s) {
-          cols.study.push('"' + (s.study || s.t || '') + '"');
+          cols.study.push('"' + ('' + (s.study || s.t || '')).replace(/"/g, '\\"') + '"');
           cols.id.push(s.id);
-          cols.t.push('"' + (s.t || s.treatment || '') + '"');
+          cols.t.push('"' + ('' + (s.t || s.treatment || '')).replace(/"/g, '\\"') + '"');
           cols.r.push(s.r != null ? s.r : (s.events != null ? s.events : 0));
           cols.n.push(s.n);
           cols.rob.push(s.rob != null ? s.rob : 1);
@@ -991,9 +991,9 @@ var Update = (model) => {
       } else if (rtype === 'long_continuous') {
         var cols = { study:[], id:[], t:[], y:[], sd:[], n:[], rob:[], indirectness:[] };
         studies.forEach(function(s) {
-          cols.study.push('"' + (s.study || '') + '"');
+          cols.study.push('"' + ('' + (s.study || '')).replace(/"/g, '\\"') + '"');
           cols.id.push(s.id);
-          cols.t.push('"' + (s.t || s.treatment || '') + '"');
+          cols.t.push('"' + ('' + (s.t || s.treatment || '')).replace(/"/g, '\\"') + '"');
           cols.y.push(s.y != null ? s.y : (s.mean != null ? s.mean : 0));
           cols.sd.push(s.sd != null ? s.sd : 0);
           cols.n.push(s.n);
@@ -1015,9 +1015,11 @@ var Update = (model) => {
         var cols = { id:[], t1:[], t2:[], effect:[], se:[], rob:[], indirectness:[] };
         var wideData = p.studies.wide || studies;
         wideData.forEach(function(s) {
-          cols.id.push(s.id);
-          cols.t1.push('"' + (s.t1 || '') + '"');
-          cols.t2.push('"' + (s.t2 || '') + '"');
+          // IV study IDs are strings (e.g. "RN335 en", "RN2529/RN6203") — must be quoted
+          var idStr = ('' + (s.id || '')).replace(/"/g, '\\"');
+          cols.id.push('"' + idStr + '"');
+          cols.t1.push('"' + ('' + (s.t1 || '')).replace(/"/g, '\\"') + '"');
+          cols.t2.push('"' + ('' + (s.t2 || '')).replace(/"/g, '\\"') + '"');
           cols.effect.push(s.effect != null ? s.effect : 0);
           cols.se.push(s.se != null ? s.se : 0);
           cols.rob.push(s.rob != null ? s.rob : 1);

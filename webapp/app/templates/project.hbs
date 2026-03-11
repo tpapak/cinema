@@ -91,18 +91,18 @@
          look at the <a href="#doc" onClick="Actions.Router.gotoRoute('doc')">documentation
             page </a>for the definition of each field
         </span>
-        {{#if view.hasFormatType}}
-          <h3>File format and outcome type</h3>
-          <ul>
-            <li class="list-group-item">
-              Format
-              <span class="badge">{{view.format}}</span>
-            </li>
-            <li class="list-group-item">
-              Outcome
-              <span class="badge">{{view.type}}</span>
-            </li>
-          </ul>
+         {{#if view.hasFormatType}}
+           <h3>File format and outcome type</h3>
+           <ul>
+             <li class="list-group-item">
+               Format
+               <span class="badge">{{view.format}}</span>
+             </li>
+             <li class="list-group-item">
+               Outcome
+               <span class="badge">{{view.type}}</span>
+             </li>
+           </ul>
           {{#unless view.canProceed}}
             <button onClick="Actions.Project.editFormatType()" class="pull-right btn
               btn-default">
@@ -222,7 +222,7 @@
             {{/each}}
           </ul>
         {{/if}}
-        {{#if ../view.allRequiredSelected}}
+        {{#if view.allRequiredSelected}}
           <button onClick="Actions.Project.checkFile()" class="pull-right btn
             btn-default">
             Check file
@@ -254,13 +254,14 @@
           <button > Save </button>
         {{/if}}
       {{/if}}
-      <span>
+      <!-- Save project button removed — use Export as .cnm from Projects page instead -->
+      <!-- <span>
     <a onClick="Actions.Project.saveProject()" class="btn btn-default"
       id="saveProject">Save project
     </a>
               <span id='prinfo'
               onclick="Actions.alertify().message('You can save the entire project as a .cnm files for later use.'
             )" class="info glyphicon glyphicon-info-sign" aria-hidden="true"></span>
-      </span>
+      </span> -->
     {{/if}}
 </div>
