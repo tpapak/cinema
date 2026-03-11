@@ -1,5 +1,39 @@
 # CINeMA Change log
 
+## v3.0.0 - March 2026
+
+Major architecture overhaul and new features.
+
+**Architecture:**
+- Replaced OpenCPU backend with Flask + subprocess(Rscript) backend
+- R netmeta >= 3.3 via conda (Python 3.11, R 4.4)
+- Docker Compose deployment: nginx frontend + Flask+R API backend
+- Production deployment at `cinema.med.auth.gr`
+
+**New features:**
+- **Project Manager**: manage collections of projects from a single UI
+- **V3 exchange format**: `.cnm` (single project) and `.cdb` (collection) files
+- **IV-format CSV support**: upload pre-computed effect sizes and standard errors
+- **Offline R script export**: download a standalone R script to reproduce the analysis locally
+- **Auto-save/restore**: projects persist to localStorage and auto-restore on refresh
+- **CSV upload**: upload datasets directly as CSV with automatic format detection (long binary, long continuous, IV)
+- **Column mapping**: associate CSV columns to required fields with auto-detection
+
+**Improvements:**
+- PureScript upgraded to 0.15.15 with spago build system
+- Risk of bias and indirectness columns made optional in CSV uploads
+- Network plot supports IV-format edge width options (inverse variance, number of studies)
+- AUTH logo added to footer
+
+**Bug fixes:**
+- Fixed evaluation domain crashes from R `NA` values (null handling for tau2, I2, SIDE statistics)
+- Fixed Handlebars template path depth bugs in incoherence domain
+- Fixed contribution matrix scaling (R netcontrib returns proportions 0-1, not percentages)
+- Fixed study name vs study ID key mismatch in contribution matrix
+- Fixed createProject() leaking stale data when uploading a new CSV over an existing project
+- Fixed "Check file" button not appearing on column mapping page (Handlebars path bug)
+- Fixed unquoted study IDs in offline R script export (strings with spaces/slashes)
+
 ## Frontend v2.0.0 - June 2021
 Version 2.0.0 has huge UI improvements. Enjoy!
 - **Save/Load projects**: You can now save the entire state of a project as a
