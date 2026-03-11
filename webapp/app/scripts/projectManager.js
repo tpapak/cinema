@@ -25,6 +25,7 @@ var convertHTML = require('html-to-vdom')({
 var Messages = require('./messages.js').Messages;
 var FR = require('./lib/readFile.js').FR;
 var V3Bridge = require('./lib/v3bridge.js');
+var OldCnmBridge = require('./lib/oldCnmBridge.js');
 var download = require('downloadjs');
 var md5 = require('../../bower_components/js-md5/js/md5.min.js');
 
@@ -158,6 +159,10 @@ var PM = {
       var doUpload = () => {
         FR.handleFileSelect(inputEl).then((statestring) => {
           var parsed = JSON.parse(statestring);
+          // Convert old CINeMA .cnm (v1.x/v2.x) to v3 format
+          if (OldCnmBridge.isOldCnmFormat(parsed)) {
+            parsed = OldCnmBridge.oldCnmToV3(parsed);
+          }
           if (V3Bridge.isV3Format(parsed)) {
             var cinema = parsed.cinema;
             var now = timestamp();
@@ -180,7 +185,7 @@ var PM = {
             PM.model.saveState();
             Messages.alertify().success('Collection loaded: ' + collection.title + ' (' + collection.projects.length + ' projects)');
           } else {
-            Messages.alertify().error('File is not in CINeMA v3 format. Use "Upload Project (.cnm)" for single projects or "Upload Dataset (.csv)" for raw data.');
+            Messages.alertify().error('File is not a valid CINeMA format. Use "Upload Project (.cnm)" for single projects or "Upload Dataset (.csv)" for raw data.');
           }
         }).catch((err) => {
           Messages.alertify().error('Failed to load collection: ' + err);
@@ -202,6 +207,10 @@ var PM = {
       // Upload a single .cnm project file into the active collection
       FR.handleFileSelect(inputEl).then((statestring) => {
         var parsed = JSON.parse(statestring);
+        // Convert old CINeMA .cnm (v1.x/v2.x) to v3 format
+        if (OldCnmBridge.isOldCnmFormat(parsed)) {
+          parsed = OldCnmBridge.oldCnmToV3(parsed);
+        }
         if (V3Bridge.isV3Format(parsed) && parsed.cinema.projects && parsed.cinema.projects.length > 0) {
           var mgr = PM.update.getManager();
           // Auto-create a collection if none exists

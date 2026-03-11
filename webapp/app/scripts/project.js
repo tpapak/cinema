@@ -27,6 +27,7 @@ var ComparisonModel = require('./purescripts/output/ComparisonModel');
 var download = require('downloadjs');
 var V2Bridge = require('./lib/v2bridge.js');
 var V3Bridge = require('./lib/v3bridge.js');
+var OldCnmBridge = require('./lib/oldCnmBridge.js');
 
 var PR = {
   actions: {
@@ -254,10 +255,18 @@ var PR = {
             let legacyState = V3Bridge.v3ToLegacyState(parsed, PR.model.getState());
             return legacyState;
           }
-          // Detect v2 exchange format and transform to legacy state
+           // Detect v2 exchange format (MetaInsight) and transform to legacy state
           if (V2Bridge.isV2Format(parsed)) {
             console.log('Detected CINeMA v2 exchange format, transforming to legacy state');
             let legacyState = V2Bridge.v2ToLegacyState(parsed, PR.model.getState());
+            return legacyState;
+          }
+          // Old CINeMA state dump (v1.x / v2.x from cinema.ispm.unibe.ch):
+          // Convert to v3 format first, then import through the normal v3 path.
+          if (OldCnmBridge.isOldCnmFormat(parsed)) {
+            console.log('Detected old CINeMA .cnm (v' + parsed.version + '), converting to v3');
+            let v3 = OldCnmBridge.oldCnmToV3(parsed);
+            let legacyState = V3Bridge.v3ToLegacyState(v3, PR.model.getState());
             return legacyState;
           }
           return parsed;
