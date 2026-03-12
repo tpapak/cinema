@@ -1,4 +1,5 @@
 var deepSeek = require('safe-access');
+var h = require('virtual-dom/h');
 var Update = require('./update.js')();
 var View = require('./view.js')();
 var Template = require('./template.js')();
@@ -25,6 +26,7 @@ var ConChart = {
       let children = _.map(ConChart.renderChildren, c => { c.render(model);});
       return Template(model,ConChart.renderChildren);
     }else{
+      return h('div');
     }
   },
   afterRender: (model) => {

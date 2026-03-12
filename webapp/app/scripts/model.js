@@ -82,9 +82,12 @@ var Model = {
         typeof Model.Actions.ProjectManager.addCurrentProjectToCollection === 'function') {
       Model.Actions.ProjectManager.addCurrentProjectToCollection();
     }
-    localStorage.clear();
+    // Serialize first, then clear+write.  If serialization or setItem
+    // fails (e.g. QuotaExceededError), the old cached state is preserved.
     try {
-      localStorage.setItem('state', JSON.stringify(Model.getState()));
+      var serialized = JSON.stringify(Model.getState());
+      localStorage.clear();
+      localStorage.setItem('state', serialized);
       console.log('saved to localstorage');
     } catch (e) {
         //data wasn't successfully saved due to quota exceed so throw an error

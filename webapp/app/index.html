@@ -46,7 +46,6 @@
     <script src="/bower_components/jquery/dist/jquery.js"></script>
     <script src="/bower_components/modernizr/modernizr.js"></script>
     <script src="/bower_components/cytoscape/dist/cytoscape.js"></script>
-    <script src="/bower_components/handlebars/handlebars.js"></script>
     <script src="/bower_components/underscore/underscore-umd.js"></script>
     <script src="/bower_components/moment/moment.js"></script>
     <script src="/bower_components/numbro/numbro.js"></script>
@@ -61,28 +60,29 @@
 
 
     <!-- build:js scripts/main.js -->
-    <script src="scripts/lib/helpers.js"></script>
-    <script src="templates/header.js"></script>
-    <script src="templates/footer.js"></script>
-    <script src="templates/messages.js"></script>
-    <script src="templates/welcome.js"></script>
-    <script src="templates/doc.js"></script>
-    <script src="templates/netplot.js"></script>
-    <script src="templates/conmatrix.js"></script>
-    <script src="templates/directrob.js"></script>
-    <script src="templates/conchart.js"></script>
-    <script src="templates/netrob.js"></script>
-    <script src="templates/indirectness.js"></script>
-    <script src="templates/indrchart.js"></script>
-    <script src="templates/netindr.js"></script>
-    <script src="templates/inconsistency.js"></script>
-    <script src="templates/heterogeneity.js"></script>
-    <script src="templates/incoherence.js"></script>
-    <script src="templates/imprecision.js"></script>
-    <script src="templates/pubBias.js"></script>
-    <script src="templates/project.js"></script>
-    <script src="templates/projectManager.js"></script>
-    <script src="templates/error.js"></script>
+    <!-- <script src="scripts/lib/helpers.js"></script> --> <!-- REMOVED: Handlebars helpers no longer needed -->
+    <!-- Handlebars templates replaced by hyperscript-helpers views in app/scripts/views/ -->
+    <!-- <script src="templates/header.js"></script> -->
+    <!-- <script src="templates/footer.js"></script> -->
+    <!-- <script src="templates/messages.js"></script> --> <!-- REMOVED: messages template no longer used -->
+    <!-- <script src="templates/welcome.js"></script> -->
+    <!-- <script src="templates/doc.js"></script> -->
+    <!-- <script src="templates/netplot.js"></script> -->
+    <!-- <script src="templates/conmatrix.js"></script> -->
+    <!-- <script src="templates/directrob.js"></script> -->
+    <!-- <script src="templates/conchart.js"></script> -->
+    <!-- <script src="templates/netrob.js"></script> -->
+    <!-- <script src="templates/indirectness.js"></script> -->
+    <!-- <script src="templates/indrchart.js"></script> -->
+    <!-- <script src="templates/netindr.js"></script> -->
+    <!-- <script src="templates/inconsistency.js"></script> -->
+    <!-- <script src="templates/heterogeneity.js"></script> -->
+    <!-- <script src="templates/incoherence.js"></script> -->
+    <!-- <script src="templates/imprecision.js"></script> -->
+    <!-- <script src="templates/pubBias.js"></script> -->
+    <!-- <script src="templates/project.js"></script> -->
+    <!-- <script src="templates/projectManager.js"></script> -->
+    <!-- <script src="templates/error.js"></script> -->
     <script src="scripts/bundle.js"></script>
     <!-- endbuild -->
 

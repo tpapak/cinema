@@ -77,8 +77,18 @@ var View = (model) => {
     },
     drobReady: () => {
       let isready = false;
-      if (typeof deepSeek(model,'getState().project.CM.currentCM.studycontributions')!=='undefined'){
+      // if (typeof deepSeek(model,'getState().project.CM.currentCM.studycontributions')!=='undefined'){
+      //   isready = true;
+      // }
+      // Check studycontributions non-empty OR directRowNames available (large projects with stripped contributions)
+      var _stcs = deepSeek(model,'getState().project.CM.currentCM.studycontributions');
+      if (typeof _stcs !== 'undefined' && _stcs != null && Object.keys(_stcs).length > 0) {
         isready = true;
+      } else {
+        var _drn = deepSeek(model,'getState().project.CM.currentCM.directRowNames');
+        if (_drn && _drn.length > 0) {
+          isready = true;
+        }
       }
       return isready;
     },

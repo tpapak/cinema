@@ -26,7 +26,7 @@
     "gulp-define-module": "^0.1.4",
     "gulp-eslint": "^6.0.0",
     "gulp-ext-replace": "^0.3.0",
-    "gulp-handlebars": "^5.0.2",
+
     "gulp-htmlmin": "^3.0.0",
     "gulp-if": "^2.0.0",
     "gulp-imagemin": "^9.1.0",
@@ -96,7 +96,7 @@
     "gulp-rename": "^1.4.0",
     "gulp-template": "^5.0.0",
     "gulp-transform": "^1.1.0",
-    "html-to-vdom": "^0.7.0",
+
     "hyperscript-helpers": "^3.0.3",
     "json2csv": "^4.4.1",
     "randomstring": "^1.1.5",

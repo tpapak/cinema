@@ -60,27 +60,33 @@ gulp.task('config', function() {
     .pipe(gulp.dest('app/scripts/'));
 });
 
-gulp.task('hbsTojs', () => {
-  let modulify = c => {
-    let pre = '"use strict";exports.template=';
-    let contents = JSON.stringify(c);
-    return pre + contents;
-  };
-  return gulp.src('app/scripts/**/*.hbs')
-    .pipe(transform( contents => modulify(contents),{encoding: 'utf8'}))
-    .pipe(ext_replace('.js'))
-    .pipe(gulp.dest('app/scripts/'));
-});
+// REMOVED: hbsTojs task — Handlebars templates replaced by hyperscript-helpers views
+// gulp.task('hbsTojs', () => {
+//   let modulify = c => {
+//     let pre = '"use strict";exports.template=';
+//     let contents = JSON.stringify(c);
+//     return pre + contents;
+//   };
+//   return gulp.src('app/scripts/**/*.hbs')
+//     .pipe(transform( contents => modulify(contents),{encoding: 'utf8'}))
+//     .pipe(ext_replace('.js'))
+//     .pipe(gulp.dest('app/scripts/'));
+// });
 
-gulp.task('templates', () => {
-  return gulp.src('app/templates/**/*.hbs')
-    .pipe($.handlebars())
-    .pipe($.defineModule('plain'))
-    .pipe($.declare({
-      namespace: 'GRADE.templates' // change this to whatever you want
-    }))
-    .pipe(gulp.dest('.tmp/templates'));
-});
+// REMOVED: templates task — Handlebars templates replaced by hyperscript-helpers views
+// gulp.task('templates', () => {
+//   return gulp.src('app/templates/**/*.hbs')
+//     .pipe($.handlebars())
+//     .pipe($.defineModule('plain'))
+//     .pipe($.declare({
+//       namespace: 'GRADE.templates'
+//     }))
+//     .pipe(gulp.dest('.tmp/templates'));
+// });
+
+// No-op stubs so gulp.series references don't break
+gulp.task('hbsTojs', (done) => { done(); });
+gulp.task('templates', (done) => { done(); });
 
 // gulp-sass v6+ requires explicit sass compiler
 const sass = require('sass');

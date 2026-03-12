@@ -63,7 +63,7 @@ var Messages = {
     if(extra){
       aux.extra = extra;
     }
-    var infotmpl = GRADE.templates.messages(aux);
+    // var infotmpl = GRADE.templates.messages(aux); // REMOVED: Handlebars dependency eliminated
     // $('#info').html(infotmpl);
     // if(aux.projectName){
       // Messages.bindNameEditor();

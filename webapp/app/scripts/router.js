@@ -1,13 +1,16 @@
 var deepSeek = require('safe-access');
 var h = require('virtual-dom/h');
-var VNode = require('vtree/vnode');
-var VText = require('vtree/vtext');
+// var VNode = require('vtree/vnode');     // REMOVED: was only needed for html-to-vdom (Handlebars)
+// var VText = require('vtree/vtext');     // REMOVED: was only needed for html-to-vdom (Handlebars)
 var md5 = require('../../bower_components/js-md5/js/md5.min.js');
-var convertHTML = require('html-to-vdom')({
-     VNode: VNode,
-     VText: VText
-});
+// var convertHTML = require('html-to-vdom')({  // REMOVED: no longer converting Handlebars HTML
+//      VNode: VNode,
+//      VText: VText
+// });
 var Messages = require('./messages.js').Messages;
+var headerView = require('./views/headerView.js');
+var footerView = require('./views/footerView.js');
+var reportView = require('./views/reportView.js');
 var Welcome = require('./welcome.js')();
 var ProjectManager = require('./projectManager.js')();
 var Project = require('./project.js')();
@@ -21,8 +24,62 @@ var Incoherence = require('./inconsistency/incoherence/incoherence.js')();
 var Imprecision = require('./imprecision/imprecision.js')();
 var Indirectness = require('./indirectness/directIndr/directIndr.js')();
 var Pubbias = require('./pubbias/pubbias.js')();
-var Report = require('./purescripts/output/Report');
+var ReportViewPS = require('./purescripts/output/Report.View');
 var ReportUpdate = require('./purescripts/output/Report.Update');
+var ModelPS = require('./purescripts/output/Model');
+
+// Report wrapper — adapts PureScript Report.View to the standard module interface.
+// PureScript computes the view data; JS reportView.js renders VNodes.
+// Replaces the old flow: PureScript Handlebars HTML string -> convertHTML -> VNodes.
+var ReportModule = {
+  view: {
+    register: function(model) {
+      ReportModule.model = model;
+    },
+  },
+  render: function(model) {
+    var state = model.getState();
+    // console.log('[Report] raw state keys:', Object.keys(state));
+    // console.log('[Report] state.project exists:', !!state.project);
+    // console.log('[Report] report status:', state.project && state.project.report && state.project.report.status);
+    // Decode raw JS state to PureScript State type
+    // readState returns Either String State; .value0 holds the value for both Left/Right
+    var decoded = ModelPS.readState(state);
+    // console.log('[Report] decoded:', decoded);
+    // console.log('[Report] decoded constructor:', decoded && decoded.constructor && decoded.constructor.name);
+    // console.log('[Report] decoded.value0 type:', typeof (decoded && decoded.value0));
+    // console.log('[Report] decoded.value0:', decoded && decoded.value0);
+    // In compiled PureScript, Right constructor has .value0 = the State value
+    // and isRight checks via either(const false)(const true)
+    try {
+      if (decoded && decoded.value0 && typeof decoded.value0 === 'object' && decoded.value0.project) {
+        // console.log('[Report] Calling viewData...');
+        var data = ReportViewPS.viewData(decoded.value0);
+        // console.log('[Report] viewData isReady:', data.isReady, 'hasDirects:', data.hasDirects, 'hasIndirects:', data.hasIndirects);
+        // console.log('[Report] directRows count:', (data.directRows || []).length);
+        // if (data.directRows && data.directRows[0]) {
+        //   var r0 = data.directRows[0];
+        //   console.log('[Report] row[0] armA:', r0.armA, 'armB:', r0.armB);
+        //   console.log('[Report] row[0] studyLimitation:', JSON.stringify(r0.studyLimitation));
+        //   console.log('[Report] row[0] pubbias:', JSON.stringify(r0.pubbias));
+        //   console.log('[Report] row[0] imprecision:', JSON.stringify(r0.imprecision));
+        //   console.log('[Report] row[0] heterogeneity:', JSON.stringify(r0.heterogeneity));
+        //   console.log('[Report] row[0] incoherence:', JSON.stringify(r0.incoherence));
+        //   console.log('[Report] row[0] indirectness:', JSON.stringify(r0.indirectness));
+        //   console.log('[Report] row[0] judgement keys:', r0.judgement ? Object.keys(r0.judgement) : 'none');
+        // }
+        return reportView(data);
+      } else {
+        // console.log('[Report] Decode check failed — decoded.value0.project missing');
+      }
+    } catch(e) {
+      // console.log('Report render error:', e);
+      // console.log('Report render error stack:', e.stack);
+    }
+    // Decode error or exception — show "Report not ready"
+    return reportView({ isReady: false });
+  },
+};
 
 var Router = {
   view: {
@@ -186,13 +243,11 @@ var Router = {
           if (projectType) bannerData.type = projectType;
         }
         
-        // Header template
-        var headertmpl = GRADE.templates.header({model:model.state,view:Router.view,banner:bannerData});
-        var hnode = convertHTML(headertmpl);
+        // Header — hyperscript-helpers view (replaces header.hbs)
+        var hnode = headerView(model, Router.view, bannerData);
         
-        // Footer template
-        var footertmpl = GRADE.templates.footer({model:model.state,view:Router.view});
-        var fnode = convertHTML(footertmpl);
+        // Footer — hyperscript-helpers view (replaces footer.hbs)
+        var fnode = footerView(model);
         
         let cnode = {};
         let child = _.find(Router.renderChildren, c => {
@@ -209,18 +264,15 @@ var Router = {
              Indirectness.destroyRender(model);
           }
           
-          if(currentRoute === 'report'){
-              let htmlString = child.module.render(model.getState());
-              cnode = convertHTML(htmlString);
-          }else{
-            cnode = child.module.render(model);
-          }
+          // Report now uses hyperscript-helpers like all other routes
+          // (no more Handlebars HTML string -> convertHTML)
+          cnode = child.module.render(model);
         }
 
         let ptree = [
                      h('div#header.row',hnode),
                      cnode,
-                     h('nav.row.footerContainer',fnode)
+                     h('nav.row.footerContainer',[fnode])
                    ];
         
         resolve(ptree);
@@ -251,10 +303,9 @@ var Router = {
     Router.model.Actions.Router = Router.update;
     Router.actions.bindNavControls();
     _.map(Router.renderChildren, c => {
+      c.module.view.register(model);
       if ( c.route === 'report' ){
         Router.model.Actions.Report = ReportUpdate;
-      }else{
-        c.module.view.register(model);
       }
     });
   },
@@ -293,7 +344,7 @@ var Router = {
       module: Incoherence,
     },
     { route: 'report',
-      module: Report,
+      module: ReportModule,
     },
   ],
 }

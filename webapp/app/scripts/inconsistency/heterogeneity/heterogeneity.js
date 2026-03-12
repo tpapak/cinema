@@ -1,4 +1,5 @@
 var deepSeek = require('safe-access');
+var h = require('virtual-dom/h');
 var Messages = require('../../messages.js').Messages;
 var Update = require('./update.js')();
 var View = require('./view.js')();
@@ -80,7 +81,8 @@ var Heterogeneity = {
       let children = _.map(Heterogeneity.renderChildren, c => { c.render(model);});
       return Template(model,Heterogeneity.renderChildren);
     }else{
-      console.log('Heterogeneity not ready to render');
+      //console.log('Heterogeneity not ready to render');
+      return h('div');
     }
   },
   afterRender: () => {

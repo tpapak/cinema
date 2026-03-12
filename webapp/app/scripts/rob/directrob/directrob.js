@@ -1,4 +1,5 @@
 var Messages = require('../../messages.js').Messages;
+var h = require('virtual-dom/h');
 var Update = require('./update.js')();
 var View = require('./view.js')();
 var Template = require('./template.js')();
@@ -39,6 +40,7 @@ var DirectRob = {
     if(View(model).isReady()){
       return Template(model,DirectRob.renderChildren);
     }else{
+      return h('div');
     }
   },
   afterRender: (model) => {

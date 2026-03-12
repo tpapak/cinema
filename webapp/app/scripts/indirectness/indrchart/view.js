@@ -8,7 +8,11 @@ var View = (model) => {
     dirsReady: () => {
       let isready = false;
       let studycontrs = deepSeek(model,'getState().project.CM.currentCM.studycontributions');
-      if (typeof studycontrs !== 'undefined'){
+      // if (typeof studycontrs !== 'undefined'){
+      //   isready = true;
+      // }
+      // Also check that studycontributions is non-empty (may be stripped for large projects)
+      if (typeof studycontrs !== 'undefined' && studycontrs != null && Object.keys(studycontrs).length > 0) {
         isready = true;
       }
       return isready;

@@ -1,4 +1,5 @@
 var deepSeek = require('safe-access');
+var h = require('virtual-dom/h');
 var Messages = require('../../messages.js').Messages;
 var Update = require('./update.js')();
 var View = require('./view.js')();
@@ -49,7 +50,8 @@ var Incoherence = {
       let children = _.map(Incoherence.renderChildren, c => { c.render(model);});
       return Template(model,Incoherence.renderChildren);
     }else{
-      console.log('Incoherence not ready to render');
+      //console.log('Incoherence not ready to render');
+      return h('div');
     }
   },
   afterRender: () => {

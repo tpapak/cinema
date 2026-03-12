@@ -94,28 +94,76 @@ var buildStudiesFromV3 = (dataset) => {
   // internal long arm: { study, id, t, r/y/sd, n, rob, indirectness }
   var projectType = dataset.type;
 
-  var long = _.map(dataset.studies, (arm) => {
-    var row = {
-      id: typeof arm.id === 'string' ? arm.id : String(arm.id),
-      t: typeof arm.treatment === 'string' ? arm.treatment : String(arm.treatment),
-      n: arm.n,
-      rob: arm.rob,
-      indirectness: arm.indirectness,
-    };
-    if (typeof arm.study !== 'undefined') {
-      row.study = typeof arm.study === 'string' ? arm.study : String(arm.study);
-    }
-    if (projectType === 'binary') {
-      row.r = arm.events || 0;
-    } else if (projectType === 'continuous') {
-      row.y = arm.mean || 0;
-      row.sd = arm.sd || 0;
-    }
-    return row;
-  });
+  var long;
+  var wide;
 
-  // Build wide-format from long
-  var wide = buildWideFromLong(long, projectType);
+  // IV format: dataset.studies are already in wide/contrast format
+  // with {id, t1, t2, effect, se, rob, indirectness} — no 'treatment' field.
+  // We need to expand to long (two arm-level rows per contrast) and
+  // use the original data as wide, following the same pattern as
+  // project.js lines 181-183 and Reshaper.wideToLong(model, 'iv').
+  if (dataset.format === 'iv') {
+    // Wide is the raw data (already in contrast format)
+    wide = _.map(dataset.studies, (row) => {
+      var wideRow = {
+        id: typeof row.id === 'string' ? row.id : String(row.id),
+        t1: typeof row.t1 === 'string' ? row.t1 : String(row.t1),
+        t2: typeof row.t2 === 'string' ? row.t2 : String(row.t2),
+        rob: row.rob,
+        indirectness: row.indirectness,
+      };
+      if (typeof row.effect !== 'undefined') { wideRow.effect = row.effect; }
+      if (typeof row.se !== 'undefined') { wideRow.se = row.se; }
+      if (typeof row.study !== 'undefined') {
+        wideRow.study = typeof row.study === 'string' ? row.study : String(row.study);
+      }
+      return wideRow;
+    });
+
+    // Expand to long: each wide row → two arm-level rows {id, t, rob, indirectness, ...}
+    // Then deduplicate by id+t (same treatment in same study from multiple contrasts)
+    var longRaw = [];
+    _.each(wide, (row) => {
+      var base = { id: row.id, rob: row.rob, indirectness: row.indirectness };
+      if (typeof row.study !== 'undefined') { base.study = row.study; }
+      longRaw.push(_.extend({}, base, { t: row.t1 }));
+      longRaw.push(_.extend({}, base, { t: row.t2 }));
+    });
+    // Deduplicate: keep first occurrence of each id+t combination
+    var seen = {};
+    long = [];
+    for (var li = 0; li < longRaw.length; li++) {
+      var key = longRaw[li].id + '\x00' + longRaw[li].t;
+      if (!seen[key]) {
+        seen[key] = true;
+        long.push(longRaw[li]);
+      }
+    }
+  } else {
+    // Binary / continuous / long formats: dataset.studies are arm-level
+    long = _.map(dataset.studies, (arm) => {
+      var row = {
+        id: typeof arm.id === 'string' ? arm.id : String(arm.id),
+        t: typeof arm.treatment === 'string' ? arm.treatment : String(arm.treatment),
+        n: arm.n,
+        rob: arm.rob,
+        indirectness: arm.indirectness,
+      };
+      if (typeof arm.study !== 'undefined') {
+        row.study = typeof arm.study === 'string' ? arm.study : String(arm.study);
+      }
+      if (projectType === 'binary') {
+        row.r = arm.events || 0;
+      } else if (projectType === 'continuous') {
+        row.y = arm.mean || 0;
+        row.sd = arm.sd || 0;
+      }
+      return row;
+    });
+
+    // Build wide-format from long
+    wide = buildWideFromLong(long, projectType);
+  }
 
   // Always compute nodes from long data to get complete internal fields
   // (low/unclear/high, indrlow/indrunclear/indrhigh, rob arrays, etc.)
@@ -137,7 +185,10 @@ var buildStudiesFromV3 = (dataset) => {
   // } else {
   //   nodes = buildNodes(long, projectType);
   // }
-  var nodes = buildNodes(long, projectType);
+  // For IV format, pass 'iv' as nodeType so buildNodes skips sampleSize
+  // (IV long rows have no 'n' field; dataset.type is the outcome type e.g. 'binary')
+  var nodeType = dataset.format === 'iv' ? 'iv' : projectType;
+  var nodes = buildNodes(long, nodeType);
 
   // Always compute direct comparisons from wide data to get complete fields
   // (rob arrays, majrob/meanrob/maxrob, indirectness rules, sampleSize, etc.)
@@ -295,13 +346,15 @@ var buildDirectComparisons = (wide, projectType) => {
 
 // Build indirect comparisons
 var buildIndirectComparisons = (nodes, directComparisons) => {
-  var directIds = _.pluck(directComparisons, 'id');
+  // var directIds = _.pluck(directComparisons, 'id');
+  var directIdSet = new Set(_.pluck(directComparisons, 'id'));
   var treatments = _.pluck(nodes, 'id');
   var indirect = [];
   for (var i = 0; i < treatments.length; i++) {
     for (var j = i + 1; j < treatments.length; j++) {
       var pairId = uniqId([treatments[i], treatments[j]]).toString();
-      if (!_.contains(directIds, pairId)) {
+      // if (!_.contains(directIds, pairId)) {
+      if (!directIdSet.has(pairId)) {
         indirect.push(pairId);
       }
     }
@@ -456,20 +509,35 @@ var buildSavedComparisons = (studyContributions, colNames) => {
 // Split comparisons into direct/indirect
 // =====================================================
 var splitComparisons = (savedComparisons, directComparisonIds) => {
+  // var directIdSet = directComparisonIds; // was array, use Set for O(1) lookup
+  var directIdSet = new Set(directComparisonIds);
   var directRows = _.filter(savedComparisons, (sc) => {
     var normalized = uniqId(sc.rowname.replace(':', ',').split(',')).toString();
-    return _.contains(directComparisonIds, normalized);
+    // return _.contains(directComparisonIds, normalized);
+    return directIdSet.has(normalized);
   });
   var indirectRows = _.filter(savedComparisons, (sc) => {
     var normalized = uniqId(sc.rowname.replace(':', ',').split(',')).toString();
-    return !_.contains(directComparisonIds, normalized);
+    // return !_.contains(directComparisonIds, normalized);
+    return !directIdSet.has(normalized);
   });
+  // JS-native sort: normalize "B:A" → "A:B", then sort lexicographically by (t1, t2)
+  // Replaces PureScript fixComparisonId + sortStringComparisonIds (JSON round-trip per item)
   var sortRows = (rows) => {
     try {
-      var fixednames = _.map(rows, (r) => { return ComparisonModel.fixComparisonId(r.rowname); });
-      var sortedIds = ComparisonModel.sortStringComparisonIds(fixednames);
-      return _.sortBy(rows, (r) => {
-        return sortedIds.indexOf(ComparisonModel.fixComparisonId(r.rowname));
+      // var fixednames = _.map(rows, (r) => { return ComparisonModel.fixComparisonId(r.rowname); });
+      // var sortedIds = ComparisonModel.sortStringComparisonIds(fixednames);
+      // return _.sortBy(rows, (r) => {
+      //   return sortedIds.indexOf(ComparisonModel.fixComparisonId(r.rowname));
+      // });
+      return rows.slice().sort((a, b) => {
+        var pa = a.rowname.split(':');
+        var pb = b.rowname.split(':');
+        if (pa[0] < pb[0]) return -1;
+        if (pa[0] > pb[0]) return 1;
+        if ((pa[1] || '') < (pb[1] || '')) return -1;
+        if ((pa[1] || '') > (pb[1] || '')) return 1;
+        return 0;
       });
     } catch (e) {
       return _.sortBy(rows, 'rowname');
@@ -493,6 +561,35 @@ var v3ProjectToLegacyState = (v3project, v3meta, currentState) => {
   var analysis = v3project.analysis;
   var evaluation = v3project.evaluation || {};
 
+  // ---------------------------------------------------------------
+  // Large-project optimization: strip bulky pre-computed contribution
+  // data to avoid freezing the browser.  The contribution matrix
+  // (studyContributions ≈ C(n,2) × #studies entries) and the hat
+  // matrix H can be re-fetched from the R backend on demand.
+  // We keep comparison IDs, NMA results, and league tables (small).
+  // Threshold: > 500 comparisons ≈ > 32 treatments.
+  // ---------------------------------------------------------------
+  var _contributionsStripped = false;
+  if (analysis && analysis.contributionMatrix) {
+    var _scCount = analysis.contributionMatrix.studyContributions
+      ? Object.keys(analysis.contributionMatrix.studyContributions).length
+      : 0;
+    if (_scCount > 500) {
+      var _hSize = (analysis.contributionMatrix.hatMatrix && analysis.contributionMatrix.hatMatrix.H)
+        ? analysis.contributionMatrix.hatMatrix.H.length : 0;
+      console.log('[v3bridge] Large project detected: ' + _scCount +
+        ' comparisons — stripping studyContributions and hatMatrix.H (' +
+        _hSize + ' rows) to avoid browser freeze. ' +
+        'These will be re-fetched from the backend on demand.');
+      // Null out bulky data — keep rowNames/colNames for comparison ID lists
+      analysis.contributionMatrix.studyContributions = {};
+      if (analysis.contributionMatrix.hatMatrix) {
+        analysis.contributionMatrix.hatMatrix.H = [];
+      }
+      _contributionsStripped = true;
+    }
+  }
+
   // Build project.studies
   var studies = buildStudiesFromV3(dataset);
   var directComparisonIds = _.pluck(studies.directComparisons, 'id');
@@ -507,7 +604,27 @@ var v3ProjectToLegacyState = (v3project, v3meta, currentState) => {
     studyContributions = analysis.contributionMatrix.studyContributions;
   }
 
-  var savedComparisons = buildSavedComparisons(studyContributions, colNames);
+  // When contributions were stripped (either by v3bridge or by projectManager.uploadProject),
+  // build savedComparisons from hatMatrix.rowNames instead (just comparison IDs, no per-study data).
+  // Detect upstream stripping: studyContributions is empty but hatmatrix.rowNames has entries.
+  if (!_contributionsStripped && Object.keys(studyContributions).length === 0
+      && hatmatrix.rowNames && hatmatrix.rowNames.length > 0) {
+    _contributionsStripped = true;
+    console.log('[v3bridge] Detected pre-stripped contributions (empty studyContributions with ' +
+      hatmatrix.rowNames.length + ' rowNames). Using rowNames for comparison IDs.');
+  }
+  var savedComparisons;
+  if (_contributionsStripped && hatmatrix.rowNames && hatmatrix.rowNames.length > 0) {
+    savedComparisons = _.map(hatmatrix.rowNames, (compId) => {
+      return {
+        rowname: compId,
+        perstudy: {},
+        comparisons: new Array(colNames.length).fill(0),
+      };
+    });
+  } else {
+    savedComparisons = buildSavedComparisons(studyContributions, colNames);
+  }
   var split = splitComparisons(savedComparisons, directComparisonIds);
 
   // Re-key study contributions from study name to study ID
@@ -525,26 +642,39 @@ var v3ProjectToLegacyState = (v3project, v3meta, currentState) => {
   });
   var allStudyIdStrings = _.uniq(_.values(studyNameToId));
   // v3 stores contributions as proportions (0-1), internal state uses percentages (0-100)
-  var studycontributions = _.mapObject(studyContributions, (studyMap) => {
-    var filled = {};
-    _.each(allStudyIdStrings, (sid) => {
-      filled[sid] = 0;
-    });
+  // Pre-build template object for filled entries (avoids re-creating for each of 9,591 comparisons)
+  var _filledTemplate = {};
+  for (var _si = 0; _si < allStudyIdStrings.length; _si++) {
+    _filledTemplate[allStudyIdStrings[_si]] = 0;
+  }
+  var studycontributions = {};
+  var _scKeys = Object.keys(studyContributions);
+  for (var _ci = 0; _ci < _scKeys.length; _ci++) {
+    var _compKey = _scKeys[_ci];
+    var studyMap = studyContributions[_compKey];
+    // Clone template (faster than iterating allStudyIdStrings per comparison)
+    var filled = Object.assign({}, _filledTemplate);
     // Detect scale: if all values sum to ~1, multiply by 100 to get percentages
-    var rawSum = _.reduce(_.values(studyMap), (a, b) => { return a + b; }, 0);
+    var _smKeys = Object.keys(studyMap);
+    var rawSum = 0;
+    for (var _smi = 0; _smi < _smKeys.length; _smi++) {
+      rawSum += studyMap[_smKeys[_smi]];
+    }
     var scale = (rawSum > 0 && rawSum <= 1.5) ? 100 : 1;
-    _.each(studyMap, (value, studyName) => {
+    for (var _smi2 = 0; _smi2 < _smKeys.length; _smi2++) {
+      var _studyName = _smKeys[_smi2];
+      var _value = studyMap[_studyName];
       // Try exact match first, then normalized (R-style) match
-      var studyId = studyNameToId[studyName] || normalizedNameToId[studyName];
+      var studyId = studyNameToId[_studyName] || normalizedNameToId[_studyName];
       if (studyId) {
-        filled[studyId] = value * scale;
+        filled[studyId] = _value * scale;
       } else {
         // Key might already be an ID
-        filled[studyName] = value * scale;
+        filled[_studyName] = _value * scale;
       }
-    });
-    return filled;
-  });
+    }
+    studycontributions[_compKey] = filled;
+  }
 
   // League tables
   var leaguetable = [];
@@ -616,7 +746,11 @@ var v3ProjectToLegacyState = (v3project, v3meta, currentState) => {
   var treatments = _.pluck(studies.nodes, 'id');
   var analysisParams = (analysis && analysis.params) || {};
   var currentCM = {
+    // When contributions were stripped, mark as 'ready' but flag it.
+    // The NMA results + league table are still valid; only the per-study
+    // contribution matrix and hat matrix need re-fetching from the backend.
     status: analysis ? 'ready' : 'empty',
+    _contributionsStripped: _contributionsStripped,
     params: {
       MAModel: analysisParams.model || 'random',
       sm: analysisParams.sm || 'OR',

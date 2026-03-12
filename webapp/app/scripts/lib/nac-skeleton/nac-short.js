@@ -69,7 +69,8 @@ var NAC = {
         ])
       ])
     }else{
-      console.log('NAC not ready to render');
+      //console.log('NAC not ready to render');
+      return h('div');
     }
   },
   afterRender: () => {

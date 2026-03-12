@@ -26,7 +26,7 @@ import Data.Lens.Traversal
 -- import Text.Smolder.Renderer.String (render) as S -- TODO: Add smolder dependency 
 import Partial.Unsafe (unsafePartial)
 
-import Report.Template as T
+-- import Report.Template as T -- REMOVED: Handlebars template no longer used
 import Model
 import Text.Model
 import StudyLimitationsModel

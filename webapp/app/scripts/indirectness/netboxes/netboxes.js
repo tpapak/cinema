@@ -1,4 +1,5 @@
 var Messages = require('../../messages.js').Messages;
+var h = require('virtual-dom/h');
 var Update = require('./update.js')();
 var View = require('./view.js')();
 var Template = require('./template.js')();
@@ -41,6 +42,7 @@ var NetIndr = {
       let children = _.map(NetIndr.renderChildren, c => {return c.render(model);});
       return Template(model,children);
     }else{
+      return h('div');
     }
   },
   afterRender: () => {

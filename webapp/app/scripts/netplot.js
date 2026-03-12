@@ -1,11 +1,12 @@
 var deepSeek = require('safe-access');
 var h = require('virtual-dom/h');
-var VNode = require('vtree/vnode');
-var VText = require('vtree/vtext');
-var convertHTML = require('html-to-vdom')({
-     VNode: VNode,
-     VText: VText
-});
+// var VNode = require('vtree/vnode');     // REMOVED: html-to-vdom no longer used
+// var VText = require('vtree/vtext');     // REMOVED: html-to-vdom no longer used
+// var convertHTML = require('html-to-vdom')({  // REMOVED: replaced by hyperscript-helpers
+//      VNode: VNode,
+//      VText: VText
+// });
+var netplotView = require('./views/netplotView.js');
 var clone = require('./lib/mixins.js').clone;
 var Messages = require('./messages.js').Messages;
 var accumulate = require('./lib/mixins.js').accumulate;
@@ -565,9 +566,12 @@ var NP = {
   },
   render: (model) => {
     if (NP.view.isReady()){
-      var tmpl = GRADE.templates.netplot({text:NP.model.state,view:NP.view});
-      return h('div#netplotContainer.col-xs-12',convertHTML(tmpl));
+      // var tmpl = GRADE.templates.netplot({text:NP.model.state,view:NP.view});
+      // return h('div#netplotContainer.col-xs-12',convertHTML(tmpl));
+      var data = { text: NP.model.state, view: NP.view };
+      return h('div#netplotContainer.col-xs-12', [netplotView(data)]);
     }else{
+      return h('div');
     }
   },
   afterRender: () => {

@@ -1,11 +1,11 @@
 var deepSeek = require('safe-access');
 var h = require('virtual-dom/h');
-var VNode = require('vtree/vnode');
-var VText = require('vtree/vtext');
-var convertHTML = require('html-to-vdom')({
-     VNode: VNode,
-     VText: VText
-});
+// var VNode = require('vtree/vnode');     // REMOVED: html-to-vdom no longer used
+// var VText = require('vtree/vtext');     // REMOVED: html-to-vdom no longer used
+// var convertHTML = require('html-to-vdom')({  // REMOVED: replaced by hyperscript-helpers
+//      VNode: VNode,
+//      VText: VText
+// });
 var sortStudies = require('./lib/mixins.js').sortStudies;
 var clone = require('./lib/mixins.js').clone;
 var majrule = require('./lib/mixins.js').majrule;

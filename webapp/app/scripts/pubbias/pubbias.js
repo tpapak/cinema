@@ -71,7 +71,8 @@ var Pubbias = {
       let children = _.map(Pubbias.renderChildren, c => { c.render(model);});
       return Template(model,Pubbias.renderChildren);
     }else{
-      console.log('Pubbias not ready to render');
+      //console.log('Pubbias not ready to render');
+      return h('div');
     }
   },
   afterRender: () => {

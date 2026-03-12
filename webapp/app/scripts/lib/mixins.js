@@ -120,12 +120,57 @@ let sortStudies = (rownames, studies) => {
   // return _.zip(rownames,studies);
 }
 
+// let sortComparisonIds = (rownames) => {
+//   let fixednames = _.map(rownames, sid => {
+//     return ComparisonModel.fixComparisonId(sid);
+//   });
+//   let sortedIds = ComparisonModel.sortStringComparisonIds(fixednames); 
+//   return sortedIds;
+// }
+
+// JS-native fast path: avoids PureScript JSON encode/decode round-trips per item
+// fixComparisonId normalizes "B:A" → "A:B" (canonical order)
+// sortStringComparisonIds sorts by comparing treatments as (t1, t2) pairs
+//
+// PureScript TreatmentId ordering:
+//   IntId < StringId (numeric IDs sort before string IDs)
+//   IntId vs IntId: numeric comparison
+//   StringId vs StringId: lexicographic comparison
+let _isNumeric = (s) => { let n = parseInt(s, 10); return !isNaN(n) && String(n) === s; };
+let _compareTreatments = (a, b) => {
+  let aNum = _isNumeric(a);
+  let bNum = _isNumeric(b);
+  if (aNum && bNum) return parseInt(a, 10) - parseInt(b, 10);
+  if (aNum && !bNum) return -1; // IntId < StringId
+  if (!aNum && bNum) return 1;  // StringId > IntId
+  // Both strings — lexicographic
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
+};
 let sortComparisonIds = (rownames) => {
-  let fixednames = _.map(rownames, sid => {
-    return ComparisonModel.fixComparisonId(sid);
+  // Normalize each comparison ID: split on ':', sort the two treatments, rejoin
+  // PureScript stringToComparison uses min/max to put smaller treatment first
+  let fixednames = rownames.map(sid => {
+    let parts = sid.split(':');
+    if (parts.length === 2) {
+      let cmp = _compareTreatments(parts[0], parts[1]);
+      if (cmp > 0) {
+        return parts[1] + ':' + parts[0];
+      }
+      return parts[0] + ':' + parts[1];
+    }
+    return sid;
   });
-  let sortedIds = ComparisonModel.sortStringComparisonIds(fixednames); 
-  return sortedIds;
+  // Sort by (t1, t2) using PureScript comparisonsOrdering
+  fixednames.sort((a, b) => {
+    let pa = a.split(':');
+    let pb = b.split(':');
+    let c1 = _compareTreatments(pa[0], pb[0]);
+    if (c1 !== 0) return c1;
+    return _compareTreatments(pa[1], pb[1]);
+  });
+  return fixednames;
 }
 
 let majrule = (values) => {
@@ -156,6 +201,32 @@ let maxrule = (values) => {
   },0);
 }
 
+// resolveGetters: takes an object whose properties may be functions (lazy getters)
+// and returns a plain object with all function properties invoked to produce values.
+// Non-function properties are copied as-is.
+// This bridges the gap between view.js modules (which return lazy getter objects)
+// and hyperscript-helpers views (which expect plain data objects).
+var resolveGetters = (obj) => {
+  var result = {};
+  for (var key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      if (typeof obj[key] === 'function') {
+        try {
+          result[key] = obj[key]();
+        } catch (e) {
+          // Getter threw — leave as undefined (some getters depend on state
+          // that may not be initialized yet, e.g. imprecision.interventionTypes
+          // calls viewers.availableParameters which may not exist).
+          result[key] = undefined;
+        }
+      } else {
+        result[key] = obj[key];
+      }
+    }
+  }
+  return result;
+};
+
 module.exports = {
   meanrule,
   majrule,
@@ -169,6 +240,7 @@ module.exports = {
   clone: clone,
   sortComparisonIds: sortComparisonIds,
   sortStudies: sortStudies,
-  hatmatrixIdOfComparison: hatmatrixIdOfComparison
+  hatmatrixIdOfComparison: hatmatrixIdOfComparison,
+  resolveGetters: resolveGetters
 }
 

@@ -76,7 +76,8 @@ var Imprecision = {
       let children = _.map(Imprecision.renderChildren, c => { c.render(model);});
       return Template(model,Imprecision.renderChildren);
     }else{
-      console.log('Imprecision not ready to render');
+      //console.log('Imprecision not ready to render');
+      return h('div');
     }
   },
   afterRender: () => {

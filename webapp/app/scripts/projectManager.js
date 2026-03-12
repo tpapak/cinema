@@ -16,12 +16,13 @@
 // State: { collections: [...Collection], activeCollectionId, activeProjectId }
 
 var h = require('virtual-dom/h');
-var VNode = require('vtree/vnode');
-var VText = require('vtree/vtext');
-var convertHTML = require('html-to-vdom')({
-  VNode: VNode,
-  VText: VText
-});
+// var VNode = require('vtree/vnode');     // REMOVED: html-to-vdom no longer used
+// var VText = require('vtree/vtext');     // REMOVED: html-to-vdom no longer used
+// var convertHTML = require('html-to-vdom')({  // REMOVED: replaced by hyperscript-helpers
+//   VNode: VNode,
+//   VText: VText
+// });
+var projectManagerView = require('./views/projectManagerView.js');
 var Messages = require('./messages.js').Messages;
 var FR = require('./lib/readFile.js').FR;
 var V3Bridge = require('./lib/v3bridge.js');
@@ -175,9 +176,21 @@ var PM = {
               updatedAt: now,
               projects: cinema.projects || [],
             };
-            // Ensure each project has an id
+            // Ensure each project has an id.
+            // Strip bulky contribution data from large projects (same as uploadProject).
             _.each(collection.projects, (p) => {
               if (!p.id) p.id = generateId();
+              if (p.analysis && p.analysis.contributionMatrix) {
+                var _sc = p.analysis.contributionMatrix.studyContributions;
+                if (_sc && Object.keys(_sc).length > 500) {
+                  console.log('[uploadCollection] Stripping bulky contribution data (' +
+                    Object.keys(_sc).length + ' comparisons) from project: ' + (p.title || p.id));
+                  p.analysis.contributionMatrix.studyContributions = {};
+                  if (p.analysis.contributionMatrix.hatMatrix) {
+                    p.analysis.contributionMatrix.hatMatrix.H = [];
+                  }
+                }
+              }
             });
             var mgr = PM.update.getManager();
             mgr.collection = collection;
@@ -225,9 +238,24 @@ var PM = {
               projects: [],
             };
           }
-          // Add all projects from the .cnm file
+          // Add all projects from the .cnm file.
+          // Strip bulky pre-computed contribution data from large projects
+          // to avoid freezing the browser and exceeding localStorage limits.
+          // The contribution matrix and hat matrix H can be re-fetched from
+          // the R backend on demand.  Threshold: > 500 comparisons.
           _.each(parsed.cinema.projects, (p) => {
             if (!p.id) p.id = generateId();
+            if (p.analysis && p.analysis.contributionMatrix) {
+              var _sc = p.analysis.contributionMatrix.studyContributions;
+              if (_sc && Object.keys(_sc).length > 500) {
+                console.log('[uploadProject] Stripping bulky contribution data (' +
+                  Object.keys(_sc).length + ' comparisons) from project: ' + (p.title || p.id));
+                p.analysis.contributionMatrix.studyContributions = {};
+                if (p.analysis.contributionMatrix.hatMatrix) {
+                  p.analysis.contributionMatrix.hatMatrix.H = [];
+                }
+              }
+            }
             mgr.collection.projects.push(p);
           });
           mgr.collection.updatedAt = timestamp();
@@ -569,7 +597,7 @@ var PM = {
   },
   render: (model) => {
     if (PM.view.isReady()) {
-      // Pre-compute view data for Handlebars (functions aren't auto-called reliably)
+      // Pre-compute view data (same logic as before, now consumed by projectManagerView)
       var col = PM.view.collection();
       var activeId = PM.view.activeProjectId();
       // Enrich each project with computed display flags
@@ -608,8 +636,8 @@ var PM = {
         projectsView: projectsView,
         hasUnsavedChanges: hasUnsavedChanges,
       };
-      var tmpl = GRADE.templates.projectManager({ model: model.state, view: viewData });
-      return h('div#contentProjectManager.row', convertHTML(tmpl));
+      // Use hyperscript-helpers view function (replaces Handlebars template)
+      return h('div#contentProjectManager.row', [projectManagerView(model, viewData)]);
     }
   },
   children: [],

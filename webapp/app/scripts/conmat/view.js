@@ -5,6 +5,9 @@ var View = (model) => {
   let cm = deepSeek(model,'getState().project.CM');
   let cmc=() => deepSeek(cm,'currentCM');
   let params = deepSeek(cmc(),'params');
+  // Memoize expensive computations within a single View(model) call
+  let _cachedComparisonIds = null;
+  let _cachedSelectedComparisons = null;
   let viewers = {
     robReady: () => {
       let ready = false;
@@ -155,6 +158,10 @@ var View = (model) => {
       return cntrs;
     },
     comparisonIds: () => {
+      // Return memoized result if already computed in this View(model) call
+      if (_cachedComparisonIds !== null) {
+        return _cachedComparisonIds;
+      }
       let directs = deepSeek(model.getState(),'project.studies.directComparisons');
       let sorted = [];
       if(typeof directs !== 'undefined') {
@@ -166,10 +173,17 @@ var View = (model) => {
           })
         )
       }
+      _cachedComparisonIds = sorted;
       return sorted;
     },
     selectedComparisons: () =>{
+      // Return memoized result if already computed in this View(model) call
+      if (_cachedSelectedComparisons !== null) {
+        return _cachedSelectedComparisons;
+      }
       let intvs = model.getState().project.CM.currentCM.params.intvs;
+      // let intvSet = new Set(intvs); // O(1) lookups instead of _.contains O(n)
+      let intvSet = new Set(intvs);
       let rule = model.getState().project.CM.currentCM.params.rule;
       let allComps = viewers.comparisonIds();
       let res = [];
@@ -177,19 +191,22 @@ var View = (model) => {
         case 'every':
           res = _.filter(allComps, r =>{
             let [t1,t2] = r.split(':');
-            return (_.contains(intvs,t1)||_.contains(intvs,t2));
+            // return (_.contains(intvs,t1)||_.contains(intvs,t2));
+            return (intvSet.has(t1)||intvSet.has(t2));
           });
           break;
         case 'between':
           res = _.filter(allComps, r =>{
             let [t1,t2] = r.split(':');
-            return (_.contains(intvs,t1)&&_.contains(intvs,t2));
+            // return (_.contains(intvs,t1)&&_.contains(intvs,t2));
+            return (intvSet.has(t1)&&intvSet.has(t2));
           });
           break;
       }
       let result = _.map(res, r => {
         return r.replace(':', ' vs ');
       });
+      _cachedSelectedComparisons = result;
       return result;
     },
     numSelectedComparisons: () => {

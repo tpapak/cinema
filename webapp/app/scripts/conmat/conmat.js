@@ -1,16 +1,18 @@
 
 var deepSeek = require('safe-access');
 var h = require('virtual-dom/h');
-var VNode = require('vtree/vnode');
-var VText = require('vtree/vtext');
-var convertHTML = require('html-to-vdom')({
-     VNode: VNode,
-     VText: VText
-});
+// var VNode = require('vtree/vnode');     // REMOVED: html-to-vdom no longer used
+// var VText = require('vtree/vtext');     // REMOVED: html-to-vdom no longer used
+// var convertHTML = require('html-to-vdom')({  // REMOVED: replaced by hyperscript-helpers
+//      VNode: VNode,
+//      VText: VText
+// });
+var conmatrixView = require('../views/conmatrixView.js');
 var Messages = require('../messages.js').Messages;
 var focusTo = require('../lib/mixins.js').focusTo;
 var bindTableResize = require('../lib/mixins.js').bindTableResize;
 var clone = require('../lib/mixins.js').clone;
+var resolveGetters = require('../lib/mixins.js').resolveGetters;
 var View = require('./view.js')();
 var Update = require('./update.js')();
 
@@ -127,7 +129,12 @@ var CM = {
       // console.log("updatingState in conmat");
       if ( _.isUndefined(deepSeek(model,'getState().project.CM'))){
         CM.model = model;
-        Update(CM.model).setState({
+        // Defer expensive computeComparisonIds() — compute lazily on first render
+        // allComparisonIds: Update(model).computeComparisonIds(),
+        // Set state directly without triggering saveState()/render cascade
+        // Update(CM.model).setState({...}) would call saveState → render → updateChildren
+        // which is redundant since updateChildren is called on line 164 below
+        model.getState().project.CM = {
           contributionMatrices: [],
           currentCM: {
             hatmatrix:[],
@@ -139,7 +146,8 @@ var CM = {
               rule: 'every',
               tau: 0
             },
-            allComparisonIds: Update(model).computeComparisonIds(),
+            allComparisonIds: [],
+            _comparisonIdsDeferred: true,
             status: 'empty', //empty, loading, canceling, ready
             progress: 0,
             currentRow: 'Contribution Matrix',
@@ -148,7 +156,7 @@ var CM = {
             indirectRowNames: [],
             selectedComparisons: [],
           },
-        });
+        };
       }else{
         if( (deepSeek(CM,'model.getState().project.CM.currentCM.status')==='loading')){
           Update(model).createMatrix();
@@ -161,10 +169,12 @@ var CM = {
   },
   render: (model) => {
     if(View(model).isReady()){
-      var tmpl = GRADE.templates.conmatrix(View(model));
-      return h('div#contMatContainer.col-xs-12',convertHTML(tmpl));
+      // var tmpl = GRADE.templates.conmatrix(View(model));
+      // return h('div#contMatContainer.col-xs-12',convertHTML(tmpl));
+      return h('div#contMatContainer.col-xs-12', conmatrixView(resolveGetters(View(model))));
     }else{
-      console.log('conMat not ready');
+      //console.log('conMat not ready');
+      return h('div');
     }
   },
   afterRender: () => {

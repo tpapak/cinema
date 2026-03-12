@@ -1,4 +1,5 @@
 var deepSeek = require('safe-access');
+var h = require('virtual-dom/h');
 var Update = require('./update.js')();
 var View = require('./view.js')();
 var Template = require('./template.js')();
@@ -26,7 +27,8 @@ var NAC = {
       let children = _.map(NAC.renderChildren, c => { c.render(model);});
       return Template(model,NAC.renderChildren);
     }else{
-      console.log('NAC not ready to render');
+      //console.log('NAC not ready to render');
+      return h('div');
     }
   },
   afterRender: () => {
