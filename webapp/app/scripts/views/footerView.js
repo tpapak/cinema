@@ -92,7 +92,13 @@ var footerView = (model) => {
             ' ' + version,
           ]),
         ]),
-        div('.col-sm-3'),
+        div('.col-sm-3', [
+          a({ target: '_blank', href: 'https://github.com/tpapak/cinema/issues',
+              style: { color: '#999', fontSize: '12px' } }, [
+            'Report issues ',
+            span('.fa.fa-github', { attributes: { 'aria-hidden': 'true' } }),
+          ]),
+        ]),
       ]),
     ]),
   ]);

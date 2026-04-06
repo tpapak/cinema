@@ -94,16 +94,25 @@ var Model = {
         console.log('Quota exceeded!',e);
     }
   },
+  _renderPending: false,
   saveState: () => {
-    let wt = document.documentElement.scrollTop || document.body.scrollTop;
-    Model.state.wt = wt;
-    View.render(Model).then(
-      out =>{
-        window.scrollTo(0,Model.state.wt);
-        }
-    ).catch(err =>{
-      $('#errormsg').text(err);
-    });
+    // Lazy: defer render to next microtask so all synchronous state
+    // mutations complete before a single render fires.
+    if (!Model._renderPending) {
+      Model._renderPending = true;
+      Promise.resolve().then(() => {
+        Model._renderPending = false;
+        let wt = document.documentElement.scrollTop || document.body.scrollTop;
+        Model.state.wt = wt;
+        View.render(Model).then(
+          out =>{
+            window.scrollTo(0,Model.state.wt);
+            }
+        ).catch(err =>{
+          $('#errormsg').text(err);
+        });
+      });
+    }
   },
   factorySettings: () => {
     let v = Model.getState().version;

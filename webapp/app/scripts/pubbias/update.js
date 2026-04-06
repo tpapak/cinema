@@ -196,8 +196,6 @@ var Update = (model) => {
         return Rules.isTheSameComparison(m.id)(tid);
       });
       tbc.judgement = parseInt(tv);
-      updaters.getState().status = 'selecting';
-      updaters.saveState();
       updaters.getState().status = 'ready';
       updaters.saveState();
     },

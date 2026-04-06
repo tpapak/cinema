@@ -130,60 +130,60 @@ var isCustomized = function (comp) {
             if (activeRule instanceof Data_Maybe.Nothing) {
                 return 0;
             };
-            throw new Error("Failed pattern match at Report.Update (line 430, column 17 - line 432, column 19): " + [ activeRule.constructor.name ]);
+            throw new Error("Failed pattern match at Report.Update (line 431, column 17 - line 433, column 19): " + [ activeRule.constructor.name ]);
         })();
         return value !== ruleValue;
     };
 };
 var hasStudyLimitations = function (st) {
-    return (Data_Lens_Getter.viewOn(st)(function ($195) {
-        return _State(project(_Project(netRob(_NetRobModel(studyLimitations(_StudyLimitations($195)))))));
+    return (Data_Lens_Getter.viewOn(st)(function ($196) {
+        return _State(project(_Project(netRob(_NetRobModel(studyLimitations(_StudyLimitations($196)))))));
     })).status === "ready";
 };
 var hasPubbias = function (st) {
-    return (Data_Lens_Getter.viewOn(st)(function ($196) {
-        return _State(project(_Project(pubbias(_Pubbias($196)))));
+    return (Data_Lens_Getter.viewOn(st)(function ($197) {
+        return _State(project(_Project(pubbias(_Pubbias($197)))));
     })).status === "ready";
 };
 var hasJudgements = function (st) {
-    return (Data_Lens_Getter.viewOn(st)(function ($197) {
-        return _State(project(_Project(report(_Report($197)))));
+    return (Data_Lens_Getter.viewOn(st)(function ($198) {
+        return _State(project(_Project(report(_Report($198)))));
     })).status === "ready";
 };
 var hasIndirectness = function (st) {
-    return (Data_Lens_Getter.viewOn(st)(function ($198) {
-        return _State(project(_Project(indirectness(_Indirectness($198)))));
+    return (Data_Lens_Getter.viewOn(st)(function ($199) {
+        return _State(project(_Project(indirectness(_Indirectness($199)))));
     })).status === "ready";
 };
 var hasIncoherence = function (st) {
-    return (Data_Lens_Getter.viewOn(st)(function ($199) {
-        return _State(project(_Project(incoherence(_Incoherence($199)))));
+    return (Data_Lens_Getter.viewOn(st)(function ($200) {
+        return _State(project(_Project(incoherence(_Incoherence($200)))));
     })).status === "ready";
 };
 var hasImprecision = function (st) {
-    return (Data_Lens_Getter.viewOn(st)(function ($200) {
-        return _State(project(_Project(imprecision(_Imprecision($200)))));
+    return (Data_Lens_Getter.viewOn(st)(function ($201) {
+        return _State(project(_Project(imprecision(_Imprecision($201)))));
     })).status === "ready";
 };
 var hasHeterogeneity = function (st) {
-    return (Data_Lens_Getter.viewOn(st)(function ($201) {
-        return _State(project(_Project(heterogeneity(_Heterogeneity(heters(_Heters($201)))))));
+    return (Data_Lens_Getter.viewOn(st)(function ($202) {
+        return _State(project(_Project(heterogeneity(_Heterogeneity(heters(_Heters($202)))))));
     })).status === "ready";
 };
 var isReady = function (s) {
     return hasStudyLimitations(s) || (hasImprecision(s) || (hasIncoherence(s) || (hasIndirectness(s) || (hasPubbias(s) || hasHeterogeneity(s)))));
 };
 var hasChanged = function (st) {
-    return (Data_Lens_Getter.viewOn(st)(function ($202) {
-        return _State(project(_Project(report(_Report($202)))));
+    return (Data_Lens_Getter.viewOn(st)(function ($203) {
+        return _State(project(_Project(report(_Report($203)))));
     })).hasChanged;
 };
 var getStudyLimitationsRule = function (st) {
-    var rulesTexts = Data_Lens_Getter.viewOn(st)(function ($203) {
-        return _State(text(_TextContent(netRobText(_NetRobText(netRobRulesText($203))))));
+    var rulesTexts = Data_Lens_Getter.viewOn(st)(function ($204) {
+        return _State(text(_TextContent(netRobText(_NetRobText(netRobRulesText($204))))));
     });
-    var rule = (Data_Lens_Getter.viewOn(st)(function ($204) {
-        return _State(project(_Project(netRob(_NetRobModel(studyLimitations(_StudyLimitations($204)))))));
+    var rule = (Data_Lens_Getter.viewOn(st)(function ($205) {
+        return _State(project(_Project(netRob(_NetRobModel(studyLimitations(_StudyLimitations($205)))))));
     })).rule;
     var label$prime = Text_Model.getNetRobRuleText(rule)(rulesTexts);
     var v = Data_Lens_Getter.viewOn(StudyLimitationsModel.skeletonRobRule)(_RobRule);
@@ -196,19 +196,19 @@ var getStudyLimitationsRule = function (st) {
     };
 };
 var getStudyLimitations = function (st) {
-    return Data_Lens_Getter.viewOn(st)(function ($205) {
-        return _State(project(_Project(netRob(_NetRobModel(studyLimitations(_StudyLimitations(boxes($205))))))));
+    return Data_Lens_Getter.viewOn(st)(function ($206) {
+        return _State(project(_Project(netRob(_NetRobModel(studyLimitations(_StudyLimitations(boxes($206))))))));
     });
 };
 var getStudyLimitationLevels = function (st) {
-    return (Data_Lens_Getter.viewOn(st)(function ($206) {
-        return _State(project(_Project($206)));
+    return (Data_Lens_Getter.viewOn(st)(function ($207) {
+        return _State(project(_Project($207)));
     })).studyLimitationLevels;
 };
 var getStudyLimitation = function (st) {
     return function (c) {
-        var $108 = hasStudyLimitations(st);
-        if ($108) {
+        var $109 = hasStudyLimitations(st);
+        if ($109) {
             var rob = Data_Array.find(function (sl) {
                 return ComparisonModel.isIdOfComparison((Data_Lens_Getter.viewOn(sl)(_NetRob)).id)(c);
             })(getStudyLimitations(st));
@@ -221,7 +221,7 @@ var getStudyLimitation = function (st) {
                 if (rob instanceof Data_Maybe.Nothing) {
                     return Data_Maybe.Nothing.value;
                 };
-                throw new Error("Failed pattern match at Report.Update (line 444, column 15 - line 451, column 27): " + [ rob.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 445, column 15 - line 452, column 27): " + [ rob.constructor.name ]);
             })();
             if (level instanceof Data_Maybe.Just) {
                 return {
@@ -236,23 +236,23 @@ var getStudyLimitation = function (st) {
             if (level instanceof Data_Maybe.Nothing) {
                 return Report_Model.skeletonStudyLimitation;
             };
-            throw new Error("Failed pattern match at Report.Update (line 454, column 7 - line 471, column 43): " + [ level.constructor.name ]);
+            throw new Error("Failed pattern match at Report.Update (line 455, column 7 - line 472, column 43): " + [ level.constructor.name ]);
         };
         return Report_Model.skeletonStudyLimitation;
     };
 };
 var getPubbias = function (st) {
     return function (c) {
-        var boxs = Data_Lens_Getter.viewOn(st)(function ($207) {
-            return _State(project(_Project(pubbias(_Pubbias(boxes($207))))));
+        var boxs = Data_Lens_Getter.viewOn(st)(function ($208) {
+            return _State(project(_Project(pubbias(_Pubbias(boxes($208))))));
         });
-        var $113 = hasPubbias(st);
-        if ($113) {
+        var $114 = hasPubbias(st);
+        if ($114) {
             var mbox = Data_Array.find(function (ib) {
                 return ComparisonModel.isIdOfComparison((Data_Lens_Getter.viewOn(ib)(_PubbiasBox)).id)(c);
             })(boxs);
-            var levelsText = (Data_Lens_Getter.viewOn(st)(function ($208) {
-                return _State(text(_TextContent(pubbiasText(_PubbiasText($208)))));
+            var levelsText = (Data_Lens_Getter.viewOn(st)(function ($209) {
+                return _State(text(_TextContent(pubbiasText(_PubbiasText($209)))));
             })).levels;
             var getcolor = (function () {
                 if (mbox instanceof Data_Maybe.Nothing) {
@@ -266,9 +266,9 @@ var getPubbias = function (st) {
                     if (mlevel instanceof Data_Maybe.Just) {
                         return (Data_Lens_Getter.viewOn(mlevel.value0)(_PubbiasLevel)).color;
                     };
-                    throw new Error("Failed pattern match at Report.Update (line 738, column 15 - line 743, column 28): " + [ mlevel.constructor.name ]);
+                    throw new Error("Failed pattern match at Report.Update (line 739, column 15 - line 744, column 28): " + [ mlevel.constructor.name ]);
                 };
-                throw new Error("Failed pattern match at Report.Update (line 729, column 9 - line 743, column 28): " + [ mbox.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 730, column 9 - line 744, column 28): " + [ mbox.constructor.name ]);
             })();
             var getLabel = (function () {
                 if (mbox instanceof Data_Maybe.Nothing) {
@@ -282,9 +282,9 @@ var getPubbias = function (st) {
                     if (mlabel instanceof Data_Maybe.Just) {
                         return mlabel.value0;
                     };
-                    throw new Error("Failed pattern match at Report.Update (line 754, column 15 - line 756, column 36): " + [ mlabel.constructor.name ]);
+                    throw new Error("Failed pattern match at Report.Update (line 755, column 15 - line 757, column 36): " + [ mlabel.constructor.name ]);
                 };
-                throw new Error("Failed pattern match at Report.Update (line 745, column 9 - line 756, column 36): " + [ mbox.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 746, column 9 - line 757, column 36): " + [ mbox.constructor.name ]);
             })();
             var getCustomized = (function () {
                 if (mbox instanceof Data_Maybe.Nothing) {
@@ -293,43 +293,43 @@ var getPubbias = function (st) {
                 if (mbox instanceof Data_Maybe.Just) {
                     return false;
                 };
-                throw new Error("Failed pattern match at Report.Update (line 758, column 9 - line 760, column 28): " + [ mbox.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 759, column 9 - line 761, column 28): " + [ mbox.constructor.name ]);
             })();
             if (mbox instanceof Data_Maybe.Nothing) {
                 return PubbiasModel.skeletonPubbiasBox;
             };
             if (mbox instanceof Data_Maybe.Just) {
-                return Data_Lens_Setter.set(function ($209) {
-                    return _PubbiasBox1(pubbiasboxcustomized($209));
-                })(getCustomized)(Data_Lens_Setter.set(function ($210) {
-                    return _PubbiasBox1(pubbiasboxcolor($210));
-                })(getcolor)(Data_Lens_Setter.set(function ($211) {
-                    return _PubbiasBox1(pubbiasboxlabel($211));
+                return Data_Lens_Setter.set(function ($210) {
+                    return _PubbiasBox1(pubbiasboxcustomized($210));
+                })(getCustomized)(Data_Lens_Setter.set(function ($211) {
+                    return _PubbiasBox1(pubbiasboxcolor($211));
+                })(getcolor)(Data_Lens_Setter.set(function ($212) {
+                    return _PubbiasBox1(pubbiasboxlabel($212));
                 })(getLabel)(mbox.value0)));
             };
-            throw new Error("Failed pattern match at Report.Update (line 762, column 7 - line 771, column 14): " + [ mbox.constructor.name ]);
+            throw new Error("Failed pattern match at Report.Update (line 763, column 7 - line 772, column 14): " + [ mbox.constructor.name ]);
         };
         return PubbiasModel.skeletonPubbiasBox;
     };
 };
 var getIndirects = function (st) {
-    var indirects = Data_Lens_Getter.viewOn(st)(function ($212) {
-        return _State(project(_Project(studies(_Studies(indirectComparisons($212))))));
+    var indirects = Data_Lens_Getter.viewOn(st)(function ($213) {
+        return _State(project(_Project(studies(_Studies(indirectComparisons($213))))));
     });
     return Data_Array.sortBy(ComparisonModel.comparisonsOrdering)(map(ComparisonModel.stringToComparison(","))(indirects));
 };
 var getIndirectness = function (st) {
     return function (c) {
-        var boxs = Data_Lens_Getter.viewOn(st)(function ($213) {
-            return _State(project(_Project(indirectness(_Indirectness(boxes($213))))));
+        var boxs = Data_Lens_Getter.viewOn(st)(function ($214) {
+            return _State(project(_Project(indirectness(_Indirectness(boxes($214))))));
         });
-        var $126 = hasIndirectness(st);
-        if ($126) {
+        var $127 = hasIndirectness(st);
+        if ($127) {
             var mbox = Data_Array.find(function (ib) {
                 return ComparisonModel.isIdOfComparison((Data_Lens_Getter.viewOn(ib)(_IndirectnessBox)).id)(c);
             })(boxs);
-            var levelsText = (Data_Lens_Getter.viewOn(st)(function ($214) {
-                return _State(text(_TextContent(indirectnessText(_IndirectnessText($214)))));
+            var levelsText = (Data_Lens_Getter.viewOn(st)(function ($215) {
+                return _State(text(_TextContent(indirectnessText(_IndirectnessText($215)))));
             })).levels;
             var getcolor = (function () {
                 if (mbox instanceof Data_Maybe.Nothing) {
@@ -343,9 +343,9 @@ var getIndirectness = function (st) {
                     if (mlevel instanceof Data_Maybe.Just) {
                         return (Data_Lens_Getter.viewOn(mlevel.value0)(_IndirectnessLevel)).color;
                     };
-                    throw new Error("Failed pattern match at Report.Update (line 355, column 15 - line 360, column 28): " + [ mlevel.constructor.name ]);
+                    throw new Error("Failed pattern match at Report.Update (line 356, column 15 - line 361, column 28): " + [ mlevel.constructor.name ]);
                 };
-                throw new Error("Failed pattern match at Report.Update (line 346, column 9 - line 360, column 28): " + [ mbox.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 347, column 9 - line 361, column 28): " + [ mbox.constructor.name ]);
             })();
             var getLabel = (function () {
                 if (mbox instanceof Data_Maybe.Nothing) {
@@ -359,9 +359,9 @@ var getIndirectness = function (st) {
                     if (mlabel instanceof Data_Maybe.Just) {
                         return mlabel.value0;
                     };
-                    throw new Error("Failed pattern match at Report.Update (line 371, column 15 - line 373, column 36): " + [ mlabel.constructor.name ]);
+                    throw new Error("Failed pattern match at Report.Update (line 372, column 15 - line 374, column 36): " + [ mlabel.constructor.name ]);
                 };
-                throw new Error("Failed pattern match at Report.Update (line 362, column 9 - line 373, column 36): " + [ mbox.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 363, column 9 - line 374, column 36): " + [ mbox.constructor.name ]);
             })();
             var getCustomized = (function () {
                 if (mbox instanceof Data_Maybe.Nothing) {
@@ -370,32 +370,32 @@ var getIndirectness = function (st) {
                 if (mbox instanceof Data_Maybe.Just) {
                     return (Data_Lens_Getter.viewOn(mbox.value0)(_IndirectnessBox)).judgement !== (Data_Lens_Getter.viewOn(mbox.value0)(_IndirectnessBox)).ruleLevel;
                 };
-                throw new Error("Failed pattern match at Report.Update (line 375, column 9 - line 379, column 52): " + [ mbox.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 376, column 9 - line 380, column 52): " + [ mbox.constructor.name ]);
             })();
             if (mbox instanceof Data_Maybe.Nothing) {
                 return IndirectnessModel.skeletonIndirectnessBox;
             };
             if (mbox instanceof Data_Maybe.Just) {
-                return Data_Lens_Setter.set(function ($215) {
-                    return _IndirectnessBox1(imprecisionboxcustomized($215));
-                })(getCustomized)(Data_Lens_Setter.set(function ($216) {
-                    return _IndirectnessBox1(imprecisionboxcolor($216));
-                })(getcolor)(Data_Lens_Setter.set(function ($217) {
-                    return _IndirectnessBox1(imprecisionboxlabel($217));
+                return Data_Lens_Setter.set(function ($216) {
+                    return _IndirectnessBox1(imprecisionboxcustomized($216));
+                })(getCustomized)(Data_Lens_Setter.set(function ($217) {
+                    return _IndirectnessBox1(imprecisionboxcolor($217));
+                })(getcolor)(Data_Lens_Setter.set(function ($218) {
+                    return _IndirectnessBox1(imprecisionboxlabel($218));
                 })(getLabel)(mbox.value0)));
             };
-            throw new Error("Failed pattern match at Report.Update (line 381, column 7 - line 390, column 14): " + [ mbox.constructor.name ]);
+            throw new Error("Failed pattern match at Report.Update (line 382, column 7 - line 391, column 14): " + [ mbox.constructor.name ]);
         };
         return IndirectnessModel.skeletonIndirectnessBox;
     };
 };
 var getIncoherence = function (st) {
     return function (c) {
-        var incoherences = Data_Lens_Getter.viewOn(st)(function ($218) {
-            return _State(project(_Project(incoherence(_Incoherence(boxes($218))))));
+        var incoherences = Data_Lens_Getter.viewOn(st)(function ($219) {
+            return _State(project(_Project(incoherence(_Incoherence(boxes($219))))));
         });
-        var $139 = hasIncoherence(st);
-        if ($139) {
+        var $140 = hasIncoherence(st);
+        if ($140) {
             var rob = Data_Array.find(function (ib) {
                 return ComparisonModel.isIdOfComparison((Data_Lens_Getter.viewOn(ib)(_IncoherenceBox)).id)(c);
             })(incoherences);
@@ -405,23 +405,23 @@ var getIncoherence = function (st) {
             if (rob instanceof Data_Maybe.Nothing) {
                 return InconsistencyModel.skeletonIncoherenceBox;
             };
-            throw new Error("Failed pattern match at Report.Update (line 633, column 7 - line 635, column 42): " + [ rob.constructor.name ]);
+            throw new Error("Failed pattern match at Report.Update (line 634, column 7 - line 636, column 42): " + [ rob.constructor.name ]);
         };
         return InconsistencyModel.skeletonIncoherenceBox;
     };
 };
 var getImprecision = function (st) {
     return function (c) {
-        var boxs = Data_Lens_Getter.viewOn(st)(function ($219) {
-            return _State(project(_Project(imprecision(_Imprecision(boxes($219))))));
+        var boxs = Data_Lens_Getter.viewOn(st)(function ($220) {
+            return _State(project(_Project(imprecision(_Imprecision(boxes($220))))));
         });
-        var $142 = hasImprecision(st);
-        if ($142) {
+        var $143 = hasImprecision(st);
+        if ($143) {
             var mbox = Data_Array.find(function (ib) {
                 return ComparisonModel.isIdOfComparison((Data_Lens_Getter.viewOn(ib)(_ImprecisionBox)).id)(c);
             })(boxs);
-            var levelsText = (Data_Lens_Getter.viewOn(st)(function ($220) {
-                return _State(text(_TextContent(imprecisionText(_ImprecisionText($220)))));
+            var levelsText = (Data_Lens_Getter.viewOn(st)(function ($221) {
+                return _State(text(_TextContent(imprecisionText(_ImprecisionText($221)))));
             })).levels;
             var getcolor = (function () {
                 if (mbox instanceof Data_Maybe.Nothing) {
@@ -435,9 +435,9 @@ var getImprecision = function (st) {
                     if (mlevel instanceof Data_Maybe.Just) {
                         return (Data_Lens_Getter.viewOn(mlevel.value0)(_ImprecisionLevel)).color;
                     };
-                    throw new Error("Failed pattern match at Report.Update (line 504, column 15 - line 509, column 28): " + [ mlevel.constructor.name ]);
+                    throw new Error("Failed pattern match at Report.Update (line 505, column 15 - line 510, column 28): " + [ mlevel.constructor.name ]);
                 };
-                throw new Error("Failed pattern match at Report.Update (line 495, column 9 - line 509, column 28): " + [ mbox.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 496, column 9 - line 510, column 28): " + [ mbox.constructor.name ]);
             })();
             var getLabel = (function () {
                 if (mbox instanceof Data_Maybe.Nothing) {
@@ -451,9 +451,9 @@ var getImprecision = function (st) {
                     if (mlabel instanceof Data_Maybe.Just) {
                         return mlabel.value0;
                     };
-                    throw new Error("Failed pattern match at Report.Update (line 520, column 15 - line 522, column 36): " + [ mlabel.constructor.name ]);
+                    throw new Error("Failed pattern match at Report.Update (line 521, column 15 - line 523, column 36): " + [ mlabel.constructor.name ]);
                 };
-                throw new Error("Failed pattern match at Report.Update (line 511, column 9 - line 522, column 36): " + [ mbox.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 512, column 9 - line 523, column 36): " + [ mbox.constructor.name ]);
             })();
             var getCustomized = (function () {
                 if (mbox instanceof Data_Maybe.Nothing) {
@@ -462,37 +462,37 @@ var getImprecision = function (st) {
                 if (mbox instanceof Data_Maybe.Just) {
                     return (Data_Lens_Getter.viewOn(mbox.value0)(_ImprecisionBox)).judgement !== (Data_Lens_Getter.viewOn(mbox.value0)(_ImprecisionBox)).ruleLevel;
                 };
-                throw new Error("Failed pattern match at Report.Update (line 524, column 9 - line 528, column 51): " + [ mbox.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 525, column 9 - line 529, column 51): " + [ mbox.constructor.name ]);
             })();
             if (mbox instanceof Data_Maybe.Nothing) {
                 return ImprecisionModel.skeletonImprecisionBox;
             };
             if (mbox instanceof Data_Maybe.Just) {
-                return Data_Lens_Setter.set(function ($221) {
-                    return _ImprecisionBox1(imprecisionboxcustomized($221));
-                })(getCustomized)(Data_Lens_Setter.set(function ($222) {
-                    return _ImprecisionBox1(imprecisionboxcolor($222));
-                })(getcolor)(Data_Lens_Setter.set(function ($223) {
-                    return _ImprecisionBox1(imprecisionboxlabel($223));
+                return Data_Lens_Setter.set(function ($222) {
+                    return _ImprecisionBox1(imprecisionboxcustomized($222));
+                })(getCustomized)(Data_Lens_Setter.set(function ($223) {
+                    return _ImprecisionBox1(imprecisionboxcolor($223));
+                })(getcolor)(Data_Lens_Setter.set(function ($224) {
+                    return _ImprecisionBox1(imprecisionboxlabel($224));
                 })(getLabel)(mbox.value0)));
             };
-            throw new Error("Failed pattern match at Report.Update (line 530, column 7 - line 539, column 14): " + [ mbox.constructor.name ]);
+            throw new Error("Failed pattern match at Report.Update (line 531, column 7 - line 540, column 14): " + [ mbox.constructor.name ]);
         };
         return ImprecisionModel.skeletonImprecisionBox;
     };
 };
 var getHeterogeneity = function (st) {
     return function (c) {
-        var heterboxes = Data_Lens_Getter.viewOn(st)(function ($224) {
-            return _State(project(_Project(heterogeneity(_Heterogeneity(heters(_Heters(boxes($224))))))));
+        var heterboxes = Data_Lens_Getter.viewOn(st)(function ($225) {
+            return _State(project(_Project(heterogeneity(_Heterogeneity(heters(_Heters(boxes($225))))))));
         });
-        var $155 = hasHeterogeneity(st);
-        if ($155) {
+        var $156 = hasHeterogeneity(st);
+        if ($156) {
             var mbox = Data_Array.find(function (ib) {
                 return ComparisonModel.isIdOfComparison((Data_Lens_Getter.viewOn(ib)(_HeterogeneityBox)).id)(c);
             })(heterboxes);
-            var levelsText = (Data_Lens_Getter.viewOn(st)(function ($225) {
-                return _State(text(_TextContent(heterogeneityText(_HeterogeneityText($225)))));
+            var levelsText = (Data_Lens_Getter.viewOn(st)(function ($226) {
+                return _State(text(_TextContent(heterogeneityText(_HeterogeneityText($226)))));
             })).levels;
             var getcolor = (function () {
                 if (mbox instanceof Data_Maybe.Nothing) {
@@ -506,9 +506,9 @@ var getHeterogeneity = function (st) {
                     if (mlevel instanceof Data_Maybe.Just) {
                         return (Data_Lens_Getter.viewOn(mlevel.value0)(_HeterogeneityLevel)).color;
                     };
-                    throw new Error("Failed pattern match at Report.Update (line 670, column 15 - line 675, column 28): " + [ mlevel.constructor.name ]);
+                    throw new Error("Failed pattern match at Report.Update (line 671, column 15 - line 676, column 28): " + [ mlevel.constructor.name ]);
                 };
-                throw new Error("Failed pattern match at Report.Update (line 661, column 9 - line 675, column 28): " + [ mbox.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 662, column 9 - line 676, column 28): " + [ mbox.constructor.name ]);
             })();
             var getLabel = (function () {
                 if (mbox instanceof Data_Maybe.Nothing) {
@@ -522,9 +522,9 @@ var getHeterogeneity = function (st) {
                     if (mlabel instanceof Data_Maybe.Just) {
                         return mlabel.value0;
                     };
-                    throw new Error("Failed pattern match at Report.Update (line 686, column 15 - line 688, column 36): " + [ mlabel.constructor.name ]);
+                    throw new Error("Failed pattern match at Report.Update (line 687, column 15 - line 689, column 36): " + [ mlabel.constructor.name ]);
                 };
-                throw new Error("Failed pattern match at Report.Update (line 677, column 9 - line 688, column 36): " + [ mbox.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 678, column 9 - line 689, column 36): " + [ mbox.constructor.name ]);
             })();
             var getCustomized = (function () {
                 if (mbox instanceof Data_Maybe.Nothing) {
@@ -533,28 +533,28 @@ var getHeterogeneity = function (st) {
                 if (mbox instanceof Data_Maybe.Just) {
                     return (Data_Lens_Getter.viewOn(mbox.value0)(_HeterogeneityBox)).judgement !== (Data_Lens_Getter.viewOn(mbox.value0)(_HeterogeneityBox)).ruleLevel;
                 };
-                throw new Error("Failed pattern match at Report.Update (line 690, column 9 - line 694, column 53): " + [ mbox.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 691, column 9 - line 695, column 53): " + [ mbox.constructor.name ]);
             })();
             if (mbox instanceof Data_Maybe.Nothing) {
                 return InconsistencyModel.skeletonHeterogeneityBox;
             };
             if (mbox instanceof Data_Maybe.Just) {
-                return Data_Lens_Setter.set(function ($226) {
-                    return _HeterogeneityBox1(heterboxcustomized($226));
-                })(getCustomized)(Data_Lens_Setter.set(function ($227) {
-                    return _HeterogeneityBox1(heterboxcolor($227));
-                })(getcolor)(Data_Lens_Setter.set(function ($228) {
-                    return _HeterogeneityBox1(heterboxlabel($228));
+                return Data_Lens_Setter.set(function ($227) {
+                    return _HeterogeneityBox1(heterboxcustomized($227));
+                })(getCustomized)(Data_Lens_Setter.set(function ($228) {
+                    return _HeterogeneityBox1(heterboxcolor($228));
+                })(getcolor)(Data_Lens_Setter.set(function ($229) {
+                    return _HeterogeneityBox1(heterboxlabel($229));
                 })(getLabel)(mbox.value0)));
             };
-            throw new Error("Failed pattern match at Report.Update (line 696, column 7 - line 705, column 14): " + [ mbox.constructor.name ]);
+            throw new Error("Failed pattern match at Report.Update (line 697, column 7 - line 706, column 14): " + [ mbox.constructor.name ]);
         };
         return InconsistencyModel.skeletonHeterogeneityBox;
     };
 };
 var getDirects = function (st) {
-    var directs = Data_Lens_Getter.viewOn(st)(function ($229) {
-        return _State(project(_Project(studies(_Studies(directComparisons($229))))));
+    var directs = Data_Lens_Getter.viewOn(st)(function ($230) {
+        return _State(project(_Project(studies(_Studies(directComparisons($230))))));
     });
     return Data_Array.sortBy(ComparisonModel.comparisonsOrdering)(directs);
 };
@@ -562,14 +562,14 @@ var getJudgementDebug = function (a) {
     var selects = Model.getSelected(a);
     var rowjudgement = function (st) {
         return function (c) {
-            var indirects = (Data_Lens_Getter.viewOn(st)(function ($230) {
-                return _State(project(_Project(report(_Report($230)))));
-            })).indirectRows;
-            var directs = (Data_Lens_Getter.viewOn(st)(function ($231) {
+            var indirects = (Data_Lens_Getter.viewOn(st)(function ($231) {
                 return _State(project(_Project(report(_Report($231)))));
+            })).indirectRows;
+            var directs = (Data_Lens_Getter.viewOn(st)(function ($232) {
+                return _State(project(_Project(report(_Report($232)))));
             })).directRows;
-            var $168 = hasJudgements(st);
-            if ($168) {
+            var $169 = hasJudgements(st);
+            if ($169) {
                 var aresame = function (r) {
                     return ComparisonModel.isIdOfComparisonComma((Data_Lens_Getter.viewOn(r)(_ReportRow)).id)(c);
                 };
@@ -610,7 +610,7 @@ var fixAllowedReasons = function (st) {
                     if (v7) {
                         return v6;
                     };
-                    throw new Error("Failed pattern match at Report.Update (line 135, column 5 - line 135, column 52): " + [ v6.constructor.name, v7.constructor.name ]);
+                    throw new Error("Failed pattern match at Report.Update (line 136, column 5 - line 136, column 52): " + [ v6.constructor.name, v7.constructor.name ]);
                 };
             };
             var incallowed = v5.judgement > 1;
@@ -656,8 +656,8 @@ var emptyReport = {
 var download = DownloadJudgements.downloadJudgements;
 var defaultJudgement = function (st) {
     return function (c) {
-        var levelsText = (Data_Lens_Getter.viewOn(st)(function ($232) {
-            return _State(text(_TextContent(reportText(_ReportText($232)))));
+        var levelsText = (Data_Lens_Getter.viewOn(st)(function ($233) {
+            return _State(text(_TextContent(reportText(_ReportText($233)))));
         })).levels;
         var getSelected = function (ls) {
             var foundLevel = Data_Array.find(function (lv) {
@@ -669,7 +669,7 @@ var defaultJudgement = function (st) {
             if (foundLevel instanceof Data_Maybe.Nothing) {
                 return Report_Model.skeletonReportLevel;
             };
-            throw new Error("Failed pattern match at Report.Update (line 244, column 9 - line 246, column 41): " + [ foundLevel.constructor.name ]);
+            throw new Error("Failed pattern match at Report.Update (line 245, column 9 - line 247, column 41): " + [ foundLevel.constructor.name ]);
         };
         var defaultReasons = [ {
             id: 1,
@@ -738,7 +738,7 @@ var defaultJudgement = function (st) {
                 if (lb instanceof Data_Maybe.Nothing) {
                     return "UNKNOWN";
                 };
-                throw new Error("Failed pattern match at Report.Update (line 194, column 23 - line 196, column 37): " + [ lb.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 195, column 23 - line 197, column 37): " + [ lb.constructor.name ]);
             })();
             var l = Data_Array.index(defaultLevels)(i);
             var ol = (function () {
@@ -748,7 +748,7 @@ var defaultJudgement = function (st) {
                 if (l instanceof Data_Maybe.Nothing) {
                     return Data_Lens_Getter.viewOn(Report_Model.skeletonReportLevel)(_ReportLevel);
                 };
-                throw new Error("Failed pattern match at Report.Update (line 190, column 20 - line 192, column 63): " + [ l.constructor.name ]);
+                throw new Error("Failed pattern match at Report.Update (line 191, column 20 - line 193, column 63): " + [ l.constructor.name ]);
             })();
             return {
                 id: ol.id,
@@ -766,14 +766,14 @@ var defaultJudgement = function (st) {
 };
 var getJudgement = function (st) {
     return function (c) {
-        var indirects = (Data_Lens_Getter.viewOn(st)(function ($233) {
-            return _State(project(_Project(report(_Report($233)))));
-        })).indirectRows;
-        var directs = (Data_Lens_Getter.viewOn(st)(function ($234) {
+        var indirects = (Data_Lens_Getter.viewOn(st)(function ($234) {
             return _State(project(_Project(report(_Report($234)))));
+        })).indirectRows;
+        var directs = (Data_Lens_Getter.viewOn(st)(function ($235) {
+            return _State(project(_Project(report(_Report($235)))));
         })).directRows;
-        var $185 = hasJudgements(st);
-        if ($185) {
+        var $186 = hasJudgements(st);
+        if ($186) {
             var judg = Data_Array.find(function (ib) {
                 return ComparisonModel.isIdOfComparisonComma((Data_Lens_Getter.viewOn(ib)(_ReportRow)).id)(c);
             })(append(directs)(indirects));
@@ -789,7 +789,7 @@ var getJudgement = function (st) {
             if (judg instanceof Data_Maybe.Nothing) {
                 return defaultJudgement(st)(c);
             };
-            throw new Error("Failed pattern match at Report.Update (line 604, column 7 - line 614, column 41): " + [ judg.constructor.name ]);
+            throw new Error("Failed pattern match at Report.Update (line 605, column 7 - line 615, column 41): " + [ judg.constructor.name ]);
         };
         return defaultJudgement(st)(c);
     };
@@ -839,20 +839,23 @@ var skeletonReport = function (st) {
 var updateState = function (mdl) {
     var v = Model.readState(mdl);
     if (v instanceof Data_Either.Left) {
-        return SaveModel.saveState("report")(emptyReport);
+        return function __do() {
+            Effect_Console.log("Report decoder error: " + v.value0)();
+            return SaveModel.saveState("report")(emptyReport)();
+        };
     };
     if (v instanceof Data_Either.Right) {
-        var $192 = isReady(v.value0);
-        if ($192) {
-            var $193 = hasChanged(v.value0);
-            if ($193) {
+        var $193 = isReady(v.value0);
+        if ($193) {
+            var $194 = hasChanged(v.value0);
+            if ($194) {
                 return logShow("report already ocupied");
             };
             return SaveModel.saveState("report")(skeletonReport(v.value0));
         };
         return SaveModel.saveState("report")(emptyReport);
     };
-    throw new Error("Failed pattern match at Report.Update (line 35, column 3 - line 47, column 39): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at Report.Update (line 35, column 3 - line 48, column 39): " + [ v.constructor.name ]);
 };
 export {
     updateState,

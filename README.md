@@ -40,4 +40,8 @@ docker run -d -p 80:80 tosku/cinema-web-dev
 docker run -d -p 8004:8004 tosku/cinema-rserver
 ```
 
+### Issues & Feedback
+
+Please report bugs and feature requests on GitHub: [tpapak/cinema/issues](https://github.com/tpapak/cinema/issues)
+
 <sup>CINeMA is licensed under the [AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html) license.</sup>

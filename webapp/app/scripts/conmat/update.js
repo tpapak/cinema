@@ -851,7 +851,8 @@ var Update = (model) => {
       return new Promise((resolve,reject) => {
         let cm = res;
         let scs = cm.studycontributions;
-        let colnames = _.keys(_.values(scs)[0]);
+        let firstRow = _.values(scs)[0];
+        let colnames = (firstRow && typeof firstRow === 'object') ? _.keys(firstRow) : [];
         let cw  = colnames.length;
         cm.sortedStudies = [];
         if(res.directStudies.length !== 0){

@@ -33,8 +33,9 @@ updateState :: Json -> Effect Unit
 updateState mdl = do
   let (s :: Either String State) = readState mdl
   case s of
-    Left err -> do saveState "report" emptyReport
-    {--logShow $ "reading state in Report error: " <> err--}
+    Left err -> do
+      log $ "Report decoder error: " <> err
+      saveState "report" emptyReport
     Right st -> do
       if isReady st then do
         if hasChanged st then do

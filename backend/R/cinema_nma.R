@@ -67,12 +67,16 @@ runNMA <- function(indata, type, model = "fixed", sm) {
   #    study = TRUE gives study.common / study.random data frames
 
   nc <- netcontrib(nma, method = "shortestpath", study = TRUE)
+  emptyStudyContrib <- data.frame(
+    comparison = character(), study = character(), contribution = numeric(),
+    stringsAsFactors = FALSE
+  )
   if (model == "fixed") {
     contribMatrix       <- nc$common
-    studyContributions  <- nc$study.common
+    studyContributions  <- if (is.null(nc$study.common)) emptyStudyContrib else nc$study.common
   } else {
     contribMatrix       <- nc$random
-    studyContributions  <- nc$study.random
+    studyContributions  <- if (is.null(nc$study.random)) emptyStudyContrib else nc$study.random
   }
 
   # 4. Design-by-treatment test ────────────────────────────────────
@@ -172,28 +176,41 @@ runNMA <- function(indata, type, model = "fixed", sm) {
 
   # 7. Pairwise heterogeneity ─────────────────────────────────────
 
-  if (type == "iv") {
-    comp <- paste(D$t1, D$t2, sep = ":")
-    pw <- metagen(D$effect, D$se, sm = sm,
-                  common = (model == "fixed"),
-                  random = (model == "random"),
-                  subgroup = comp)
-  } else {
-    comp <- paste(Dpairs$treat1, Dpairs$treat2, sep = ":")
-    pw <- metagen(Dpairs$TE, Dpairs$seTE, sm = sm,
-                  common = (model == "fixed"),
-                  random = (model == "random"),
-                  subgroup = comp)
-  }
+  pw <- tryCatch({
+    if (type == "iv") {
+      comp <- paste(D$t1, D$t2, sep = ":")
+      metagen(D$effect, D$se, sm = sm,
+              common = (model == "fixed"),
+              random = (model == "random"),
+              subgroup = comp)
+    } else {
+      comp <- paste(Dpairs$treat1, Dpairs$treat2, sep = ":")
+      metagen(Dpairs$TE, Dpairs$seTE, sm = sm,
+              common = (model == "fixed"),
+              random = (model == "random"),
+              subgroup = comp)
+    }
+  }, error = function(e) {
+    message("Pairwise heterogeneity estimation failed: ", conditionMessage(e))
+    NULL
+  })
 
-  Pairwise <- data.frame(
-    comparison = pw$subgroup.levels,
-    tau2       = c(pw$tau.w^2),
-    I2         = c(pw$I2.w),
-    I2lower    = c(pw$lower.I2.w),
-    I2upper    = c(pw$upper.I2.w),
-    stringsAsFactors = FALSE
-  )
+  if (is.null(pw)) {
+    Pairwise <- data.frame(
+      comparison = character(), tau2 = numeric(),
+      I2 = numeric(), I2lower = numeric(), I2upper = numeric(),
+      stringsAsFactors = FALSE
+    )
+  } else {
+    Pairwise <- data.frame(
+      comparison = pw$subgroup.levels,
+      tau2       = c(pw$tau.w^2),
+      I2         = c(pw$I2.w),
+      I2lower    = c(pw$lower.I2.w),
+      I2upper    = c(pw$upper.I2.w),
+      stringsAsFactors = FALSE
+    )
+  }
 
   # 8. Network heterogeneity ──────────────────────────────────────
 

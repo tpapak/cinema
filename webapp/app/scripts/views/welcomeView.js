@@ -95,7 +95,24 @@ var welcomeView = () => {
           i('.fa.fa-folder-open', { attributes: { 'aria-hidden': 'true' }, style: { paddingRight: '7px' } }),
           ' PROJECTS ',
         ]),
-        br(), br(), br(), br(),
+        br(), br(),
+
+        p([hr('.thin')]),
+        h4([
+          i('.fa.fa-bug', { attributes: { 'aria-hidden': 'true' }, style: { paddingRight: '5px' } }),
+          'Feedback & Bug Reports',
+        ]),
+        p([
+          'If you encounter any issues or have suggestions for improving ',
+          span('.fontcinema', 'CINeMA'),
+          ', please report them on our GitHub repository:',
+          br(),
+          a({ target: '_blank', href: 'https://github.com/tpapak/cinema/issues' }, [
+            i('.fa.fa-github', { attributes: { 'aria-hidden': 'true' }, style: { paddingRight: '5px' } }),
+            'github.com/tpapak/cinema/issues',
+          ]),
+        ]),
+        br(), br(),
 
       ]),
     ]),

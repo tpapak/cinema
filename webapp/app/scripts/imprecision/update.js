@@ -250,8 +250,6 @@ var Update = (model) => {
       });
       let rulevalue = tbc.ruleLevel;
       tbc.judgement = parseInt(tv);
-      updaters.getState().status = 'selecting';
-      updaters.saveState();
       updaters.getState().status = 'ready';
       updaters.saveState();
     },

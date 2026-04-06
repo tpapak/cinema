@@ -70,8 +70,6 @@ var Update = (model) => {
         updaters.getState().customized -= 1;
       }
       tbc.directRob = parseInt(tv);
-      updaters.getState().status = 'selecting';
-      updaters.saveState();
       updaters.getState().status = 'ready';
       Messages.alertify().success(tid.replace(',',':')+' '+model.getState().text.directRob.directRobSet);
       updaters.saveState();

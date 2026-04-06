@@ -81,8 +81,6 @@ var Update = (model) => {
         updaters.getState().customized -= 1;
       }
       tbc.judgement = parseInt(tv);
-      updaters.getState().status = 'selecting';
-      updaters.saveState();
       updaters.getState().status = 'ready';
       Messages.alertify().success(tid.replace(',',':')+' '+model.getState().text.directIndr.directIndrSet);
       updaters.saveState();
