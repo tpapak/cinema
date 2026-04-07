@@ -143,9 +143,9 @@ Create `config.json` in the webapp directory to customize settings:
 
 ```json
 {
-  "version": "3.0.1",
   "rserverurl": "",
-  "ganalID": "UA-XXXXXXXXX-X"
+  "umamiUrl": "https://your-umami-instance",
+  "umamiWebsiteId": "your-website-id"
 }
 ```
 

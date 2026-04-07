@@ -24,7 +24,7 @@ COPY webapp/ .
 
 # Create production config (config.json is gitignored, so we generate it here)
 # rserverurl="" means same-origin /api/ proxy in production
-RUN echo '{"version":"3.0.0","ganalID":"UA-XXXXXXXXX-X","rserverurl":""}' > config.json
+COPY webapp/config.json config.json
 RUN gulp build
 
 # ── Stage 2: Nginx ──────────────────────────────────────────────────

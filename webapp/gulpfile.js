@@ -45,7 +45,8 @@ if(fs.existsSync("config.json")){
   config = require('./config.json');
 }else{
   config = {
-    ganalID: "UA-XXXXXXXXX-X",
+    umamiUrl: "",
+    umamiWebsiteId: "",
     // rserverurl: "http://localhost:8004/ocpu/library/contribution/R"
     rserverurl: "localhost:8004"
   }
@@ -172,14 +173,9 @@ gulp.task('lint:test', () => {
 gulp.task('html', gulp.series('config', 'styles', 'scripts', 'templates', 'hbsTojs', () => {
   var inject = require('gulp-inject-string');
   var postfix = config.version==='0.0.0'?randomstring.generate():config.version;
-  var ganal = config.version==='0.0.0'?'':`<script async src='https://www.googletagmanager.com/gtag/js?id=`+config.ganalID+`'></script>
-   <script>
-      window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments)};
-    gtag('js', new Date());
-
-    gtag('config', '`+config.ganalID+`');
-  </script>`;
+  var analytics = (config.umamiUrl && config.umamiWebsiteId)
+    ? `<script defer src='${config.umamiUrl}/script.js' data-website-id='${config.umamiWebsiteId}'></script>`
+    : '';
 
   return gulp.src('app/*.html')
     .pipe($.useref({searchPath: ['.tmp', 'app', '.']}))
@@ -192,7 +188,7 @@ gulp.task('html', gulp.series('config', 'styles', 'scripts', 'templates', 'hbsTo
     .pipe($.if('index.html', replace("vendor.js","vendor.js?"+postfix)))
     .pipe($.if('index.html', replace("vendor.css","vendor.css?"+postfix)))
     .pipe($.if('index.html', replace("main.css","main.css?"+postfix)))
-    //.pipe($.if('index.html', inject.after('<!-- analytics:js -->', ganal)))
+    .pipe($.if('index.html', inject.after('<!-- analytics:js -->', analytics)))
     .pipe(gulp.dest('dist'));
 }));
 
