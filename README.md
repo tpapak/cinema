@@ -7,8 +7,8 @@ Key to the <span class="fontcinema">CINeMA</span>'s methodology is the percentag
 
 ### Contents
 - `webapp/` - Web application source code (JavaScript + PureScript)
-- `docker/cinema-rserver/` - Backend R server Docker image
-- `docker/cinema-web-dev/` - Frontend web server Docker image
+- `backend/` - Flask + Rscript API backend (R 4.4, netmeta >= 3.3)
+- `docker/` - Docker Compose deployment (nginx + Flask+R)
 
 ### Quick Start
 
@@ -33,12 +33,11 @@ See [webapp/README.md](webapp/README.md) for detailed build instructions.
 ### Docker Deployment
 
 ```bash
-# Frontend
-docker run -d -p 80:80 tosku/cinema-web-dev
-
-# Backend R Server
-docker run -d -p 8004:8004 tosku/cinema-rserver
+cd docker
+docker compose up -d --build
 ```
+
+This starts the full stack: nginx frontend on port 8080 and Flask+R backend on port 8004.
 
 ### Issues & Feedback
 

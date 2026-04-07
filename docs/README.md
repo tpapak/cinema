@@ -1,4 +1,4 @@
-##Instructions for writing documentation 
+## Instructions for writing documentation 
 
 - edit in vim with MarkdownPreview
 - use Remarkable to export to html styled 
@@ -6,8 +6,7 @@
 - escape it [here](https://www.freeformatter.com/json-escape.html#ad-output) ```clipit.sh documentation.md```
 - paste it to translations.json
 
-##Instructions for The Welcome page
+## Instructions for the Welcome page
 
-- Remarkable for html 
-- remove html body tags and paste it into the template welcome.hbs
-- update README.md fo cinema
+- Edit `webapp/app/scripts/views/welcomeView.js` directly (hyperscript-helpers)
+- update README.md for cinema

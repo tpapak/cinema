@@ -116,7 +116,7 @@ webapp/
 │   │   ├── main.js          # JavaScript entry point
 │   │   └── bundle.js        # Built JavaScript bundle
 │   ├── styles/              # SCSS stylesheets
-│   ├── templates/           # Handlebars templates
+│   ├── views/               # Hyperscript-helpers view functions
 │   └── images/              # Static images
 ├── build.js                 # esbuild configuration
 ├── build.sh                 # Combined build script
@@ -126,23 +126,16 @@ webapp/
 
 ## Docker
 
-### Development
-```bash
-docker run -ti -p 80:80 tosku/cinema-web-dev bash
-```
-
-### Production
-```bash
-docker run -d -p 80:80 tosku/cinema-web-dev
-```
-
-### R Server Backend
-CINeMA requires an R server backend. Unless you provide `webapp/config.json`, 
-R calculations will be queried at `localhost:8004`:
+CINeMA uses Docker Compose for deployment (nginx frontend + Flask+R backend):
 
 ```bash
-docker run -d -p 8004:8004 tosku/cinema-rserver
+cd docker
+docker compose up -d --build
 ```
+
+This starts the full stack: nginx on port 8080 proxying to the Flask+R API on port 8004.
+
+For local development without Docker, the frontend expects the backend API at `localhost:8004`. See `backend/README.md` for running the backend locally.
 
 ## Configuration
 
@@ -150,8 +143,8 @@ Create `config.json` in the webapp directory to customize settings:
 
 ```json
 {
-  "version": "2.0.0",
-  "rserverurl": "http://localhost:8004/ocpu/library/contribution/R",
+  "version": "3.0.1",
+  "rserverurl": "",
   "ganalID": "UA-XXXXXXXXX-X"
 }
 ```

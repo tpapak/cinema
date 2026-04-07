@@ -1,6 +1,6 @@
 # CINeMA Backend API
 
-Flask + rpy2 backend replacing OpenCPU. Uses Miniconda for R + Python.
+Flask + subprocess(Rscript) backend replacing OpenCPU. Uses Miniconda for R + Python.
 Requires netmeta >= 3.3 (uses `netcontrib(study = TRUE)` for per-study contributions).
 
 ## Endpoints

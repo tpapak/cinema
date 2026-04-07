@@ -1,5 +1,20 @@
 # CINeMA Change log
 
+## v3.0.1 - April 2026
+
+**Bug fixes:**
+- Fixed null study contributions with random effects + single study per comparison (#1)
+- Fixed Report tab silently redirecting to welcome page due to decoder failures (#2)
+- Fixed Fisher scoring crash in pairwise heterogeneity estimation (#3)
+- Removed dead 'selecting' intermediate status from domain update modules
+- Added microtask render coalescing to prevent redundant renders
+
+**Improvements:**
+- Report decoder errors now logged to browser console for diagnostics
+- Added issue reporting links to welcome page and footer
+- Updated Docker deployment instructions (removed stale DockerHub references)
+- Added end-to-end test for domain selectIndividual paths
+
 ## v3.0.0 - March 2026
 
 Major architecture overhaul and new features.
