@@ -168,6 +168,7 @@ var Model = {
   },
   loadCachedModel: () => {
     let savedModel = JSON.parse(localStorage.state);
+    savedModel.text = Locales[Model.defaults.locale];
     Model.setState(savedModel);
   },
   versionsAreCompatible: (v1,v2) => {
@@ -184,6 +185,10 @@ var Model = {
     })
   },
   loadSavedProject: (state) => {
+    // UI translations live in the current bundle, not the saved file. Older
+    // .cnm dumps (e.g. before "collections" was added to routes) would
+    // overwrite the active text and crash menu rendering.
+    state.text = Locales[Model.defaults.locale];
     Model.setState(state);
   },
   initializeModel: (version) => {
