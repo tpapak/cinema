@@ -1,7 +1,8 @@
 var Model = require('./model.js').Model;
-var Config = require('./config.js').config;
 
-Model.init(Config.version);
+// Version is hardcoded in the model (Model.VERSION) as the app/compat source of
+// truth, rather than read from the build-injected config.
+Model.init(Model.VERSION);
 window.Actions = Model.Actions;
 //Need it for passing the model to purescript actions
 window.Model = {};

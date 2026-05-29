@@ -10,6 +10,10 @@ var download = require('downloadjs');
 const json2csv = require('json2csv');
 
 var Model = {
+  // Hardcoded source of truth for the app/compat version. Kept in step with
+  // webapp/package.json (gulp uses that one only for asset cache-busting).
+  // Used to gate which saved projects can be loaded — see checkSavedProject.
+  VERSION: '3.0.1',
   Actions:
   { alertify: Messages.Messages.alertify
   , download: download
@@ -168,28 +172,58 @@ var Model = {
   },
   loadCachedModel: () => {
     let savedModel = JSON.parse(localStorage.state);
-    savedModel.text = Locales[Model.defaults.locale];
-    Model.setState(savedModel);
+    Model.setState(Model.sanitizeLoadedProject(savedModel));
   },
   versionsAreCompatible: (v1,v2) => {
     return v1.split('.').slice(0,2).toString() === v2.split('.').slice(0,2).toString();
   },
+  // Parse "3.0.1" -> [3, 0, 1]; missing/garbage parts become 0 so an old file
+  // with a partial or absent version still compares sanely instead of throwing.
+  parseVersion: (v) => {
+    return String(v || '0.0.0').split('.').map(n => parseInt(n, 10) || 0);
+  },
+  // True only when `v` is strictly newer (major, then minor) than this build.
+  // Older or equal files are accepted and sanitized on load (backward compat);
+  // a newer file may use schema this build can't understand, so it's refused.
+  isNewerThanCurrent: (v) => {
+    let [fMajor, fMinor] = Model.parseVersion(v);
+    let [cMajor, cMinor] = Model.parseVersion(Model.VERSION);
+    if (fMajor !== cMajor) return fMajor > cMajor;
+    return fMinor > cMinor;
+  },
+  // Bring a project loaded from a .cnm file or localStorage up to the current
+  // schema so older files keep opening. UI translations and defaults live in
+  // the running bundle, not in the saved file — an older dump can carry a stale
+  // `text`/`defaults` that overwrites the active ones and crashes rendering.
+  // Reset those from the current bundle and stamp the current version.
+  sanitizeLoadedProject: (state) => {
+    let locale = (state.defaults && Locales[state.defaults.locale])
+      ? state.defaults.locale
+      : Model.defaults.locale;
+    state.text = Locales[locale];
+    // Backfill any defaults added since the file was saved (additive only;
+    // values present in the saved file win).
+    state.defaults = _.defaults({}, state.defaults || {}, Model.defaults);
+    state.version = Model.VERSION;
+    return state;
+  },
   checkSavedProject: (state) => {
     return new Promise((resolve,reject) => {
-      let cinv = Model.getState().version;
-      if(Model.versionsAreCompatible(state.version,cinv)){
-        resolve(state);
-      }else{
-        reject('Unfortunately cannot upload, the file\'s version ('+state.version+') is not compatible with CINeMA v:'+cinv);
+      let cinv = Model.VERSION;
+      if (!state || typeof state !== 'object') {
+        reject('Unfortunately cannot upload, the file is not a valid CINeMA project.');
+        return;
       }
+      if (Model.isNewerThanCurrent(state.version)) {
+        reject('Unfortunately cannot upload, the file\'s version ('+state.version+') was created by a newer CINeMA than this one (v:'+cinv+'). Please update CINeMA.');
+        return;
+      }
+      // Older or same version: accepted, then sanitized in loadSavedProject.
+      resolve(state);
     })
   },
   loadSavedProject: (state) => {
-    // UI translations live in the current bundle, not the saved file. Older
-    // .cnm dumps (e.g. before "collections" was added to routes) would
-    // overwrite the active text and crash menu rendering.
-    state.text = Locales[Model.defaults.locale];
-    Model.setState(state);
+    Model.setState(Model.sanitizeLoadedProject(state));
   },
   initializeModel: (version) => {
     Model.setState(Model.skeletonModel(version));
@@ -224,16 +258,19 @@ var Model = {
   //   }
   // },
   init: (version) => {
+    version = version || Model.VERSION;
     Router.register(Model);
     View.init(Model);
-    // Auto-restore from localStorage if valid cached state exists
+    // Auto-restore from localStorage if valid cached state exists. Older caches
+    // are restored and sanitized (backward compat); only a cache from a newer
+    // CINeMA, or an expired one, is discarded.
     let savedModel = Model.cachedModel();
     if (savedModel !== 'Nothing' &&
         typeof savedModel.version !== 'undefined' &&
-        Model.versionsAreCompatible(version, savedModel.version) &&
+        !Model.isNewerThanCurrent(savedModel.version) &&
         !Model.hasExpired(savedModel.timestamp)) {
       console.log('Restoring cached state from localStorage');
-      Model.setState(savedModel);
+      Model.setState(Model.sanitizeLoadedProject(savedModel));
     } else {
       if (savedModel !== 'Nothing') {
         // Incompatible or expired — clear stale cache
