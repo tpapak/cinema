@@ -55,7 +55,9 @@ var uploaderSection = (model) => {
       span('.pull-left.glyphicon.glyphicon-cloud-upload', { attributes: { 'aria-hidden': 'true' } }),
       div('.form-group', [
         input('#uploadProject', {
-          type: 'file', name: 'uploadProject', accept: '.cnm,.CNM,.json,.JSON',
+          // No `accept`: iOS/macOS file pickers grey out custom extensions
+          // (.cnm) even when listed, so we leave the filter off.
+          type: 'file', name: 'uploadProject',
           onchange: function() { Actions.Project.readProject(this); },
         }),
         div('.col-xs-12.col-md-offset-2.col-md-8', [

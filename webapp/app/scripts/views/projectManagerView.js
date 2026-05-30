@@ -31,7 +31,9 @@ var emptyToolbar = () => {
         ' Upload Collection (.cdb)',
       ]),
       input('#pmUploadCollection', {
-        type: 'file', accept: '.cdb,.CDB,.json,.JSON',
+        // No `accept`: macOS Finder greys out custom extensions (.cdb) even when
+        // listed, so we leave the filter off to keep these files selectable.
+        type: 'file',
         style: { display: 'none' },
       }),
     ]),
@@ -84,7 +86,9 @@ var projectToolbar = () => {
         ' Upload Project (.cnm)',
       ]),
       input('#pmUploadProject', {
-        type: 'file', accept: '.cnm,.CNM,.json,.JSON',
+        // No `accept`: macOS Finder greys out custom extensions (.cnm) even when
+        // listed, so we leave the filter off to keep these files selectable.
+        type: 'file',
         style: { display: 'none' },
       }),
     ]),
