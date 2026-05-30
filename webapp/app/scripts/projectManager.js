@@ -220,8 +220,12 @@ var PM = {
       // Upload a single .cnm project file into the active collection
       FR.handleFileSelect(inputEl).then((statestring) => {
         var parsed = JSON.parse(statestring);
-        // Convert old CINeMA .cnm (v1.x/v2.x) to v3 format
-        if (OldCnmBridge.isOldCnmFormat(parsed)) {
+        // Anything that isn't already a v3 exchange envelope is treated as a
+        // legacy CINeMA state dump — a v1.x/v2.x file or a 3.0.x "save project"
+        // file (top-level version + project) — and bridged to v3. oldCnmToV3
+        // runs legacyStateToV3 with a minimal fallback. (The Project page upload
+        // already accepts these; this keeps the Project Manager consistent.)
+        if (!V3Bridge.isV3Format(parsed)) {
           parsed = OldCnmBridge.oldCnmToV3(parsed);
         }
         if (V3Bridge.isV3Format(parsed) && parsed.cinema.projects && parsed.cinema.projects.length > 0) {
