@@ -1,0 +1,7 @@
+# R build artifacts
+*.tar.gz
+*.Rcheck/
+cinemar/inst/doc/
+cinemar/..Rcheck/
+.Rhistory
+.RData

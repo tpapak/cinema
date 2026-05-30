@@ -1,0 +1,121 @@
+---
+title: "Creating CINeMA .cnm files from Bayesian NMA (MetaInsight / gemtc)"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Creating CINeMA .cnm files from Bayesian NMA (MetaInsight / gemtc)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+`cinemar` turns a network meta-analysis into a CINeMA v3 exchange file (`.cnm`)
+that you upload directly into [CINeMA](https://cinema.med.auth.gr). It targets
+the MetaInsight workflow: a **Bayesian** NMA fitted with
+[gemtc](https://cran.r-project.org/package=gemtc).
+
+## Why both frameworks appear in one file
+
+CINeMA's confidence domains need two kinds of quantity:
+
+* **Effect estimates and intervals** — the treatment effects, credible /
+  predictive intervals, nodesplit (incoherence) and between-study SD (tau). A
+  Bayesian model provides these.
+* **Structural quantities** — the hat / contribution matrix, prop-direct, the
+  design-by-treatment inconsistency test and pairwise heterogeneity. These are
+  frequentist constructs that a Bayesian model cannot produce.
+
+So `cinemar` always runs `netmeta` for the structural block, and — when you
+supply a Bayesian fit — writes the posterior results to the Bayesian block.
+On upload, CINeMA promotes the Bayesian block to primary (effects, intervals,
+nodesplit, tau, league table) and keeps the frequentist block for the
+structural quantities. This is the schema's *preference rule*.
+
+## A complete MetaInsight-style example
+
+The `smoking` dataset shipped with gemtc is MetaInsight's default example
+(binary outcome, odds ratios).
+
+```{r}
+library(gemtc)
+library(cinemar)
+
+data(smoking)
+ab <- smoking$data.ab   # columns: study, treatment, responders, sampleSize
+
+# --- Bayesian NMA, exactly as MetaInsight fits it ------------------------
+net   <- mtc.network(ab)
+model <- mtc.model(net, likelihood = "binom", link = "logit",
+                   linearModel = "random")
+res   <- mtc.run(model, n.adapt = 2000, n.iter = 10000)
+ranks <- rank.probability(res, preferredDirection = 1)   # for SUCRA
+```
+
+`cinemar` needs the study data in long form, plus per-arm risk of bias and
+indirectness (1 = low, 2 = moderate, 3 = high) for CINeMA's domains:
+
+```{r}
+D <- data.frame(
+  study = ab$study, id = ab$study, t = ab$treatment,
+  r = ab$responders, n = ab$sampleSize,
+  rob = 1L, indirectness = 1L
+)
+
+write_cinema_cnm(
+  data     = D,
+  type     = "long_binary",
+  sm       = "OR",
+  model    = "random",
+  bayesian = res,      # gemtc mtc.result  -> Bayesian block (primary)
+  ranks    = ranks,    # rank probabilities -> SUCRA
+  title    = "Smoking cessation (Bayesian)",
+  file     = "smoking_bayesian.cnm"
+)
+```
+
+Upload `smoking_bayesian.cnm` into CINeMA: the league table, imprecision and
+incoherence assessments use the posterior estimates, while the contribution
+matrix (within-study bias, indirectness) comes from netmeta.
+
+## Bringing your own estimates
+
+If you already hold posterior summaries (MetaInsight does), skip the gemtc
+extraction and pass them straight in. Comparison ids are `"A:B"` (alphabetical)
+and report the effect of **A relative to B**:
+
+```{r}
+comps <- data.frame(
+  comparison = c("A:B", "A:C", "A:D", "B:C", "B:D", "C:D"),
+  effect   = c(...), ciLower = c(...), ciUpper = c(...),
+  priLower = c(...), priUpper = c(...)
+)
+bblock <- cnm_bayesian_block(
+  comps,
+  tau = list(mean = ., ciLower = ., ciUpper = .),
+  dic = list(Dbar = ., pD = ., DIC = ., dataPoints = .)
+)
+
+freq <- cnm_frequentist_block(D, type = "long_binary", sm = "OR")
+write_cnm(build_cnm(freq, bayesian = bblock, title = "Smoking cessation"),
+          "smoking_bayesian.cnm")
+```
+
+## Frequentist-only files
+
+Omit `bayesian` to write a frequentist `.cnm` (equivalent to CINeMA's
+*Download R script* export):
+
+```{r}
+write_cinema_cnm(D, type = "long_binary", sm = "OR", title = "Smoking (FE/RE)",
+                 file = "smoking_frequentist.cnm")
+```
+
+## Orientation note
+
+gemtc's basic parameters `d.A.B` are the effect of B relative to A; CINeMA
+reports `"A:B"` as A relative to B, so `cnm_bayesian_gemtc()` negates them to
+match. The orientation is verified against the frequentist league table in the
+package tests (signs agree for every comparison on the smoking network). If a
+future gemtc version changes this, pass `flip = TRUE`.

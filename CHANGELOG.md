@@ -1,5 +1,22 @@
 # CINeMA Change log
 
+## Unreleased
+
+**Bayesian interoperability (Deliverable 2):**
+- New **cinemar** R package (`r-package/cinemar/`) — creates v3 `.cnm` files from
+  frequentist and Bayesian NMA. Always computes the contribution matrix and
+  structural statistics with netmeta; attaches gemtc posterior results
+  (effects, credible/predictive intervals, nodesplit, tau, SUCRA, DIC) as the
+  primary Bayesian block. Targets the MetaInsight/gemtc workflow.
+- Offered for download on the welcome page (`downloads/cinemar_<version>.tar.gz`).
+- **v3bridge** now implements the schema preference rule: when a loaded `.cnm`
+  is `framework: "bayesian"`, the Bayesian block is promoted to primary
+  (effects, intervals, nodesplit, tau, league table) via
+  `applyBayesianPreference()`, with the frequentist block providing the
+  contribution matrix and design-by-treatment test.
+- Tests: `cinemar` unit + gemtc orientation tests, and an end-to-end
+  create-and-consume test (`webapp/test/test-bayesian-cnm.js`).
+
 ## v3.0.1 - April 2026
 
 **Bug fixes:**

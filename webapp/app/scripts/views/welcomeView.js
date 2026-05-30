@@ -99,6 +99,35 @@ var welcomeView = () => {
 
         p([hr('.thin')]),
         h4([
+          i('.fa.fa-cubes', { attributes: { 'aria-hidden': 'true' }, style: { paddingRight: '5px' } }),
+          'R package for Bayesian network meta-analysis',
+        ]),
+        p([
+          'Run a Bayesian network meta-analysis in R — for example the models exported from ',
+          a({ target: '_blank', href: 'https://crsu-development.shinyapps.io/MetaInsight/' }, 'MetaInsight'),
+          ' — and turn the results into a ',
+          span('.fontcinema', 'CINeMA'),
+          ' project file you can upload here. ',
+          'The ',
+          strong('cinemar'),
+          ' package computes the contribution matrix and incoherence/heterogeneity statistics with ',
+          em('netmeta'),
+          ' and attaches your Bayesian posterior effects as the primary results.',
+          br(),
+          a({ href: 'downloads/cinemar_0.1.0.tar.gz', attributes: { download: '' } }, [
+            i('.fa.fa-download', { attributes: { 'aria-hidden': 'true' }, style: { paddingRight: '5px' } }),
+            'Download cinemar (R source package)',
+          ]),
+          br(),
+          small([
+            'Install: ',
+            h('code', 'install.packages("cinemar_0.1.0.tar.gz", repos = NULL, type = "source")'),
+          ]),
+        ]),
+        br(), br(),
+
+        p([hr('.thin')]),
+        h4([
           i('.fa.fa-bug', { attributes: { 'aria-hidden': 'true' }, style: { paddingRight: '5px' } }),
           'Feedback & Bug Reports',
         ]),

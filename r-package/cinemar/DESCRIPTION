@@ -1,0 +1,30 @@
+Package: cinemar
+Type: Package
+Title: Create CINeMA .cnm Files from Frequentist and Bayesian NMA
+Version: 0.1.0
+Authors@R: person("Thodoris", "Papakonstantinou", role = c("aut", "cre"),
+    email = "antrcl@tpapak.com")
+Description: Builds CINeMA v3 exchange files (.cnm) from network meta-analysis
+    results. The frequentist structural block (hat matrix, study contributions,
+    design-by-treatment test, heterogeneity) is always computed with 'netmeta',
+    which CINeMA needs for the within-study bias, indirectness and incoherence
+    domains. When a Bayesian fit is supplied (e.g. a 'gemtc' result as produced
+    by MetaInsight) the posterior effects, credible/predictive intervals,
+    nodesplit, SUCRA, DIC and tau are written to the Bayesian block and used as
+    the primary results. The output validates against cinema_schema_v3.json and
+    can be uploaded directly into CINeMA.
+License: AGPL-3
+Encoding: UTF-8
+Depends: R (>= 4.0)
+Imports:
+    netmeta (>= 3.3),
+    meta,
+    jsonlite
+Suggests:
+    gemtc,
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+RoxygenNote: 7.3.2
+Config/testthat/edition: 3

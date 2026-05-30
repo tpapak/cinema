@@ -220,6 +220,11 @@ gulp.task('extras',() => {
   }).pipe(gulp.dest('dist'));
 });
 
+gulp.task('downloads', () => {
+  return gulp.src('app/downloads/**/*')
+    .pipe(gulp.dest('dist/downloads'));
+});
+
 // inject bower components
 const merge = require('merge-stream');
 
@@ -351,7 +356,7 @@ gulp.task('buildWithServiceWorker', gulp.series('lint', 'generate-service-worker
   return gulp.src('dist/**/*').pipe($.size({title: 'build', gzip: true}));
 }));
 
-gulp.task('build', gulp.series('html', 'model', 'images', 'fonts', 'extras', (done) => {
+gulp.task('build', gulp.series('html', 'model', 'images', 'fonts', 'extras', 'downloads', (done) => {
   console.log('Build complete! Output in dist/');
   done();
 }));

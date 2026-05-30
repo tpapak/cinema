@@ -369,7 +369,9 @@ var analysisToLegacy = (analysis) => {
   var params = analysis.params;
   var cm = analysis.contributionMatrix;
   var freq = analysis.frequentist;
-  // var bayes = analysis.bayesian; // reserved for future use
+  // Bayesian results (analysis.bayesian) are already overlaid onto
+  // analysis.frequentist upstream by applyBayesianPreference(), so the mapping
+  // below transparently uses Bayesian estimates when framework === 'bayesian'.
 
   var hatmatrix = {};
 
@@ -556,9 +558,76 @@ var splitComparisons = (savedComparisons, directComparisonIds) => {
 // =====================================================
 // Main: transform v3 project → legacy internal State
 // =====================================================
+// =====================================================
+// Bayesian preference rule (schema: framework === 'bayesian')
+// Promote the Bayesian block to primary for the quantities it provides
+// (effects, credible/predictive intervals, nodesplit, tau, league table).
+// The frequentist block still supplies the contribution matrix, prop-direct,
+// pairwise/network Q and the design-by-treatment test — quantities a Bayesian
+// model cannot produce. Implemented as an overlay on analysis.frequentist so
+// every downstream consumer (NMA results, league table, heterogeneity,
+// incoherence) transparently uses the Bayesian estimates.
+// =====================================================
+var normComp = (c) => String(c).split(':').sort().join(':');
+
+var applyBayesianPreference = (analysis) => {
+  if (!analysis) return analysis;
+  var params = analysis.params || {};
+  var bayes = analysis.bayesian;
+  if (!bayes || params.framework !== 'bayesian' || !bayes.nmaResults) return analysis;
+  var freq = analysis.frequentist || {};
+
+  var bById = {};
+  bayes.nmaResults.forEach((b) => { bById[normComp(b.comparison)] = b; });
+  var nsById = {};
+  (bayes.nodesplit || []).forEach((n) => { nsById[normComp(n.comparison)] = n; });
+
+  if (freq.nmaResults) {
+    freq.nmaResults = _.map(freq.nmaResults, (cr) => {
+      var b = bById[normComp(cr.comparison)];
+      if (!b) return cr;
+      var has = (v) => (v !== undefined && v !== null);
+      var merged = _.extend({}, cr, {
+        'effect': b.effect,
+        'se': has(b.se) ? b.se : cr.se,
+        'ciLower': b.ciLower,
+        'ciUpper': b.ciUpper,
+        'priLower': has(b.priLower) ? b.priLower : cr.priLower,
+        'priUpper': has(b.priUpper) ? b.priUpper : cr.priUpper,
+      });
+      var ns = nsById[normComp(cr.comparison)];
+      if (ns && ns.direct && ns.indirect) {
+        merged.direct = ns.direct;
+        merged.indirect = ns.indirect;
+        merged.incoherence = {
+          effect: ns.direct.effect - ns.indirect.effect,
+          ciLower: cr.incoherence ? cr.incoherence.ciLower : null,
+          ciUpper: cr.incoherence ? cr.incoherence.ciUpper : null,
+          z: cr.incoherence ? cr.incoherence.z : null,
+          pvalue: ns.pvalue,
+        };
+      }
+      return merged;
+    });
+  }
+
+  if (bayes.tau && bayes.tau.mean !== undefined && bayes.tau.mean !== null) {
+    freq.networkHeterogeneity = _.extend({}, freq.networkHeterogeneity || {}, {
+      'tau2': bayes.tau.mean * bayes.tau.mean,
+    });
+    params.tau = bayes.tau.mean;
+  }
+
+  if (bayes.leagueTable) freq.leagueTable = bayes.leagueTable;
+
+  analysis.frequentist = freq;
+  analysis.params = params;
+  return analysis;
+};
+
 var v3ProjectToLegacyState = (v3project, v3meta, currentState) => {
   var dataset = v3project.dataset;
-  var analysis = v3project.analysis;
+  var analysis = applyBayesianPreference(v3project.analysis);
   var evaluation = v3project.evaluation || {};
 
   // ---------------------------------------------------------------
