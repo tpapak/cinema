@@ -192,6 +192,64 @@ box-shadow:         inset 0 0 0px grey;
   text-align: center;
 }
 
+// Expanded report — per-comparison domain detail
+.report-expand {
+  cursor: pointer;
+  color: #2c4d6d;
+  margin-right: 4px;
+  .glyphicon {
+    transition: transform 0.15s ease;
+    font-size: 0.8em;
+  }
+}
+.report-expand[aria-expanded="true"] .glyphicon {
+  transform: rotate(90deg);
+}
+.report-detail-row > td {
+  padding: 0 !important;
+  border-top: 0;
+  background: #f7f9fb;
+}
+.report-detail {
+  padding: 0;
+}
+.report-detail.in {
+  padding: 10px 14px;
+}
+.report-domain-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  text-align: left;
+}
+.report-domain-card {
+  flex: 1 1 180px;
+  min-width: 170px;
+  border: 1px solid #e2e2e2;
+  border-radius: 4px;
+  background: #fff;
+  overflow: hidden;
+  font-size: 0.85em;
+}
+.rdc-head {
+  padding: 4px 8px;
+  font-weight: 600;
+  color: #1a1a1a;
+  border-bottom: 1px solid #e2e2e2;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.6);
+}
+.rdc-body {
+  padding: 6px 8px;
+}
+.rdc-line {
+  margin-bottom: 2px;
+  line-height: 1.3;
+  word-break: break-word;
+}
+.rdc-line strong {
+  color: #555;
+}
+
 //Contribution Chart
 #chartContainer{
   width:$chartw;

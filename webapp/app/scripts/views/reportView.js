@@ -8,9 +8,13 @@
 
 var hh = require('hyperscript-helpers')(require('virtual-dom/h'));
 var h = require('virtual-dom/h');
+var reportDetail = require('./reportDetail');
 var div = hh.div, h3 = hh.h3, h4 = hh.h4, span = hh.span;
 var table = hh.table, thead = hh.thead, tbody = hh.tbody, tr = hh.tr, th = hh.th, td = hh.td;
 var button = hh.button, select = hh.select, option = hh.option, input = hh.input;
+
+// total number of columns in the report table (used for detail-row colspan)
+var NCOLS = 10;
 
 var infoText = 'Judgments for the six domains across all evaluated treatment effects are reported. A thick grey left border line appears for judgments whose automatically generated judgments have been manually modified. The default summary judgment is "High" confidence; downgrading by one, two, or three levels will lead to a confidence rating of "Moderate," "Low," or "Very low" respectively. Use the "Confidence rating" dropdown menu to manually assign an overall level of confidence to each relative effect. For each comparison, tick the relevant domains to indicate the reasons for downgrade; these domains will automatically appear under the column \'Reason for downgrade\'. Details can be found in Section 5 of the detailed manual.';
 
@@ -93,11 +97,16 @@ var reportRow = function(row, showStudyCount) {
     };
   };
 
-  // console.log('[reportRow] r.armA:', r.armA, 'r.studyLimitation:', r.studyLimitation);
-  // console.log('[reportRow] r.studyLimitation.label:', r.studyLimitation && r.studyLimitation.label);
-  // console.log('[reportRow] r.studyLimitation.color:', r.studyLimitation && r.studyLimitation.color);
+  var detailTarget = '#rdetail-' + reportDetail.cssId(r.id);
+  var toggle = span('.report-expand', {
+    attributes: {
+      'data-toggle': 'collapse', 'data-target': detailTarget,
+      'aria-expanded': 'false', title: 'Show domain details',
+    },
+  }, [span('.glyphicon.glyphicon-chevron-right', { attributes: { 'aria-hidden': 'true' } })]);
+
   return tr([
-    th({ attributes: { scope: 'row' } }, [r.armA + ' vs ' + r.armB]),
+    th({ attributes: { scope: 'row' } }, [toggle, ' ', r.armA + ' vs ' + r.armB]),
     td(showStudyCount ? String(r.numberOfStudies) : '--'),
     domainCell(r.studyLimitation || {}, makeReason(0)),
     domainCell(r.pubbias || {}, makeReason(1)),
@@ -137,6 +146,7 @@ var reportView = function(data) {
       // Unwrap ReportRow newtype if needed
       var rowData = row;
       bodyRows.push(reportRow(rowData, true));
+      bodyRows.push(reportDetail.detailRow(rowData, NCOLS));
     });
   }
 
@@ -148,6 +158,7 @@ var reportView = function(data) {
     (data.indirectRows || []).forEach(function(row) {
       var rowData = row;
       bodyRows.push(reportRow(rowData, false));
+      bodyRows.push(reportDetail.detailRow(rowData, NCOLS));
     });
   }
 
@@ -166,6 +177,14 @@ var reportView = function(data) {
       button('.pull-right.btn.btn-default.btn-pad', {
         onclick: function() { Actions.Report.download(); },
       }, 'Download Report'),
+      button('.pull-right.btn.btn-default.btn-pad', {
+        onclick: function() {
+          var $d = window.$ && window.$('.report-detail');
+          if (!$d) return;
+          var anyOpen = $d.filter('.in').length > 0;
+          $d.collapse(anyOpen ? 'hide' : 'show');
+        },
+      }, 'Expand / collapse all'),
       table('.table.report-table', [
         thead('.thead-inverse', [
           tr([
