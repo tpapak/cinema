@@ -20,6 +20,18 @@ var infoText = 'Judgments for the six domains across all evaluated treatment eff
 // optional reason checkbox) and, hidden until expanded, the domain detail.
 // Clicking the cell expands it in place (the Expand-all button toggles them
 // all via a class on the table).
+// Map a judgement colour to a stable class so the colour can be re-asserted in
+// print (Bootstrap's print reset forces `background: transparent !important`,
+// which clobbers the inline colour).
+var colourClass = function(c) {
+  switch ((c || '').toLowerCase()) {
+    case '#02c000': return '.jc-low';
+    case '#e0df02': return '.jc-some';
+    case '#c00000': return '.jc-high';
+    default: return '';
+  }
+};
+
 var domainCell = function(which, domain, reason, row) {
   var color = domain.color || '';
   var summaryChildren = [domain.label || ''];
@@ -42,7 +54,7 @@ var domainCell = function(which, domain, reason, row) {
   return h(selector, {
     onclick: function() { this.classList.toggle('expanded'); },
   }, [
-    div('.rdc-summary', { style: { backgroundColor: color } }, summaryChildren),
+    div('.rdc-summary' + colourClass(color), { style: { backgroundColor: color } }, summaryChildren),
     div('.rdc-detail', reportDetail.domainLines(which, row)),
   ]);
 };
@@ -175,6 +187,16 @@ var reportView = function(data) {
       button('.pull-right.btn.btn-default.btn-pad', {
         onclick: function() { Actions.Report.download(); },
       }, 'Download Report'),
+      button('.pull-right.btn.btn-default.btn-pad', {
+        // Print to PDF: reveal every domain detail, then open the browser
+        // print dialog (Save as PDF on desktop, Share → PDF on iOS). Print CSS
+        // also forces details visible, so the PDF is the full expanded report.
+        onclick: function() {
+          var $t = window.$ && window.$('.report-table');
+          if ($t) $t.addClass('all-expanded');
+          if (window.print) window.print();
+        },
+      }, 'Export PDF'),
       button('.pull-right.btn.btn-default.btn-pad', {
         onclick: function() {
           var $ = window.$;

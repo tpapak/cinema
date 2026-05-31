@@ -16,6 +16,9 @@ html{
 }
 
 @media print{
+    @page {
+        size: landscape;
+    }
     @page :footer {
         display: none
     }
@@ -27,6 +30,33 @@ html{
     .info, .btn {
         display: none!important
     }
+
+    // Hide app chrome so the PDF is just the report.
+    .navbar,
+    .alertify-notifier,
+    .ajs-notifier {
+        display: none !important;
+    }
+
+    // Expanded report: always show every domain detail, and force the
+    // judgement colours to print (browsers strip backgrounds by default).
+    .report-table td.domain-cell .rdc-detail {
+        display: block !important;
+        page-break-inside: avoid;
+    }
+    .report-table tr {
+        page-break-inside: avoid;
+    }
+    .report-table .thead-inverse th,
+    .report-table td.domain-cell .rdc-summary {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    // Re-assert judgement colours: Bootstrap's print reset forces every
+    // background transparent, so put them back by level.
+    .report-table td.domain-cell .rdc-summary.jc-low  { background-color: #02c000 !important; }
+    .report-table td.domain-cell .rdc-summary.jc-some { background-color: #e0df02 !important; }
+    .report-table td.domain-cell .rdc-summary.jc-high { background-color: #c00000 !important; color: #fff !important; }
 }
 
 .cinema {
