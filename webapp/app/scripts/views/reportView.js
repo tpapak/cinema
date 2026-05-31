@@ -43,7 +43,7 @@ var domainCell = function(which, domain, reason, row) {
     onclick: function() { this.classList.toggle('expanded'); },
   }, [
     div('.rdc-summary', { style: { backgroundColor: color } }, summaryChildren),
-    div('.rdc-detail', { style: { borderTop: '1px solid #e2e2e2' } },
+    div('.rdc-detail', { style: { border: '2px solid ' + (color || '#ccc') } },
         reportDetail.domainLines(which, row)),
   ]);
 };
@@ -178,8 +178,19 @@ var reportView = function(data) {
       }, 'Download Report'),
       button('.pull-right.btn.btn-default.btn-pad', {
         onclick: function() {
-          var $t = window.$ && window.$('.report-table');
-          if ($t) $t.toggleClass('all-expanded');
+          var $ = window.$;
+          if (!$) return;
+          var $t = $('.report-table');
+          // Collapse if anything is open (table-level OR individual cells),
+          // otherwise expand everything.
+          var anyOpen = $t.hasClass('all-expanded') ||
+                        $('td.domain-cell.expanded').length > 0;
+          if (anyOpen) {
+            $t.removeClass('all-expanded');
+            $('td.domain-cell.expanded').removeClass('expanded');
+          } else {
+            $t.addClass('all-expanded');
+          }
         },
       }, 'Expand / collapse all'),
       table('.table.report-table', [
