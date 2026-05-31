@@ -172,7 +172,12 @@ gulp.task('lint:test', () => {
 
 gulp.task('html', gulp.series('config', 'styles', 'scripts', 'templates', 'hbsTojs', () => {
   var inject = require('gulp-inject-string');
-  var postfix = config.version==='0.0.0'?randomstring.generate():config.version;
+  // Cache-bust token for main.js/vendor/css. `config` here is config.json
+  // (no `version` field), so the old `config.version` was always undefined and
+  // produced a constant `?undefined` query — browsers then cached assets
+  // forever across rebuilds. Use the package version plus a per-build random
+  // suffix so every build emits a fresh URL.
+  var postfix = (pkg.version || 'dev') + '-' + randomstring.generate(6);
   var analytics = (config.umamiUrl && config.umamiWebsiteId)
     ? `<script defer src='${config.umamiUrl}/script.js' data-website-id='${config.umamiWebsiteId}'></script>`
     : '';
