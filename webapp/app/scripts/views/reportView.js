@@ -13,30 +13,39 @@ var div = hh.div, h3 = hh.h3, h4 = hh.h4, span = hh.span;
 var table = hh.table, thead = hh.thead, tbody = hh.tbody, tr = hh.tr, th = hh.th, td = hh.td;
 var button = hh.button, select = hh.select, option = hh.option, input = hh.input;
 
-// total number of columns in the report table (used for detail-row colspan)
-var NCOLS = 10;
-
 var infoText = 'Judgments for the six domains across all evaluated treatment effects are reported. A thick grey left border line appears for judgments whose automatically generated judgments have been manually modified. The default summary judgment is "High" confidence; downgrading by one, two, or three levels will lead to a confidence rating of "Moderate," "Low," or "Very low" respectively. Use the "Confidence rating" dropdown menu to manually assign an overall level of confidence to each relative effect. For each comparison, tick the relevant domains to indicate the reasons for downgrade; these domains will automatically appear under the column \'Reason for downgrade\'. Details can be found in Section 5 of the detailed manual.';
 
-// Render a domain cell (study limitation, pubbias, indirectness, imprecision, heterogeneity, incoherence)
-// with optional reason checkbox
-var domainCell = function(domain, reason) {
-  var children = [domain.label || ''];
+// Render a domain cell (study limitation, pubbias, indirectness, imprecision,
+// heterogeneity, incoherence). Each cell holds a coloured summary (label +
+// optional reason checkbox) and, hidden until expanded, the domain detail.
+// Clicking the cell expands it in place (the Expand-all button toggles them
+// all via a class on the table).
+var domainCell = function(which, domain, reason, row) {
+  var color = domain.color || '';
+  var summaryChildren = [domain.label || ''];
   if (reason && reason.allowed) {
-    children.push(
+    summaryChildren.push(
       input({
         type: 'checkbox',
         name: 'interest',
         value: reason.rowId + '\u03C3\u03B4\u03B5l' + reason.id,
         checked: reason.selected,
-        onclick: function() { Actions.Report.updateReportReason(this)(); },
+        // Don't let ticking the reason toggle the cell's expansion.
+        onclick: function(ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          Actions.Report.updateReportReason(this)();
+        },
       })
     );
   }
-  var selector = domain.customized ? 'td.customized-report' : 'td';
+  var selector = 'td.domain-cell' + (domain.customized ? '.customized-report' : '');
   return h(selector, {
-    style: { backgroundColor: domain.color || '' },
-  }, children);
+    onclick: function() { this.classList.toggle('expanded'); },
+  }, [
+    div('.rdc-summary', { style: { backgroundColor: color } }, summaryChildren),
+    div('.rdc-detail', { style: { borderTop: '3px solid ' + (color || '#ccc') } },
+        reportDetail.domainLines(which, row)),
+  ]);
 };
 
 // Render the confidence rating dropdown
@@ -97,23 +106,15 @@ var reportRow = function(row, showStudyCount) {
     };
   };
 
-  var detailTarget = '#rdetail-' + reportDetail.cssId(r.id);
-  var toggle = span('.report-expand', {
-    attributes: {
-      'data-toggle': 'collapse', 'data-target': detailTarget,
-      'aria-expanded': 'false', title: 'Show domain details',
-    },
-  }, [span('.glyphicon.glyphicon-chevron-right', { attributes: { 'aria-hidden': 'true' } })]);
-
   return tr([
-    th({ attributes: { scope: 'row' } }, [toggle, ' ', r.armA + ' vs ' + r.armB]),
+    th({ attributes: { scope: 'row' } }, [r.armA + ' vs ' + r.armB]),
     td(showStudyCount ? String(r.numberOfStudies) : '--'),
-    domainCell(r.studyLimitation || {}, makeReason(0)),
-    domainCell(r.pubbias || {}, makeReason(1)),
-    domainCell(r.indirectness || {}, makeReason(2)),
-    domainCell(r.imprecision || {}, makeReason(3)),
-    domainCell(r.heterogeneity || {}, makeReason(4)),
-    domainCell(r.incoherence || {}, makeReason(5)),
+    domainCell('studyLimitation', r.studyLimitation || {}, makeReason(0), r),
+    domainCell('pubbias', r.pubbias || {}, makeReason(1), r),
+    domainCell('indirectness', r.indirectness || {}, makeReason(2), r),
+    domainCell('imprecision', r.imprecision || {}, makeReason(3), r),
+    domainCell('heterogeneity', r.heterogeneity || {}, makeReason(4), r),
+    domainCell('incoherence', r.incoherence || {}, makeReason(5), r),
     ratingCell(jData, r.id),
     reasonsCell(reasons),
   ]);
@@ -146,7 +147,6 @@ var reportView = function(data) {
       // Unwrap ReportRow newtype if needed
       var rowData = row;
       bodyRows.push(reportRow(rowData, true));
-      bodyRows.push(reportDetail.detailRow(rowData, NCOLS));
     });
   }
 
@@ -158,7 +158,6 @@ var reportView = function(data) {
     (data.indirectRows || []).forEach(function(row) {
       var rowData = row;
       bodyRows.push(reportRow(rowData, false));
-      bodyRows.push(reportDetail.detailRow(rowData, NCOLS));
     });
   }
 
@@ -179,10 +178,8 @@ var reportView = function(data) {
       }, 'Download Report'),
       button('.pull-right.btn.btn-default.btn-pad', {
         onclick: function() {
-          var $d = window.$ && window.$('.report-detail');
-          if (!$d) return;
-          var anyOpen = $d.filter('.in').length > 0;
-          $d.collapse(anyOpen ? 'hide' : 'show');
+          var $t = window.$ && window.$('.report-table');
+          if ($t) $t.toggleClass('all-expanded');
         },
       }, 'Expand / collapse all'),
       table('.table.report-table', [

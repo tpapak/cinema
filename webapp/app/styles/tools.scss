@@ -192,54 +192,33 @@ box-shadow:         inset 0 0 0px grey;
   text-align: center;
 }
 
-// Expanded report — per-comparison domain detail
-.report-expand {
-  cursor: pointer;
-  color: #2c4d6d;
-  margin-right: 4px;
-  .glyphicon {
-    transition: transform 0.15s ease;
-    font-size: 0.8em;
-  }
-}
-.report-expand[aria-expanded="true"] .glyphicon {
-  transform: rotate(90deg);
-}
-.report-detail-row > td {
-  padding: 0 !important;
-  border-top: 0;
-  background: #f7f9fb;
-}
-.report-detail {
+// Expanded report — each domain cell expands in place to show its detail.
+// The coloured summary and the detail occupy the same cell; a class toggle
+// (per cell, or `.all-expanded` on the table) swaps which one is visible.
+.report-table td.domain-cell {
   padding: 0;
+  vertical-align: top;
+  cursor: pointer;
 }
-.report-detail.in {
-  padding: 10px 14px;
+.report-table td.domain-cell .rdc-summary {
+  padding: 8px 6px;
+  min-height: 2.2em;
 }
-.report-domain-cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  text-align: left;
-}
-.report-domain-card {
-  flex: 1 1 180px;
-  min-width: 170px;
-  border: 1px solid #e2e2e2;
-  border-radius: 4px;
-  background: #fff;
-  overflow: hidden;
-  font-size: 0.85em;
-}
-.rdc-head {
-  padding: 4px 8px;
-  font-weight: 600;
-  color: #1a1a1a;
-  border-bottom: 1px solid #e2e2e2;
-  text-shadow: 0 0 2px rgba(255, 255, 255, 0.6);
-}
-.rdc-body {
+.report-table td.domain-cell .rdc-detail {
+  display: none;
   padding: 6px 8px;
+  text-align: left;
+  background: #fff;
+  font-size: 0.78em;
+}
+// Expanded state: show detail, hide the coloured summary.
+.report-table.all-expanded td.domain-cell .rdc-detail,
+.report-table td.domain-cell.expanded .rdc-detail {
+  display: block;
+}
+.report-table.all-expanded td.domain-cell .rdc-summary,
+.report-table td.domain-cell.expanded .rdc-summary {
+  display: none;
 }
 .rdc-line {
   margin-bottom: 2px;

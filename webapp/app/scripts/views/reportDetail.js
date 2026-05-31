@@ -1,17 +1,15 @@
 'use strict';
 
-// reportDetail.js — expanded per-comparison detail for the Report table.
+// reportDetail.js — per-domain detail lines for the Report table.
 //
-// The report rows carry only each domain's judgement label + colour. The
+// The report cells show only each domain's judgement label + colour. The
 // underlying numbers (rules applied, CIs, prediction intervals, SIDE
 // inconsistency, direct contribution, …) live in the live domain state, keyed
-// by comparison id. This module reads those boxes and renders a collapsible
-// detail row holding one card per domain — the same payload each domain page
-// shows for that comparison.
+// by comparison id. This module reads those boxes and returns the detail lines
+// for one domain, which the report cell reveals in place when expanded.
 
 var hh = require('hyperscript-helpers')(require('virtual-dom/h'));
 var div = hh.div, span = hh.span, strong = hh.strong, small = hh.small;
-var tr = hh.tr, td = hh.td;
 
 // Read the live state lazily (avoids a load-time circular require with model.js).
 var getProject = function() {
@@ -33,29 +31,20 @@ var findBox = function(boxes, id, key) {
   var vs = variants(id);
   return boxes.find(function(b) {
     var bid = String(b[key] || '');
-    return vs.indexOf(bid) !== -1 ||
-           vs.indexOf(bid.replace(/,/g, ':')) !== -1;
+    return vs.indexOf(bid) !== -1 || vs.indexOf(bid.replace(/,/g, ':')) !== -1;
   }) || null;
 };
 
 var path = function(o, ks) { return ks.reduce(function(a, k) { return a && a[k]; }, o); };
 
-// A single labelled line inside a card. Missing values render as an em dash.
+// A single labelled line. Missing values render as an em dash.
 var line = function(label, value) {
   var v = (value === undefined || value === null || value === '' ||
            String(value) === 'undefined') ? '—' : String(value);
   return div('.rdc-line', [strong(label + ' '), span(v)]);
 };
 
-// A domain card: coloured header + body lines.
-var card = function(name, color, lines) {
-  return div('.report-domain-card', [
-    div('.rdc-head', { style: { background: color || '#eee' } }, [name]),
-    div('.rdc-body', lines.length ? lines : [small('—')]),
-  ]);
-};
-
-// ---- per-domain detail builders ----------------------------------------
+// ---- per-domain detail builders (return an array of lines) --------------
 
 var withinStudy = function(project, row) {
   var lines = [];
@@ -67,30 +56,28 @@ var withinStudy = function(project, row) {
   rules.forEach(function(rl) {
     lines.push(line(rl.name + ':', rl.label + (rl.isActive ? ' (applied)' : '')));
   });
-  return card('Within-study bias', row.studyLimitation && row.studyLimitation.color, lines);
+  return lines;
 };
 
 var reporting = function(project, row) {
   var box = findBox(path(project, ['pubbias', 'boxes']), row.id) || {};
   var evidence = box.isMixed ? 'mixed' : box.isDirect ? 'direct' : box.isIndirect ? 'indirect' : '—';
   var uploaded = path(project, ['pubbias', 'hasUploaded']);
-  var lines = [
+  return [
     line('Evidence:', evidence),
     line('Source:', (uploaded === 'true' || uploaded === true) ? 'ROB-MEN upload' : 'manual'),
   ];
-  return card('Reporting bias', row.pubbias && row.pubbias.color, lines);
 };
 
 var indirectness = function(project, row) {
   var box = findBox(path(project, ['indirectness', 'directs', 'directBoxes']), row.id, 'niceid')
          || findBox(path(project, ['indirectness', 'directs', 'directBoxes']), row.id);
-  var lines = [];
-  if (box) {
-    lines.push(line('Majority:', box.majindrName));
-    lines.push(line('Average:', box.meanindrName));
-    lines.push(line('Highest:', box.maxindrName));
-  }
-  return card('Indirectness', row.indirectness && row.indirectness.color, lines);
+  if (!box) return [];
+  return [
+    line('Majority:', box.majindrName),
+    line('Average:', box.meanindrName),
+    line('Highest:', box.maxindrName),
+  ];
 };
 
 var clinZone = function(project) {
@@ -109,75 +96,70 @@ var crossesText = function(box) {
 
 var imprecision = function(project, row) {
   var box = findBox(path(project, ['imprecision', 'boxes']), row.id);
-  var lines = [];
-  if (box) {
-    lines.push(line('NMA effect:', box.nmaEffect));
-    lines.push(line('95% CI:', '(' + box.CIf + ', ' + box.CIs + ')'));
-    var ct = crossesText(box); if (ct) lines.push(line('', ct));
-    var z = clinZone(project); if (z) lines.push(line('Clinically important:', z));
-  }
-  return card('Imprecision', row.imprecision && row.imprecision.color, lines);
+  if (!box) return [];
+  var lines = [
+    line('NMA effect:', box.nmaEffect),
+    line('95% CI:', '(' + box.CIf + ', ' + box.CIs + ')'),
+  ];
+  var ct = crossesText(box); if (ct) lines.push(line('', ct));
+  var z = clinZone(project); if (z) lines.push(line('Clinically important:', z));
+  return lines;
 };
 
 var heterogeneity = function(project, row) {
   var box = findBox(path(project, ['heterogeneity', 'heters', 'boxes']), row.id);
-  var lines = [];
-  if (box) {
-    lines.push(line('NMA effect:', box.nmaEffect));
-    lines.push(line('95% CI:', '(' + box.CIf + ', ' + box.CIs + ')'));
-    lines.push(line('95% PrI:', '(' + box.PrIf + ', ' + box.PrIs + ')'));
-    if (box.tauSquare !== undefined) lines.push(line('τ²:', box.tauSquare));
-    if (box.ISquare !== undefined) lines.push(line('I²:', box.ISquare + '%'));
-  }
-  return card('Heterogeneity', row.heterogeneity && row.heterogeneity.color, lines);
+  if (!box) return [];
+  var lines = [
+    line('NMA effect:', box.nmaEffect),
+    line('95% CI:', '(' + box.CIf + ', ' + box.CIs + ')'),
+    line('95% PrI:', '(' + box.PrIf + ', ' + box.PrIs + ')'),
+  ];
+  if (box.tauSquare !== undefined) lines.push(line('τ²:', box.tauSquare));
+  if (box.ISquare !== undefined) lines.push(line('I²:', box.ISquare + '%'));
+  return lines;
 };
 
 var incoherence = function(project, row) {
   var box = findBox(path(project, ['incoherence', 'boxes']), row.id);
-  var lines = [];
-  if (box) {
-    if (box.isMixed) {
-      lines.push(line('Direct:', box.direct + ' (' + box.directL + ', ' + box.directU + ')'));
-      lines.push(line('Indirect:', box.indirect + ' (' + box.indirectL + ', ' + box.indirectU + ')'));
-      lines.push(line('SIDE IF:', box.sideIF + ' (' + box.sideIFLower + ', ' + box.sideIFUpper + ')'));
-      lines.push(line('p-value:', box.pvalue));
-      if (box.dcont !== undefined) lines.push(line('Direct contribution:', box.dcont + '%'));
-    } else {
-      var ev = box.isDirect ? 'direct only' : 'indirect only';
-      lines.push(line('Evidence:', ev));
-      lines.push(line('', 'Inconsistency factor not applicable; judged from the design-by-treatment test.'));
-    }
-  }
-  return card('Incoherence', row.incoherence && row.incoherence.color, lines);
-};
-
-// The collapsible detail row inserted under a comparison row.
-var detailRow = function(row, colspan) {
-  var cards;
-  try {
-    var project = getProject();
-    cards = [
-      withinStudy(project, row),
-      reporting(project, row),
-      indirectness(project, row),
-      imprecision(project, row),
-      heterogeneity(project, row),
-      incoherence(project, row),
+  if (!box) return [];
+  if (box.isMixed) {
+    var lines = [
+      line('Direct:', box.direct + ' (' + box.directL + ', ' + box.directU + ')'),
+      line('Indirect:', box.indirect + ' (' + box.indirectL + ', ' + box.indirectU + ')'),
+      line('SIDE IF:', box.sideIF + ' (' + box.sideIFLower + ', ' + box.sideIFUpper + ')'),
+      line('p-value:', box.pvalue),
     ];
-  } catch (e) {
-    if (window.console) console.warn('[reportDetail] failed to build detail for', row && row.id, e);
-    cards = [div('.report-domain-card', [small('Details unavailable')])];
+    if (box.dcont !== undefined) lines.push(line('Direct contribution:', box.dcont + '%'));
+    return lines;
   }
-  return tr('.report-detail-row', [
-    td({ attributes: { colspan: String(colspan) } }, [
-      div('#rdetail-' + cssId(row && row.id) + '.report-detail.collapse', [
-        div('.report-domain-cards', cards),
-      ]),
-    ]),
-  ]);
+  var ev = box.isDirect ? 'direct only' : 'indirect only';
+  return [
+    line('Evidence:', ev),
+    line('', 'IF not applicable; judged from the design-by-treatment test.'),
+  ];
 };
 
-// data-target needs a CSS-safe id (no ':' or ',').
-var cssId = function(id) { return String(id || '').replace(/[^a-zA-Z0-9_-]/g, '_'); };
+var BUILDERS = {
+  studyLimitation: withinStudy,
+  pubbias: reporting,
+  indirectness: indirectness,
+  imprecision: imprecision,
+  heterogeneity: heterogeneity,
+  incoherence: incoherence,
+};
 
-module.exports = { detailRow: detailRow, cssId: cssId };
+// Detail lines for one domain of one comparison row. Defensive: any failure
+// degrades to a placeholder rather than throwing (the report render path
+// swallows exceptions and would otherwise blank the whole table).
+var domainLines = function(which, row) {
+  try {
+    var build = BUILDERS[which];
+    if (!build) return [];
+    return build(getProject(), row);
+  } catch (e) {
+    if (window.console) console.warn('[reportDetail] failed for', which, row && row.id, e);
+    return [small('Details unavailable')];
+  }
+};
+
+module.exports = { domainLines: domainLines };
