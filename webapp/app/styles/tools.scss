@@ -211,14 +211,11 @@ box-shadow:         inset 0 0 0px grey;
   background: #fff;
   font-size: 0.78em;
 }
-// Expanded state: show detail, hide the coloured summary.
+// Expanded state: reveal the detail beneath the (still-visible) coloured
+// summary, so the judgement label and reason checkbox stay in place.
 .report-table.all-expanded td.domain-cell .rdc-detail,
 .report-table td.domain-cell.expanded .rdc-detail {
   display: block;
-}
-.report-table.all-expanded td.domain-cell .rdc-summary,
-.report-table td.domain-cell.expanded .rdc-summary {
-  display: none;
 }
 .rdc-line {
   margin-bottom: 2px;

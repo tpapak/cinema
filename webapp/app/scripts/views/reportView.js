@@ -43,7 +43,7 @@ var domainCell = function(which, domain, reason, row) {
     onclick: function() { this.classList.toggle('expanded'); },
   }, [
     div('.rdc-summary', { style: { backgroundColor: color } }, summaryChildren),
-    div('.rdc-detail', { style: { borderTop: '3px solid ' + (color || '#ccc') } },
+    div('.rdc-detail', { style: { borderTop: '1px solid #e2e2e2' } },
         reportDetail.domainLines(which, row)),
   ]);
 };
