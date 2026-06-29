@@ -172,7 +172,11 @@ var formatTypeSelector = (view) => {
 };
 
 var columnMapping = (view) => {
-  var requiredList = (view.requiredFields || []).map(function(field) {
+  // resolveView() has already called requiredFields()/optionalFields(), so
+  // these are values, not functions. projectFields() returns {} (not an array)
+  // when settings aren't set yet, and `{} || []` is truthy so a bare .map()
+  // throws. Guard with Array.isArray.
+  var requiredList = (Array.isArray(view.requiredFields) ? view.requiredFields : []).map(function(field) {
     var colOptions = (field.availableColumns || []).map(function(col) {
       return option({
         value: col.name,
@@ -193,7 +197,7 @@ var columnMapping = (view) => {
     ]);
   });
 
-  var optionalList = (view.optionalFields || []).map(function(field) {
+  var optionalList = (Array.isArray(view.optionalFields) ? view.optionalFields : []).map(function(field) {
     var colOptions = (field.availableColumns || []).map(function(col) {
       return option({
         value: col.name,

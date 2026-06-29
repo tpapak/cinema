@@ -292,25 +292,32 @@ var Update = (model) => {
           let sm = model.getState().project.CM.currentCM.params.sm;
           let useExps =  ((sm === 'OR') || (sm === 'RR'));
           let tauSquare = 'nothing';
-          let CIf = useExps 
-            ? Math.exp(nmaRow['lower CI']) : nmaRow['lower CI'];
-          let nmaEffect = useExps 
-            ? Math.exp(nmaRow['NMA treatment effect']) : nmaRow['NMA treatment effect'];
-          let CIs = useExps 
-            ? Math.exp(nmaRow['upper CI']) : nmaRow['upper CI'];
-          let PrIf = useExps 
-            ? Math.exp(nmaRow['lower PrI']) : nmaRow['lower PrI'];
-          let PrIs = useExps 
-            ? Math.exp(nmaRow['upper PrI']) : nmaRow['upper PrI'];
+          let expv = (v) => useExps ? Math.exp(v) : v;
+          // netmeta returns NA prediction-interval bounds when between-study
+          // heterogeneity is inestimable (tau == 0, e.g. only one study per
+          // comparison). Following MetaInsight (CRSU-Apps/MetaInsight#255),
+          // collapse the prediction interval to the confidence interval in that
+          // case: with no between-study variance the prediction interval equals
+          // the confidence interval. Previously the raw null hit .toFixed() and
+          // threw, aborting the whole heterogeneity assessment (issues #5/#6/#8).
+          let rawPrIf = (nmaRow['lower PrI'] == null) ? nmaRow['lower CI'] : nmaRow['lower PrI'];
+          let rawPrIs = (nmaRow['upper PrI'] == null) ? nmaRow['upper CI'] : nmaRow['upper PrI'];
+          let CIf = expv(nmaRow['lower CI']);
+          let nmaEffect = expv(nmaRow['NMA treatment effect']);
+          let CIs = expv(nmaRow['upper CI']);
+          let PrIf = expv(rawPrIf);
+          let PrIs = expv(rawPrIs);
+          // NA-safe formatter — any residual null/NaN renders as 'N/A' rather
+          // than throwing.
+          let fmt3 = (v) => (v == null || (typeof v === 'number' && isNaN(v))) ? 'N/A' : Number(v).toFixed(3);
           let contents = {}
-            // console.log("BOX id",s[0]);
             contents =  {
                 id: nmaRow['_row'],
-                CIf: CIf.toFixed(3), 
-                nmaEffect: nmaEffect.toFixed(3),
-                CIs: CIs.toFixed(3),
-                PrIf: PrIf.toFixed(3), 
-                PrIs: PrIs.toFixed(3)
+                CIf: fmt3(CIf),
+                nmaEffect: fmt3(nmaEffect),
+                CIs: fmt3(CIs),
+                PrIf: fmt3(PrIf),
+                PrIs: fmt3(PrIs)
             }
           if(_.isUndefined(pairRow)){
             _.extend(contents,{
@@ -346,7 +353,13 @@ var Update = (model) => {
                             , nmaEffect
                             , nulleffect
                             ].map(n => {return Number(n)});
-          contents.ruleLevel = updaters.getRuleLevel(...crossParams);
+          // ruleLevel/judgement feed a PureScript Int field. Guarantee an
+          // integer even if a cross input was inestimable (NaN), so the report
+          // decoder can never fail on this box. With tau == 0 the PrI->CI
+          // collapse above means the rule is assessed on the confidence
+          // interval, which is the correct "no extra heterogeneity" judgement.
+          let rl = updaters.getRuleLevel(...crossParams);
+          contents.ruleLevel = Number.isInteger(rl) ? rl : 1;
           contents.crosses = updaters.getNumberOfCrosses(...crossParams);
           contents.judgement = contents.ruleLevel;
           return contents;
