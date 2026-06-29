@@ -70,8 +70,6 @@ var Update = (model) => {
     getRule: () => {
       return deepSeek(model.getState(), modelPosition+'.rule');
     },
-    selectRule: (rule) => {
-    },
     selectIndividual: (value) => {
       let [tid,tv] = value.value.split('σδel');
       let boxes = updaters.getState().boxes;

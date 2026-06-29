@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://cinema.ispm.unibe.ch/schema/v3",
+  "$id": "https://cinema.med.auth.gr/schema/v3",
   "title": "CINeMA Exchange Schema v3",
   "description": "Schema for CINeMA (Confidence in Network Meta-Analysis) project files. A .cnm file contains a collection of self-contained projects, each with one dataset, one analysis, and optionally one CINeMA evaluation. Designed for interoperability with MetaInsight and other NMA software. Type definitions mirror the PureScript model (Model.purs, ComparisonModel.purs, etc.).",
   "type": "object",
