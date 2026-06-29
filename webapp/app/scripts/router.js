@@ -199,9 +199,48 @@ var Router = {
         Router.model.getState().router.currentRoute = route;
         Router.model.saveState();
         }else{
-          Router.update.gotoRoute('welcome');
+          // The report route is blocked when project.report.status !== 'ready',
+          // which almost always means readState failed to decode the current
+          // state. Surface that decoder error and stay put, instead of silently
+          // bouncing the user to the homepage (issues #5, #6, #8).
+          if(route === 'report'){
+            Router.update.surfaceReportUnavailable();
+          }else{
+            Router.update.gotoRoute('welcome');
+          }
         }
       }
+    },
+    // Re-run the decoder to recover the reason the report could not be built.
+    // readState :: Json -> Either String State — a Left carries the error string
+    // in .value0 (a Right carries the decoded State object), mirroring the
+    // discrimination used in ReportModule.render above.
+    reportUnavailableReason: () => {
+      try {
+        var decoded = ModelPS.readState(Router.model.getState());
+        if (decoded && typeof decoded.value0 === 'string') {
+          return decoded.value0;
+        }
+      } catch (e) {
+        return String(e && e.message ? e.message : e);
+      }
+      return null;
+    },
+    surfaceReportUnavailable: () => {
+      var reason = Router.update.reportUnavailableReason();
+      console.log('Report decoder error:', reason);
+      var msg = 'The report could not be generated.';
+      if (reason) {
+        msg += '<br><br><b>Technical detail:</b> ' + reason +
+          '<br><br>Please report this at ' +
+          '<a href="https://github.com/tpapak/cinema/issues" target="_blank">' +
+          'github.com/tpapak/cinema/issues</a>, including your dataset if possible.';
+      } else {
+        // report.status stays notReady when readState decodes but no domain is
+        // ready yet — only ONE assessment needs completing for a report.
+        msg += '<br><br>Please complete at least one assessment step (e.g. Risk of Bias) first.';
+      }
+      Messages.alertify().alert('Report not available', msg);
     },
   },
   actions: {
