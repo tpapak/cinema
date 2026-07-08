@@ -26,5 +26,7 @@ EXPOSE 8004
 # Use gunicorn with multiple workers for production.
 # Each request spawns its own Rscript subprocess, so workers handle
 # concurrency at the Python level while R processes run in parallel.
+# CMD ["conda", "run", "--no-capture-output", "-n", "cinema-api", \
+#      "gunicorn", "--bind", "0.0.0.0:8004", "--timeout", "600", "--workers", "4", "app:app"]
 CMD ["conda", "run", "--no-capture-output", "-n", "cinema-api", \
-     "gunicorn", "--bind", "0.0.0.0:8004", "--timeout", "600", "--workers", "4", "app:app"]
+     "gunicorn", "--bind", "0.0.0.0:8004", "--timeout", "1800", "--workers", "2", "--worker-class", "gthread", "--threads", "6", "app:app"]

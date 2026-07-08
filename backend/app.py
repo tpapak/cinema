@@ -25,6 +25,9 @@ import uuid
 import subprocess
 import threading
 import signal
+import resource
+import fcntl
+import time
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -50,10 +53,23 @@ _conda_rscript = os.path.join(_conda_prefix, "bin", "Rscript")
 RSCRIPT = _conda_rscript if os.path.isfile(_conda_rscript) else "Rscript"
 
 # Maximum concurrent R processes (0 = unlimited)
-MAX_CONCURRENT = int(os.environ.get("MAX_R_JOBS", "0"))
+# MAX_CONCURRENT = int(os.environ.get("MAX_R_JOBS", "0"))
+MAX_CONCURRENT = int(os.environ.get("MAX_R_JOBS", "1"))
 
 # R process timeout in seconds (0 = no timeout)
 R_TIMEOUT = int(os.environ.get("R_TIMEOUT", "600"))
+
+# Maximum queued R requests waiting for an R process slot
+R_QUEUE_LIMIT = int(os.environ.get("R_QUEUE_LIMIT", "5"))
+
+# Seconds between queue slot checks
+R_QUEUE_POLL_SECONDS = float(os.environ.get("R_QUEUE_POLL_SECONDS", "1"))
+
+# R process address-space limit in MB (0 = no per-process limit)
+R_MEMORY_LIMIT_MB = int(os.environ.get("R_MEMORY_LIMIT_MB", "0"))
+
+# Shared lock directory for enforcing R job concurrency across gunicorn workers
+R_LOCK_DIR = os.environ.get("R_LOCK_DIR", "/tmp/cinema-r-jobs")
 
 
 # ── Job tracking ─────────────────────────────────────────────────────────────
@@ -61,6 +77,7 @@ R_TIMEOUT = int(os.environ.get("R_TIMEOUT", "600"))
 
 _active_jobs = {}  # job_id -> {"process": Popen, "cancelled": bool}
 _jobs_lock = threading.Lock()
+_job_slot_locks = {}
 
 
 def _register_job(job_id, proc):
@@ -106,7 +123,73 @@ def _active_count():
         )
 
 
+def _acquire_lock_slot(job_id, prefix, limit):
+    if limit <= 0:
+        return True
+
+    os.makedirs(R_LOCK_DIR, exist_ok=True)
+
+    for slot in range(limit):
+        path = os.path.join(R_LOCK_DIR, f"{prefix}-{slot}.lock")
+        lock_file = open(path, "w")
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            lock_file.write(job_id)
+            lock_file.flush()
+            with _jobs_lock:
+                _job_slot_locks[job_id] = lock_file
+            return True
+        except BlockingIOError:
+            lock_file.close()
+
+    return False
+
+
+def _acquire_job_slot(job_id):
+    return _acquire_lock_slot(job_id, "active", MAX_CONCURRENT)
+
+
+def _release_job_slot(job_id):
+    with _jobs_lock:
+        lock_file = _job_slot_locks.pop(job_id, None)
+
+    if lock_file:
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+        finally:
+            lock_file.close()
+
+
+def _wait_for_r_turn(job_id):
+    if _acquire_job_slot(job_id):
+        return True
+
+    if R_QUEUE_LIMIT <= 0:
+        return False
+
+    queue_job_id = f"{job_id}-queue"
+    if not _acquire_lock_slot(queue_job_id, "queue", R_QUEUE_LIMIT):
+        return False
+
+    try:
+        while not _acquire_job_slot(job_id):
+            time.sleep(R_QUEUE_POLL_SECONDS)
+    finally:
+        _release_job_slot(queue_job_id)
+
+    return True
+
+
 # ── R subprocess runner ──────────────────────────────────────────────────────
+
+
+def _prepare_r_process():
+    """Prepare R child process limits before exec."""
+    os.setsid()
+
+    if R_MEMORY_LIMIT_MB > 0:
+        memory_bytes = R_MEMORY_LIMIT_MB * 1024 * 1024
+        resource.setrlimit(resource.RLIMIT_AS, (memory_bytes, memory_bytes))
 
 
 def run_r(request_obj, job_id=None):
@@ -131,7 +214,8 @@ def run_r(request_obj, job_id=None):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         # Start new process group so we can kill R + children
-        preexec_fn=os.setsid,
+        # preexec_fn=os.setsid,
+        preexec_fn=_prepare_r_process,
     )
 
     if job_id:
@@ -187,6 +271,7 @@ def status():
         {
             "active_jobs": _active_count(),
             "max_concurrent": MAX_CONCURRENT,
+            "max_queue": R_QUEUE_LIMIT,
         }
     )
 
@@ -203,14 +288,27 @@ def api_run_nma():
     Response headers include X-Job-Id for cancellation.
     """
     job_id = str(uuid.uuid4())
+    acquired_slot = False
 
     # Check concurrency limit
-    if MAX_CONCURRENT > 0 and _active_count() >= MAX_CONCURRENT:
+    # if MAX_CONCURRENT > 0 and _active_count() >= MAX_CONCURRENT:
+    #     return jsonify(
+    #         {
+    #             "error": "server_busy",
+    #             "message": f"Maximum concurrent jobs ({MAX_CONCURRENT}) reached. Try again later.",
+    #             "active_jobs": _active_count(),
+    #         }
+    #     ), 503
+
+    # acquired_slot = _acquire_job_slot(job_id)
+    acquired_slot = _wait_for_r_turn(job_id)
+    if not acquired_slot:
         return jsonify(
             {
                 "error": "server_busy",
-                "message": f"Maximum concurrent jobs ({MAX_CONCURRENT}) reached. Try again later.",
+                "message": f"Maximum queue size ({R_QUEUE_LIMIT}) reached. Try again later.",
                 "active_jobs": _active_count(),
+                "max_queue": R_QUEUE_LIMIT,
             }
         ), 503
 
@@ -252,6 +350,8 @@ def api_run_nma():
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
     finally:
         _cleanup_job(job_id)
+        if acquired_slot:
+            _release_job_slot(job_id)
 
 
 @app.route("/api/cancel/<job_id>", methods=["POST"])
@@ -273,6 +373,18 @@ def api_leaguetable():
 
     Response:  2-D string array.
     """
+    job_id = str(uuid.uuid4())
+    acquired_slot = _wait_for_r_turn(job_id)
+    if not acquired_slot:
+        return jsonify(
+            {
+                "error": "server_busy",
+                "message": f"Maximum queue size ({R_QUEUE_LIMIT}) reached. Try again later.",
+                "active_jobs": _active_count(),
+                "max_queue": R_QUEUE_LIMIT,
+            }
+        ), 503
+
     try:
         p = request.get_json(force=True)
 
@@ -293,6 +405,9 @@ def api_leaguetable():
     except Exception as e:
         logger.error(f"leaguetable error: {e}\n{traceback.format_exc()}")
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+    finally:
+        if acquired_slot:
+            _release_job_slot(job_id)
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
