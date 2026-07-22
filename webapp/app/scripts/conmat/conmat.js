@@ -141,7 +141,9 @@ var CM = {
             savedComparisons: [],
             params: {
               MAModel: 'random',
-              sm: 'OR',
+              // Effect measure must suit the outcome type: continuous → MD, else OR.
+              // (Prevents netmeta's "Argument 'sm' must be MD/SMD/ROM" on continuous data.)
+              sm: (deepSeek(model,'getState().project.type') === 'continuous') ? 'MD' : 'OR',
               intvs: [],
               rule: 'every',
               tau: 0

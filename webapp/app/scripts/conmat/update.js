@@ -22,6 +22,20 @@ ClinicalImportance.update = require('../purescripts/output/ClinImp.Update');
 // 70 / 2415 OOMs the 2GB server. Matches the frontend's existing >500-comparison strip.
 var MAX_SERVER_COMPARISONS = 500;
 
+// Effect measure (sm) must be valid for the outcome type. netmeta rejects OR/RR/RD on
+// continuous data ("Argument 'sm' must be MD, SMD, or ROM"), so a leaked default of 'OR'
+// on a continuous analysis aborts the run. These mirror the options in conmat/view.js
+// (CINeMA offers OR/RR/RD for binary and MD/SMD for continuous; no ROM in the UI).
+var validSmForType = function (type) {
+  return type === 'continuous' ? ['MD', 'SMD'] : ['OR', 'RR', 'RD'];
+};
+var defaultSmForType = function (type) {
+  return type === 'continuous' ? 'MD' : 'OR';
+};
+var coerceSm = function (sm, type) {
+  return validSmForType(type).indexOf(sm) >= 0 ? sm : defaultSmForType(type);
+};
+
 // ── Backend API helpers ─────────────────────────────────────────────────────
 // The backend base URL comes from config.
 // In dev: "localhost:8004" → "http://localhost:8004" (direct to Flask)
@@ -284,6 +298,10 @@ var Update = (model) => {
         );
         return;
       }
+      // Ensure the effect measure is valid for the outcome type (continuous must not be
+      // OR/RR/RD) — guards stale/saved states before sending to the backend.
+      let curParams = deepSeek(model,'getState().project.CM.currentCM.params');
+      if (curParams) { curParams.sm = coerceSm(curParams.sm, project.type); }
       updaters.setCurrentCM('status','loading');
       updaters.fetchContributionMatrix(cmc).then(ncm => {
         // console.log('matrix loaded ok!!!!!');
@@ -304,7 +322,7 @@ var Update = (model) => {
             savedComparisons: [],
             params: {
               MAModel: 'random',
-              sm: 'OR',
+              sm: defaultSmForType(project && project.type),
               intvs: [],
               rule: 'every',
               tau: 0
@@ -988,7 +1006,7 @@ var Update = (model) => {
       }
       if(p.format === 'iv'){ rtype = 'iv'; }
       var maModel = cm.params.MAModel || 'random';
-      var sm = cm.params.sm || 'OR';
+      var sm = coerceSm(cm.params.sm, p.type);
 
       // Serialise the study data as an R data.frame constructor
       var rData = '';
