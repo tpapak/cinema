@@ -444,13 +444,13 @@ var Update = (model) => {
               out = studies.long;
             }
             if(exclude === 'H'){
-              out = _.filter(out, 
-                //function(s){return(s.rob===1 | s.rob===2)})
-                function(s){return(s.rob===1 | s.rob===2)})
+              // Number() so string rob ("1"/"2") from .cnm/IV imports still matches.
+              out = _.filter(out,
+                function(s){return(Number(s.rob)===1 || Number(s.rob)===2)})
             }
             if(exclude === 'MH'){
-              out = _.filter(out, 
-                function(s){return(s.rob===1)})
+              out = _.filter(out,
+                function(s){return(Number(s.rob)===1)})
             }
               return out;
           }
@@ -491,8 +491,15 @@ var Update = (model) => {
           });
 
           // ── Sensitivity analysis: exclude High RoB ──
+          var dataLM = formatData(rtype, project.studies, 'H');
+          if (_.isEmpty(dataLM)) {
+            // No low/medium-risk studies remain → sensitivity not applicable. Skip the
+            // call; empty indata crashes R with "object 'id' not found" (issue #13).
+            cm.leaguetableLM = {};
+            updaters.saveState();
+          } else {
           _postAPI('/api/runNMA', {
-            indata: formatData(rtype, project.studies, 'H'),
+            indata: dataLM,
             type: rtype,
             model: cm.params.MAModel,
             sm: cm.params.sm
@@ -513,10 +520,18 @@ var Update = (model) => {
             Messages.alertify().alert(msg);
             cm.leaguetableLM = {};
           });
+          }
 
           // ── Sensitivity analysis: exclude Medium+High RoB ──
+          var dataL = formatData(rtype, project.studies, 'MH');
+          if (_.isEmpty(dataL)) {
+            // No low-risk studies remain → sensitivity not applicable. Skip the call;
+            // empty indata crashes R with "object 'id' not found" (issue #13).
+            cm.leaguetableL = {};
+            updaters.saveState();
+          } else {
           _postAPI('/api/runNMA', {
-            indata: formatData(rtype, project.studies, 'MH'),
+            indata: dataL,
             type: rtype,
             model: cm.params.MAModel,
             sm: cm.params.sm
@@ -537,6 +552,7 @@ var Update = (model) => {
             Messages.alertify().alert(msg);
             cm.leaguetableL = {};
           });
+          }
         }else{
             console.log('found hatmatrix', cm.hatmatrix);
             updaters.fetchRows(cm, null).then(res => {
