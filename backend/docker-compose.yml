@@ -9,8 +9,13 @@ services:
       - MAX_R_JOBS=1
       - R_QUEUE_LIMIT=5
       - R_TIMEOUT=300
+      # R_MEMORY_LIMIT_MB enforces RLIMIT_AS (virtual address space) per R process.
+      # That is the WRONG metric: igraph/netcontrib reserve large virtual regions that
+      # never touch physical RAM, so a low cap spuriously fails analyses that fit in RAM
+      # (e.g. ~14-treatment networks). Disabled — the container mem_limit below is the
+      # real (RSS/cgroup) ceiling and protects the host. Re-enable only as a high backstop.
       # - R_MEMORY_LIMIT_MB=1536
-      - R_MEMORY_LIMIT_MB=1024
+      # - R_MEMORY_LIMIT_MB=1024
     # mem_limit: 2g
     mem_limit: 1536m
     pids_limit: 256
