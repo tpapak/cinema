@@ -15,6 +15,13 @@ var Pubbias = require('../pubbias/pubbias.js')();
 var ClinicalImportance = require('../purescripts/output/ClinImp');
 ClinicalImportance.update = require('../purescripts/output/ClinImp.Update');
 
+// Networks above this many pairwise comparisons (~32 interventions) risk exhausting
+// server memory during netcontrib(study=TRUE) and OOM-abort the analysis. Above it we
+// stop and direct the user to the offline R script (runs locally, uses the fast
+// shortestpath method). Calibration: 13 interventions / 78 comparisons runs in ~1.3GB;
+// 70 / 2415 OOMs the 2GB server. Matches the frontend's existing >500-comparison strip.
+var MAX_SERVER_COMPARISONS = 500;
+
 // ── Backend API helpers ─────────────────────────────────────────────────────
 // The backend base URL comes from config.
 // In dev: "localhost:8004" → "http://localhost:8004" (direct to Flask)
@@ -261,6 +268,22 @@ var Update = (model) => {
     },
     createMatrix: () => {
       // console.log('creating matrix');
+      // Guard: predict networks too large for the server and route to the offline
+      // R script instead of attempting the computation and OOM-crashing the backend.
+      let nodes = deepSeek(project,'studies.nodes') || [];
+      let nInterventions = nodes.length;
+      let nComparisons = (nInterventions * (nInterventions - 1)) / 2;
+      if (nComparisons > MAX_SERVER_COMPARISONS) {
+        updaters.setCurrentCM('status','empty');
+        updaters.saveState();
+        Messages.alertify().error(
+          'This network is too large to analyse on the server (' + nInterventions +
+          ' interventions, ' + nComparisons + ' comparisons). Please use the ' +
+          '"Get R script for offline analysis" button to run it on your own computer, ' +
+          'then upload the resulting .cnm file.'
+        );
+        return;
+      }
       updaters.setCurrentCM('status','loading');
       updaters.fetchContributionMatrix(cmc).then(ncm => {
         // console.log('matrix loaded ok!!!!!');
