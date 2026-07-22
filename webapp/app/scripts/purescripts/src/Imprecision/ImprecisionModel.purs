@@ -85,8 +85,14 @@ instance decodeImprecisionBox :: DecodeJson ImprecisionBox where
     Nothing -> Left $ TypeMismatch "Object"
     Just obj -> do
       id <- getField obj "id"
-      judgement <- getField obj "judgement"
-      ruleLevel <- getField obj "ruleLevel"
+      -- judgement <- getField obj "judgement"   -- strict: crashed on 'nothing'/null/fraction
+      let judgement = case (getField obj "judgement" :: Either JsonDecodeError Int) of
+                        Left _  -> (-1)
+                        Right v -> v
+      -- ruleLevel <- getField obj "ruleLevel"
+      let ruleLevel = case (getField obj "ruleLevel" :: Either JsonDecodeError Int) of
+                        Left _  -> (-1)
+                        Right v -> v
       levels <- getField obj "levels"
       let color = ""
       let label = "--"

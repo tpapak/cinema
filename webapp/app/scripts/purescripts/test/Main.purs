@@ -63,6 +63,7 @@ import SchemaV2
   )
 import Data.Lens ((^.))
 import Test.ReadFixture (readFixture)
+import IndirectnessModel (IndirectnessBox(..))
 
 main :: Effect Unit
 main = runSpecAndExitProcess [consoleReporter] do
@@ -536,3 +537,31 @@ main = runSpecAndExitProcess [consoleReporter] do
       case result of
         Left _ -> pure unit  -- Expected failure
         Right _ -> fail "Should have rejected incomplete data"
+
+  -- =========================================================
+  -- IndirectnessBox tolerant judgement decode (Cluster A fix)
+  -- =========================================================
+  describe "IndirectnessBox tolerant judgement" do
+
+    it "decodes string judgement 'nothing' as -1 instead of crashing" do
+      let json = encodeJson { id: "A:B", judgement: "nothing", ruleLevel: (-1), levels: ([] :: Array Int) }
+      let result = decodeJson json :: Either _ IndirectnessBox
+      result `shouldSatisfy` isRight
+      case result of
+        Right (IndirectnessBox b) -> b.judgement `shouldEqual` (-1)
+        Left err -> fail $ "should have tolerated 'nothing': " <> show err
+
+    it "decodes fractional judgement as -1 instead of crashing" do
+      let json = encodeJson { id: "A:B", judgement: 1.5, ruleLevel: (-1), levels: ([] :: Array Int) }
+      let result = decodeJson json :: Either _ IndirectnessBox
+      result `shouldSatisfy` isRight
+      case result of
+        Right (IndirectnessBox b) -> b.judgement `shouldEqual` (-1)
+        Left err -> fail $ "should have tolerated fraction: " <> show err
+
+    it "still decodes a valid integer judgement" do
+      let json = encodeJson { id: "A:B", judgement: 2, ruleLevel: 2, levels: ([] :: Array Int) }
+      let result = decodeJson json :: Either _ IndirectnessBox
+      case result of
+        Right (IndirectnessBox b) -> b.judgement `shouldEqual` 2
+        Left err -> fail $ "valid judgement should decode: " <> show err

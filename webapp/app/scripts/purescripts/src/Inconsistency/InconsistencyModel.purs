@@ -131,8 +131,14 @@ instance decodeHeterogeneityBox :: DecodeJson HeterogeneityBox where
     Nothing -> Left $ TypeMismatch "Object"
     Just obj -> do
       id <- getField obj "id"
-      judgement <- getField obj "judgement"
-      ruleLevel <- getField obj "ruleLevel"
+      -- judgement <- getField obj "judgement"   -- strict: crashed on 'nothing'/null/fraction
+      let judgement = case (getField obj "judgement" :: Either JsonDecodeError Int) of
+                        Left _  -> (-1)
+                        Right v -> v
+      -- ruleLevel <- getField obj "ruleLevel"
+      let ruleLevel = case (getField obj "ruleLevel" :: Either JsonDecodeError Int) of
+                        Left _  -> (-1)
+                        Right v -> v
       levels <- getField obj "levels"
       let color = ""
       let label = "--"
@@ -232,11 +238,17 @@ instance decodeIncoherenceBox :: DecodeJson IncoherenceBox where
     Nothing -> Left $ TypeMismatch "Object"
     Just obj -> do
       i <- getField obj "id"
-      j <- getField obj "judgement"
+      -- j <- getField obj "judgement"   -- strict: crashed on 'nothing'/null/fraction
+      let j = case (getField obj "judgement" :: Either JsonDecodeError Int) of
+                Left _  -> (-1)
+                Right v -> v
       l <- getField obj "label"
       lvls <- getField obj "levels"
       c <- getField obj "color"
-      rj <- getField obj "ruleJudgement"
+      -- rj <- getField obj "ruleJudgement"
+      let rj = case (getField obj "ruleJudgement" :: Either JsonDecodeError Int) of
+                 Left _  -> (-1)
+                 Right v -> v
       cust <- getField obj "customized"
       pure $ IncoherenceBox { id: i, judgement: j, label: l, levels: lvls, color: c, ruleJudgement: rj, customized: cust }
 
