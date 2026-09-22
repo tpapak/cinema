@@ -12,7 +12,7 @@
     "opencpu.js": "opencpu#*",
     "chart.js": "^2.4.0",
     "file-saver": "^1.3.3",
-    "canvas-toBlob.js": "^0.1.3"
+    "canvas-toBlob.js": "https://github.com/eligrey/canvas-toBlob.js.git#f1a01896135ab378aa5c0118eadd81da55e698d8"
   },
   "overrides": {
     "bootstrap-sass": {
