@@ -27,6 +27,7 @@ var Messages = require('./messages.js').Messages;
 var FR = require('./lib/readFile.js').FR;
 var V3Bridge = require('./lib/v3bridge.js');
 var OldCnmBridge = require('./lib/oldCnmBridge.js');
+var MetaInsightBridge = require('./lib/schemaBridge.js');
 var download = require('downloadjs');
 var md5 = require('../../bower_components/js-md5/js/md5.min.js');
 
@@ -220,13 +221,18 @@ var PM = {
       // Upload a single .cnm project file into the active collection
       FR.handleFileSelect(inputEl).then((statestring) => {
         var parsed = JSON.parse(statestring);
-        // Anything that isn't already a v3 exchange envelope is treated as a
-        // legacy CINeMA state dump — a v1.x/v2.x file or a 3.0.x "save project"
-        // file (top-level version + project) — and bridged to v3. oldCnmToV3
-        // runs legacyStateToV3 with a minimal fallback. (The Project page upload
-        // already accepts these; this keeps the Project Manager consistent.)
+        // Anything that isn't already a v3 exchange envelope needs bridging.
+        // A real MetaInsight export is checked first — it doesn't carry a
+        // `version`/`hasFile` marker, but has a distinctive project.CM shape.
+        // Anything else is treated as a legacy CINeMA state dump — a v1.x/v2.x
+        // file or a 3.0.x "save project" file (top-level version + project) —
+        // and bridged via oldCnmToV3 (legacyStateToV3 with a minimal fallback).
         if (!V3Bridge.isV3Format(parsed)) {
-          parsed = OldCnmBridge.oldCnmToV3(parsed);
+          if (MetaInsightBridge.isMetaInsightFormat(parsed)) {
+            parsed = MetaInsightBridge.metaInsightToV3(parsed);
+          } else {
+            parsed = OldCnmBridge.oldCnmToV3(parsed);
+          }
         }
         if (V3Bridge.isV3Format(parsed) && parsed.cinema.projects && parsed.cinema.projects.length > 0) {
           var mgr = PM.update.getManager();

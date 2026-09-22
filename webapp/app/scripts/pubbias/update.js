@@ -137,6 +137,10 @@ var Update = (model) => {
           let nmaRow = _.find(NMAs, nma => {
             return _.isEqual(uniqId(nma['_row'].split(':')),uniqId(s[0].split(':')));
           });
+          if (!nmaRow) {
+            console.warn('Pubbias: no NMA row found for comparison', s[0]);
+            return null;
+          }
           let contents = {}
             contents =  {
                 id: nmaRow['_row'],
@@ -173,9 +177,9 @@ var Update = (model) => {
         });
         return res;
       };
-      let mixed = makeBoxes(
-        sortStudies(cm.directRowNames,cm.directStudies));
-      let indirect = makeBoxes(sortStudies(cm.indirectRowNames,cm.indirectStudies));
+      let mixed = _.compact(makeBoxes(
+        sortStudies(cm.directRowNames,cm.directStudies)));
+      let indirect = _.compact(makeBoxes(sortStudies(cm.indirectRowNames,cm.indirectStudies)));
       return _.union(mixed,indirect);
     },
     resetBoxes: () => {

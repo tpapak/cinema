@@ -25,7 +25,7 @@ var Netplot = require('./netplot.js')();
 var ConMat = require('./conmat/conmat.js')();
 var ComparisonModel = require('./purescripts/output/ComparisonModel');
 var download = require('downloadjs');
-var V2Bridge = require('./lib/v2bridge.js');
+var MetaInsightBridge = require('./lib/schemaBridge.js');
 var V3Bridge = require('./lib/v3bridge.js');
 var OldCnmBridge = require('./lib/oldCnmBridge.js');
 var projectView = require('./views/projectView.js');
@@ -256,10 +256,11 @@ var PR = {
             let legacyState = V3Bridge.v3ToLegacyState(parsed, PR.model.getState());
             return legacyState;
           }
-           // Detect v2 exchange format (MetaInsight) and transform to legacy state
-          if (V2Bridge.isV2Format(parsed)) {
-            console.log('Detected CINeMA v2 exchange format, transforming to legacy state');
-            let legacyState = V2Bridge.v2ToLegacyState(parsed, PR.model.getState());
+           // Detect a real MetaInsight CINeMA-export file and transform to legacy state
+          if (MetaInsightBridge.isMetaInsightFormat(parsed)) {
+            console.log('Detected MetaInsight export, transforming to legacy state');
+            let v3 = MetaInsightBridge.metaInsightToV3(parsed);
+            let legacyState = V3Bridge.v3ToLegacyState(v3, PR.model.getState());
             return legacyState;
           }
           // Old CINeMA state dump (v1.x / v2.x from cinema.ispm.unibe.ch):
